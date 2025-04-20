@@ -21,10 +21,10 @@ constDecl:
 	T_CONST basicType constDef (T_COMMA constDef)* T_SEMICOLON;
 
 constDef:
-	T_ID (T_L_SQBRA constExp T_R_SQBRA)* T_EQUAL constInitVal;
+	T_ID (T_L_SQBRA constExp T_R_SQBRA)* T_ASSIGN constInitVal;
 constInitVal:
 	constExp
-	| T_L_BRACE (constInitVal (T_COMMA constInitVal)*)?;
+	| T_L_BRACE (constInitVal (T_COMMA constInitVal)*)? T_R_BRACE;
 
 // 函数定义，目前不支持形参，也不支持返回void类型等
 funcDef: funcType T_ID T_L_PAREN (funcFParams)? T_R_PAREN block;
@@ -53,7 +53,8 @@ varDecl: basicType varDef (T_COMMA varDef)* T_SEMICOLON;
 basicType: T_INT | T_FLOAT;
 
 // 变量定义
-varDef: T_ID (T_L_SQBRA constExp T_R_SQBRA)* (T_EQUAL initVal)?;
+varDef:
+	T_ID (T_L_SQBRA constExp T_R_SQBRA)* (T_ASSIGN initVal)?;
 
 initVal:
 	expr
@@ -61,14 +62,14 @@ initVal:
 
 // 目前语句支持return和赋值语句
 statement:
-	T_RETURN expr? T_SEMICOLON			# returnStatement
-	| lVal T_ASSIGN expr T_SEMICOLON	# assignStatement
-	| block								# blockStatement
-	| expr? T_SEMICOLON					# expressionStatement
-	| T_IF T_L_PAREN cond T_R_PAREN statement (T_ELSE statement)?
-	| T_WHILE T_L_PAREN cond T_R_PAREN statement
-	| T_BREAK T_SEMICOLON
-	| T_CONTINUE T_SEMICOLON;
+	T_RETURN expr? T_SEMICOLON										# returnStatement
+	| lVal T_ASSIGN expr T_SEMICOLON								# assignStatement
+	| block															# blockStatement
+	| expr? T_SEMICOLON												# expressionStatement
+	| T_IF T_L_PAREN cond T_R_PAREN statement (T_ELSE statement)?	# ifStatement
+	| T_WHILE T_L_PAREN cond T_R_PAREN statement					# whileStatement
+	| T_BREAK T_SEMICOLON											# breakStatement
+	| T_CONTINUE T_SEMICOLON										# continueStatement;
 
 // 表达式文法 expr : AddExp 表达式目前只支持加法与减法运算
 expr: addExp;
