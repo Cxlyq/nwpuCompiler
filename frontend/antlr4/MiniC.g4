@@ -13,109 +13,122 @@ grammar MiniC;
 // 源文件编译单元定义
 compileUnit: (funcDef | decl)* EOF;
 
-// 声明：变量或常量
-decl: constDecl | varDecl;
-
-// 常量声明
-constDecl:
-	T_CONST basicType constDef (T_COMMA constDef)* T_SEMICOLON;
-
-constDef:
-	T_ID (T_L_SQBRA constExp T_R_SQBRA)* T_EQUAL constInitVal;
-constInitVal:
-	constExp
-	| T_L_BRACE (constInitVal (T_COMMA constInitVal)*)?;
-
+//-----------------------函数------------------------
 // 函数定义，目前不支持形参，也不支持返回void类型等
 funcDef: funcType T_ID T_L_PAREN (funcFParams)? T_R_PAREN block;
-
-funcType: T_INT | T_FLOAT | T_VOID;
-
+// 函数返回类型
+funcType:
+	T_INT		# integerReturn
+	| T_FLOAT	# floatReturn
+	| T_VOID	# voidReturn;
+//函数形参列表
 funcFParams: funcFParam (T_COMMA funcFParam)*;
+//函数形参
 funcFParam:
 	basicType T_ID (
 		T_L_SQBRA T_R_SQBRA (T_L_SQBRA expr T_R_SQBRA)*
 	)?;
 
+//----------------------语句块---------------------------
 // 语句块看用作函数体，这里允许多个语句，并且不含任何语句
 block: T_L_BRACE blockItemList? T_R_BRACE;
-
 // 每个ItemList可包含至少一个Item
 blockItemList: blockItem+;
-
 // 每个Item可以是一个语句，或者变量声明语句
 blockItem: statement | decl;
 
-// 变量声明，目前不支持变量含有初值
-varDecl: basicType varDef (T_COMMA varDef)* T_SEMICOLON;
-
+//-----------------------常量与变量----------------------------
+// 声明：变量或常量
+decl: constDecl | varDecl;
 // 基本类型
 basicType: T_INT | T_FLOAT;
 
+// 常量声明
+constDecl:
+	T_CONST basicType constDef (T_COMMA constDef)* T_SEMICOLON;
+// 常量定义
+constDef:
+	T_ID (T_L_SQBRA constExp T_R_SQBRA)* T_EQUAL constInitVal;
+// 常量初始化值
+constInitVal:
+	constExp											# singleConstVal
+	| T_L_BRACE (constInitVal (T_COMMA constInitVal)*)?	# multiConstVal;
+
+// 变量声明，目前不支持变量含有初值
+varDecl: basicType varDef (T_COMMA varDef)* T_SEMICOLON;
 // 变量定义
 varDef: T_ID (T_L_SQBRA constExp T_R_SQBRA)* (T_EQUAL initVal)?;
-
+// 变量初始化值
 initVal:
-	expr
-	| T_L_BRACE (initVal (T_COMMA initVal)*)? T_R_BRACE;
+	expr												# singleVal
+	| T_L_BRACE (initVal (T_COMMA initVal)*)? T_R_BRACE	# multiVal;
 
-// 目前语句支持return和赋值语句
+//-------------------基本语句与表达式---------------------------
+// 基本语句
 statement:
-	T_RETURN expr? T_SEMICOLON			# returnStatement
-	| lVal T_ASSIGN expr T_SEMICOLON	# assignStatement
-	| block								# blockStatement
-	| expr? T_SEMICOLON					# expressionStatement
-	| T_IF T_L_PAREN cond T_R_PAREN statement (T_ELSE statement)?
-	| T_WHILE T_L_PAREN cond T_R_PAREN statement
-	| T_BREAK T_SEMICOLON
-	| T_CONTINUE T_SEMICOLON;
+	T_RETURN expr? T_SEMICOLON										# returnStatement
+	| lVal T_ASSIGN expr T_SEMICOLON								# assignStatement
+	| block															# blockStatement
+	| expr? T_SEMICOLON												# expressionStatement
+	| T_IF T_L_PAREN cond T_R_PAREN statement (T_ELSE statement)?	# ifelseStatement
+	| T_WHILE T_L_PAREN cond T_R_PAREN statement					# whileStatement
+	| T_BREAK T_SEMICOLON											# breakstatement
+	| T_CONTINUE T_SEMICOLON										# continuestatement;
 
-// 表达式文法 expr : AddExp 表达式目前只支持加法与减法运算
-expr: addExp;
+// 表达式：多项算术表达式
+expr: cond; // ?表达式是否支持逻辑01 expr: addExp;
+// 条件表达式：多项逻辑表达式
 cond: lOrExp;
-// 基本表达式：括号表达式、整数、左值表达式
-primaryExp: T_L_PAREN expr T_R_PAREN | lVal | number;
-
-number: T_DIGIT | T_FLOAT_LITERAL;
-
-// 加减表达式
-
-// 一元表达式
-unaryExp:
-	primaryExp
-	| T_ID T_L_PAREN funcRParams? T_R_PAREN
-	| unaryOp unaryExp;
-unaryOp: T_ADD | T_SUB | T_NOT;
-// 基本表达式：括号表达式、整数、左值表达式
-
-// 实参列表
-funcRParams: expr (T_COMMA expr)*;
-
-mulExp: unaryExp | mulExp mulOp unaryExp;
-mulOp: T_MUL | T_DIV | T_MOD;
-addExp: mulExp | addExp addOp mulExp;
-addOp: T_ADD | T_SUB;
-relExp: addExp | relExp relOp addExp;
-relOp: T_GE | T_GREATER | T_LE | T_LESS;
-eqExp: relExp | eqExp eqOp relExp;
-eqOp: T_EQUAL | T_NEQUAL;
-lAndExp: eqExp | lAndExp T_AND eqExp;
-lOrExp: lAndExp | lOrExp T_OR lAndExp;
-constExp: addExp;
-
 // 左值表达式
 lVal: T_ID (T_L_SQBRA expr T_R_SQBRA)*;
+// 基本表达式：括号表达式、左值表达式、数值
+primaryExp: T_L_PAREN expr T_R_PAREN | lVal | number;
+// 数值：整数/浮点数
+number: T_DIGIT | T_FLOAT_LITERAL;
+// 一元表达式
+unaryExp:
+	primaryExp								# primary
+	| T_ID T_L_PAREN funcRParams? T_R_PAREN	# funcCall
+	| unaryOp unaryExp						# monoOp;
+// 单目运算符
+unaryOp: T_ADD | T_SUB | T_NOT;
+// 实参列表
+funcRParams: expr (T_COMMA expr)*;
+// 单项算术表达式
+mulExp:
+	unaryExp (mulOp mulExp)?; //unaryExp | mulExp mulOp unaryExp; //unaryExp (mulOp unaryExp)*;
+// 项内运算符
+mulOp: T_MUL | T_DIV | T_MOD;
+// 多项算术表达式
+addExp:
+	mulExp (addOp addExp)?; //mulExp | addExp addOp mulExp;//mulExp (addOp mulExp)*;
+// 项间运算符
+addOp: T_ADD | T_SUB;
+// 关系表达式
+relExp: addExp (relOp relExp)?; //addExp | relExp relOp addExp;
+// 关系运算符
+relOp: T_GE | T_GREATER | T_LE | T_LESS;
+// 相等性表达式（多项关系）
+eqExp: relExp (eqOp eqExp)?; //relExp | eqExp eqOp relExp;
+// 相等性判断运算符
+eqOp: T_EQUAL | T_NEQUAL;
+// 单项逻辑表达式（与表达式）（多项相等性判断）
+lAndExp: eqExp (T_AND lAndExp)?; //eqExp | lAndExp T_AND eqExp;
+// 多项逻辑表达式（或表达式）
+lOrExp: lAndExp (T_OR lOrExp)?; //lAndExp | lOrExp T_OR lAndExp;
+// 常量表达式
+constExp: addExp;
 
 // 用正规式来进行词法规则的描述
+
+T_SEMICOLON: ';';
+T_L_BRACE: '{';
+T_R_BRACE: '}';
 
 T_L_PAREN: '(';
 T_R_PAREN: ')';
 T_L_SQBRA: '[';
 T_R_SQBRA: ']';
-
-T_SEMICOLON: ';';
-T_L_BRACE: '{';
-T_R_BRACE: '}';
 
 T_NOT: '!';
 
@@ -127,8 +140,8 @@ T_ADD: '+';
 T_SUB: '-';
 
 T_GE: '>=';
-T_GREATER: '>';
 T_LE: '<=';
+T_GREATER: '>';
 T_LESS: '<';
 
 T_EQUAL: '==';
