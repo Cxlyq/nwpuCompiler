@@ -404,3 +404,5 @@ set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-bin")
 set(CPACK_PACKAGE_DESCRIPTION "minic表达式版")
 
 include(CPack)
+
+include_directories(/home/cx/antlr4-cpp-runtime-4.12.0-source/runtime/src)
