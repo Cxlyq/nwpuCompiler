@@ -14,19 +14,6 @@ grammar MiniC;
 compileUnit: (funcDef | decl)* EOF;
 
 //-----------------------函数------------------------
-// 声明：变量或常量
-decl: constDecl | varDecl;
-
-// 常量声明
-constDecl:
-	T_CONST basicType constDef (T_COMMA constDef)* T_SEMICOLON;
-
-constDef:
-	T_ID (T_L_SQBRA constExp T_R_SQBRA)* T_ASSIGN constInitVal;
-constInitVal:
-	constExp
-	| T_L_BRACE (constInitVal (T_COMMA constInitVal)*)? T_R_BRACE;
-
 // 函数定义，目前不支持形参，也不支持返回void类型等
 funcDef: funcType T_ID T_L_PAREN (funcFParams)? T_R_PAREN block;
 // 函数返回类型
