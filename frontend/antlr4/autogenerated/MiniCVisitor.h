@@ -1,5 +1,6 @@
 
 // Generated from /home/cx/文档/codes/nwpuCompiler/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
+// Generated from /home/code/exp04-minic-expr/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -21,17 +22,13 @@ public:
    */
     virtual std::any visitCompileUnit(MiniCParser::CompileUnitContext *context) = 0;
 
-    virtual std::any visitDecl(MiniCParser::DeclContext *context) = 0;
-
-    virtual std::any visitConstDecl(MiniCParser::ConstDeclContext *context) = 0;
-
-    virtual std::any visitConstDef(MiniCParser::ConstDefContext *context) = 0;
-
-    virtual std::any visitConstInitVal(MiniCParser::ConstInitValContext *context) = 0;
-
     virtual std::any visitFuncDef(MiniCParser::FuncDefContext *context) = 0;
 
-    virtual std::any visitFuncType(MiniCParser::FuncTypeContext *context) = 0;
+    virtual std::any visitIntegerReturn(MiniCParser::IntegerReturnContext *context) = 0;
+
+    virtual std::any visitFloatReturn(MiniCParser::FloatReturnContext *context) = 0;
+
+    virtual std::any visitVoidReturn(MiniCParser::VoidReturnContext *context) = 0;
 
     virtual std::any visitFuncFParams(MiniCParser::FuncFParamsContext *context) = 0;
 
@@ -43,13 +40,25 @@ public:
 
     virtual std::any visitBlockItem(MiniCParser::BlockItemContext *context) = 0;
 
-    virtual std::any visitVarDecl(MiniCParser::VarDeclContext *context) = 0;
+    virtual std::any visitDecl(MiniCParser::DeclContext *context) = 0;
 
     virtual std::any visitBasicType(MiniCParser::BasicTypeContext *context) = 0;
 
+    virtual std::any visitConstDecl(MiniCParser::ConstDeclContext *context) = 0;
+
+    virtual std::any visitConstDef(MiniCParser::ConstDefContext *context) = 0;
+
+    virtual std::any visitSingleConstVal(MiniCParser::SingleConstValContext *context) = 0;
+
+    virtual std::any visitMultiConstVal(MiniCParser::MultiConstValContext *context) = 0;
+
+    virtual std::any visitVarDecl(MiniCParser::VarDeclContext *context) = 0;
+
     virtual std::any visitVarDef(MiniCParser::VarDefContext *context) = 0;
 
-    virtual std::any visitInitVal(MiniCParser::InitValContext *context) = 0;
+    virtual std::any visitSingleVal(MiniCParser::SingleValContext *context) = 0;
+
+    virtual std::any visitMultiVal(MiniCParser::MultiValContext *context) = 0;
 
     virtual std::any visitReturnStatement(MiniCParser::ReturnStatementContext *context) = 0;
 
@@ -59,23 +68,29 @@ public:
 
     virtual std::any visitExpressionStatement(MiniCParser::ExpressionStatementContext *context) = 0;
 
-    virtual std::any visitIfStatement(MiniCParser::IfStatementContext *context) = 0;
+    virtual std::any visitIfelseStatement(MiniCParser::IfelseStatementContext *context) = 0;
 
     virtual std::any visitWhileStatement(MiniCParser::WhileStatementContext *context) = 0;
 
-    virtual std::any visitBreakStatement(MiniCParser::BreakStatementContext *context) = 0;
+    virtual std::any visitBreakstatement(MiniCParser::BreakstatementContext *context) = 0;
 
-    virtual std::any visitContinueStatement(MiniCParser::ContinueStatementContext *context) = 0;
+    virtual std::any visitContinuestatement(MiniCParser::ContinuestatementContext *context) = 0;
 
     virtual std::any visitExpr(MiniCParser::ExprContext *context) = 0;
 
     virtual std::any visitCond(MiniCParser::CondContext *context) = 0;
 
+    virtual std::any visitLVal(MiniCParser::LValContext *context) = 0;
+
     virtual std::any visitPrimaryExp(MiniCParser::PrimaryExpContext *context) = 0;
 
     virtual std::any visitNumber(MiniCParser::NumberContext *context) = 0;
 
-    virtual std::any visitUnaryExp(MiniCParser::UnaryExpContext *context) = 0;
+    virtual std::any visitPrimary(MiniCParser::PrimaryContext *context) = 0;
+
+    virtual std::any visitFuncCall(MiniCParser::FuncCallContext *context) = 0;
+
+    virtual std::any visitMonoOp(MiniCParser::MonoOpContext *context) = 0;
 
     virtual std::any visitUnaryOp(MiniCParser::UnaryOpContext *context) = 0;
 
@@ -102,8 +117,6 @@ public:
     virtual std::any visitLOrExp(MiniCParser::LOrExpContext *context) = 0;
 
     virtual std::any visitConstExp(MiniCParser::ConstExpContext *context) = 0;
-
-    virtual std::any visitLVal(MiniCParser::LValContext *context) = 0;
 
 
 };
