@@ -134,7 +134,6 @@ std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
 {
-    // TODO
     // 获取参数类型
     type_attr paramType = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
 
@@ -242,11 +241,6 @@ std::any MiniCCSTVisitor::visitBasicType(MiniCParser::BasicTypeContext * ctx)
 
 std::any MiniCCSTVisitor::visitConstDecl(MiniCParser::ConstDeclContext * ctx)
 {
-<<<<<<< HEAD
-    // TODO
-
-    return nullptr;
-=======
     // constDecl: T_CONST basicType constDef (T_COMMA constDef)* T_SEMICOLON;
 
     // 声明语句节点
@@ -270,7 +264,6 @@ std::any MiniCCSTVisitor::visitConstDecl(MiniCParser::ConstDeclContext * ctx)
         (void) const_stmt_node->insert_son_node(decl_node);
     }
     return const_stmt_node;
->>>>>>> 794336c32f7414b1187057db799234bdfef0c457
 }
 
 std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
@@ -536,11 +529,7 @@ std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
     return nullptr;
 }
 std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
-<<<<<<< HEAD
-{   //     // 识别文法产生式：unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN;
-=======
 { //     // 识别文法产生式：unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN;
->>>>>>> 794336c32f7414b1187057db799234bdfef0c457
     //     if (ctx->primaryExp()) {//         // 普通表达式
     //         return visitPrimaryExp(ctx->primaryExp());
     //     } else if (ctx->T_ID()) {//         // 创建函数调用名终结符节点
