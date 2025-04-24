@@ -1,4 +1,4 @@
-const int a;
+const int a = 5;
 float temp()
 {
     int a = 3;

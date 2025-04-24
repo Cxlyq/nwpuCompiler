@@ -67,7 +67,7 @@ statement:
 	| T_BREAK T_SEMICOLON											# breakStatement
 	| T_CONTINUE T_SEMICOLON										# continueStatement;
 // 表达式：多项算术表达式
-expr: cond; // ?表达式是否支持逻辑01 expr: addExp;
+expr: addExp; // ?表达式是否支持逻辑01 expr: cond;
 // 条件表达式：多项逻辑表达式
 cond: lOrExp;
 // 基本表达式：括号表达式、左值表达式、数值

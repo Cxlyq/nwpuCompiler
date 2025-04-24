@@ -146,7 +146,7 @@ void minicParserInitialize() {
   	17,0,224,225,5,5,0,0,225,226,3,30,15,0,226,232,1,0,0,0,227,228,5,32,0,
   	0,228,232,5,1,0,0,229,230,5,33,0,0,230,232,5,1,0,0,231,197,1,0,0,0,231,
   	202,1,0,0,0,231,207,1,0,0,0,231,209,1,0,0,0,231,212,1,0,0,0,231,221,1,
-  	0,0,0,231,227,1,0,0,0,231,229,1,0,0,0,232,31,1,0,0,0,233,234,3,34,17,
+  	0,0,0,231,227,1,0,0,0,231,229,1,0,0,0,232,31,1,0,0,0,233,234,3,54,27,
   	0,234,33,1,0,0,0,235,236,3,42,21,0,236,35,1,0,0,0,237,238,5,4,0,0,238,
   	239,3,32,16,0,239,240,5,5,0,0,240,244,1,0,0,0,241,244,3,38,19,0,242,244,
   	3,40,20,0,243,237,1,0,0,0,243,241,1,0,0,0,243,242,1,0,0,0,244,37,1,0,
@@ -1894,8 +1894,8 @@ MiniCParser::ExprContext::ExprContext(ParserRuleContext *parent, size_t invoking
   : ParserRuleContext(parent, invokingState) {
 }
 
-MiniCParser::CondContext* MiniCParser::ExprContext::cond() {
-  return getRuleContext<MiniCParser::CondContext>(0);
+MiniCParser::AddExpContext* MiniCParser::ExprContext::addExp() {
+  return getRuleContext<MiniCParser::AddExpContext>(0);
 }
 
 
@@ -1925,7 +1925,7 @@ MiniCParser::ExprContext* MiniCParser::expr() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(233);
-    cond();
+    addExp();
    
   }
   catch (RecognitionException &e) {

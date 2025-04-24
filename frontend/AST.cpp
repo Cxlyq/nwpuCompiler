@@ -22,6 +22,7 @@
 #include "AttrType.h"
 #include "Types/IntegerType.h"
 #include "Types/VoidType.h"
+#include "Types/FloatType.h"
 
 /* 整个AST的根节点 */
 ast_node * ast_root = nullptr;
@@ -406,28 +407,58 @@ ast_node * add_var_decl_node(ast_node * stmt_node, var_id_attr & id)
     return stmt_node;
 }
 
-// /// @brief 创建变量形参节点
-// ast_node* create_var_param(type_attr dataType, var_id_attr idAttr)
-// {
-//     ast_node* paramNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAM, dataType.type, idAttr.lineno);
-//     paramNode->name = idAttr.id; // id 已通过 strdup 分配
-//     return paramNode;
-// }
+ ///@brief 创建变量形参节点
+/// @param dataType 变量类型
+/// @param idAttr 变量标识符
+/// @return 创建的节点
+ast_node* create_var_param(type_attr dataType, var_id_attr idAttr)
+{
+    Type* type = convert_basic_type(dataType.type);
+    ast_node* paramNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAM, type, idAttr.lineno);
+    paramNode->name = idAttr.id; // id 已通过 strdup 分配
+    return paramNode;
+}
 
-// /// @brief 创建数组形参节点
-// ast_node* create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node*>& dimensions)
-// {
-//     ast_node* arrayParamNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAMS, dataType.type, idAttr.lineno);
-//     arrayParamNode->name = idAttr.id;
-//     arrayParamNode->children = dimensions; // 每个维度表达式作为一个子节点
-//     return arrayParamNode;
-// }
+/// @brief 创建数组形参节点
+/// @param dataType 数组类型
+/// @param idAttr 数组标识符
+/// @param dimensions 数组维度
+/// @return 创建的节点
+/// @note 数组维度的表达式作为孩子节点
+/// @note 这里的维度表达式是一个或多个孩子节点，可能是整数字面量，也可能是变量名
+ast_node* create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node*>& dimensions)
+{
+    Type* type = convert_basic_type(dataType.type);
+    ast_node* arrayParamNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAM, type, idAttr.lineno);
+    arrayParamNode->name = idAttr.id;
+    arrayParamNode->sons = dimensions; // 每个维度表达式作为一个子节点
+    return arrayParamNode;
+}
 
-// /// @brief 创建参数列表节点
-// ast_node* create_param_list(const std::vector<ast_node*>& params)
-// {
-//     ast_node * listNode = new ast_node(ast_operator_type:: AST_OP_FUNC_FORMAL_PARAMS, VoidType::getType(), -1);
-//     listNode->children = params;
-//     return listNode;
-// }
+/// @brief 创建参数列表节点
+/// @param params 形参列表
+/// @return 创建的节点
+ast_node* create_param_list(const std::vector<ast_node*>& params)
+{
+    ast_node * listNode = new ast_node(ast_operator_type:: AST_OP_FUNC_FORMAL_PARAMS, VoidType::getType(), -1);
+    listNode->sons = params;
+    return listNode;
+}
+
+/// @brief 将基本类型转换为 Type
+/// @param bt 基本类型
+/// @return 对应的 Type 指针
+Type* convert_basic_type(BasicType bt)
+{
+    switch (bt) {
+        case BasicType::TYPE_INT:
+            return IntegerType::getTypeInt();
+        case BasicType::TYPE_FLOAT:
+            return FloatType::getType();  // 假设你有 FloatType::getType()
+        case BasicType::TYPE_VOID:
+            return VoidType::getType();
+        default:
+            return nullptr;  // 或抛异常
+    }
+}
 
