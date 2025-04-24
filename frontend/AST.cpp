@@ -406,28 +406,28 @@ ast_node * add_var_decl_node(ast_node * stmt_node, var_id_attr & id)
     return stmt_node;
 }
 
-/// @brief 创建变量形参节点
-ast_node* create_var_param(type_attr dataType, var_id_attr idAttr)
-{
-    ast_node* paramNode = new ast_node(ast_operator_type::AST_OP_VAR_PARAM, dataType.type_ptr, idAttr.lineno);
-    paramNode->name = idAttr.id; // id 已通过 strdup 分配
-    return paramNode;
-}
+// /// @brief 创建变量形参节点
+// ast_node* create_var_param(type_attr dataType, var_id_attr idAttr)
+// {
+//     ast_node* paramNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAM, dataType.type, idAttr.lineno);
+//     paramNode->name = idAttr.id; // id 已通过 strdup 分配
+//     return paramNode;
+// }
 
-/// @brief 创建数组形参节点
-ast_node* create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node*>& dimensions)
-{
-    ast_node* arrayParamNode = new ast_node(ast_operator_type::AST_OP_ARRAY_PARAM, dataType.type_ptr, idAttr.lineno);
-    arrayParamNode->name = idAttr.id;
-    arrayParamNode->children = dimensions; // 每个维度表达式作为一个子节点
-    return arrayParamNode;
-}
+// /// @brief 创建数组形参节点
+// ast_node* create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node*>& dimensions)
+// {
+//     ast_node* arrayParamNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAMS, dataType.type, idAttr.lineno);
+//     arrayParamNode->name = idAttr.id;
+//     arrayParamNode->children = dimensions; // 每个维度表达式作为一个子节点
+//     return arrayParamNode;
+// }
 
-/// @brief 创建参数列表节点
-ast_node* create_param_list(const std::vector<ast_node*>& params)
-{
-    ast_node* listNode = new ast_node(ast_operator_type::AST_OP_PARAM_LIST, VoidType::getType(), -1);
-    listNode->children = params;
-    return listNode;
-}
+// /// @brief 创建参数列表节点
+// ast_node* create_param_list(const std::vector<ast_node*>& params)
+// {
+//     ast_node * listNode = new ast_node(ast_operator_type:: AST_OP_FUNC_FORMAL_PARAMS, VoidType::getType(), -1);
+//     listNode->children = params;
+//     return listNode;
+// }
 
