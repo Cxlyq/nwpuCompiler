@@ -88,8 +88,10 @@ std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
     var_id_attr funcId{id, (int64_t) ctx->T_ID()->getSymbol()->getLine()};
 
     // 形参结点目前没有，设置为空指针
-    // TODO:设置形参结点
     ast_node * formalParamsNode = nullptr;
+    if (ctx->funcFParams()) {
+        formalParamsNode = std::any_cast<ast_node *>(visitFuncFParams(ctx->funcFParams()));
+    }
 
     // 遍历block结点创建函数体节点，非终结符
     auto blockNode = std::any_cast<ast_node *>(visitBlock(ctx->block()));
@@ -115,12 +117,40 @@ std::any MiniCCSTVisitor::visitFuncType(MiniCParser::FuncTypeContext * ctx)
 
 std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx)
 {
-    return nullptr;
+    std::vector<ast_node *> params;
+
+    for (auto paramCtx : ctx->funcFParam()) {
+        auto paramNode = std::any_cast<ast_node *>(visitFuncFParam(paramCtx));
+        params.push_back(paramNode);
+    }
+
+    return create_param_list(params); // 创建形参列表的AST节点
 }
 std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
 {
     // TODO
-    return nullptr;
+    // 获取参数类型
+    type_attr paramType = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
+
+    // 获取参数名称
+    char *id = strdup(ctx->T_ID()->getText().c_str());
+    var_id_attr paramId{id, (int64_t)ctx->T_ID()->getSymbol()->getLine()};
+
+    // 判断是否是数组参数
+    bool isArray = ctx->T_L_SQBRA().size() > 0;
+
+    std::vector<ast_node *> dimensions;
+    if (ctx->expr().size() > 0) {
+        for (auto dimExpr : ctx->expr()) {
+            dimensions.push_back(std::any_cast<ast_node *>(visit(dimExpr)));
+        }
+    }
+
+    if (isArray) {
+        return create_array_param(paramType, paramId, dimensions);
+    } else {
+        return create_var_param(paramType, paramId);
+    }
 }
 
 /// @brief 非终结运算符block的遍历

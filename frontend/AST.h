@@ -280,3 +280,12 @@ ast_node * create_var_decl_stmt_node(type_attr & type, var_id_attr & id);
 /// @return ast_node* 变量声明语句节点
 ///
 ast_node * add_var_decl_node(ast_node * stmt_node, var_id_attr & id);
+
+/// @brief 创建变量形参节点
+ast_node* create_var_param(type_attr dataType, var_id_attr idAttr);
+
+/// @brief 创建数组形参节点
+ast_node* create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node*>& dimensions);
+
+/// @brief 创建参数列表节点
+ast_node* create_param_list(const std::vector<ast_node*>& params);
