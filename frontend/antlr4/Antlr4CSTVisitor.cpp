@@ -114,47 +114,51 @@ std::any MiniCCSTVisitor::visitFuncType(MiniCParser::FuncTypeContext * ctx)
     }
     return attr;
 }
+
+
 /// @brief 非终结运算符funcFParams的遍历
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx)
 {
-    // std::vector<ast_node *> params;
+     std::vector<ast_node *> params;
 
-    // for (auto paramCtx : ctx->funcFParam()) {
-    //     auto paramNode = std::any_cast<ast_node *>(visitFuncFParam(paramCtx));
-    //     params.push_back(paramNode);
-    // }
+    for (auto paramCtx : ctx->funcFParam()) {
+        auto paramNode = std::any_cast<ast_node *>(visitFuncFParam(paramCtx));
+        params.push_back(paramNode);
+    }
 
-    // return create_param_list(params); // 创建形参列表的AST节点
+    return create_param_list(params); // 创建形参列表的AST节点
     return nullptr;
 }
+
+
 /// @brief 非终结运算符funcFParam的遍历
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
 {
     // TODO
-    // // 获取参数类型
-    // type_attr paramType = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
+    // 获取参数类型
+    type_attr paramType = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
 
-    // // 获取参数名称
-    // char *id = strdup(ctx->T_ID()->getText().c_str());
-    // var_id_attr paramId{id, (int64_t)ctx->T_ID()->getSymbol()->getLine()};
+    // 获取参数名称
+    char *id = strdup(ctx->T_ID()->getText().c_str());
+    var_id_attr paramId{id, (int64_t)ctx->T_ID()->getSymbol()->getLine()};
 
-    // // 判断是否是数组参数
-    // bool isArray = ctx->T_L_SQBRA().size() > 0;
+    // 判断是否是数组参数
+    bool isArray = ctx->T_L_SQBRA().size() > 0;
 
-    // std::vector<ast_node *> dimensions;
-    // if (ctx->expr().size() > 0) {
-    //     for (auto dimExpr : ctx->expr()) {
-    //         dimensions.push_back(std::any_cast<ast_node *>(visit(dimExpr)));
-    //     }
-    // }
+    std::vector<ast_node *> dimensions;
+    if (ctx->expr().size() > 0) {
+        for (auto dimExpr : ctx->expr()) {
+            dimensions.push_back(std::any_cast<ast_node *>(visit(dimExpr)));
+        }
+    }
 
-    // if (isArray) {
-    //     return create_array_param(paramType, paramId, dimensions);
-    // } else {
-    //     return create_var_param(paramType, paramId);
-    // }
+    if (isArray) {
+        return create_array_param(paramType, paramId, dimensions);
+    } else {
+        return create_var_param(paramType, paramId);
+    }
     return nullptr;
 }
 

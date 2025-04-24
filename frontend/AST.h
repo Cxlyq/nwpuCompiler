@@ -289,3 +289,8 @@ ast_node* create_array_param(type_attr dataType, var_id_attr idAttr, const std::
 
 /// @brief 创建参数列表节点
 ast_node* create_param_list(const std::vector<ast_node*>& params);
+
+/// @brief 将基本类型转换为 Type
+/// @param bt 基本类型
+/// @return 对应的 Type 指针
+Type* convert_basic_type(BasicType bt);
