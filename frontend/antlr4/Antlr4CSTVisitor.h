@@ -47,26 +47,31 @@ protected:
     /// @return AST的节点
     std::any visitFuncDef(MiniCParser::FuncDefContext * ctx) override;
 
-    ///
-    /// @brief 非终结符IntegerReturn的分析
+    /// @brief 非终结运算符funcType的遍历
     /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    ///
-    std::any visitIntegerReturn(MiniCParser::IntegerReturnContext * ctx) override;
+    /// @return AST的节点
+    std::any visitFuncType(MiniCParser::FuncTypeContext * ctx) override;
 
     ///
-    /// @brief 非终结符FloatReturn的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    ///
-    std::any visitFloatReturn(MiniCParser::FloatReturnContext * ctx) override;
+    // /// @brief 非终结符IntegerReturn的分析
+    // /// @param ctx CST上下文
+    // /// @return std::any AST的节点
+    // ///
+    // std::any visitIntegerReturn(MiniCParser::IntegerReturnContext * ctx) override;
 
-    ///
-    /// @brief 非终结符VoidReturn的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    ///
-    std::any visitVoidReturn(MiniCParser::VoidReturnContext * ctx) override;
+    // ///
+    // /// @brief 非终结符FloatReturn的分析
+    // /// @param ctx CST上下文
+    // /// @return std::any AST的节点
+    // ///
+    // std::any visitFloatReturn(MiniCParser::FloatReturnContext * ctx) override;
+
+    // ///
+    // /// @brief 非终结符VoidReturn的分析
+    // /// @param ctx CST上下文
+    // /// @return std::any AST的节点
+    // ///
+    // std::any visitVoidReturn(MiniCParser::VoidReturnContext * ctx) override;
 
     ///
     /// @brief 非终结符FuncFParams的分析

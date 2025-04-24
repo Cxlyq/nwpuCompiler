@@ -80,23 +80,15 @@ std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
     // 识别的文法产生式：funcDef : T_INT T_ID T_L_PAREN T_R_PAREN block;
     //初步修改了代码的表示
     // 函数返回类型，终结符
-    auto funcTypeCtx = ctx->funcType();
 
-    type_attr funcReturnType;
-
-    if (dynamic_cast<MiniCParser::IntegerReturnContext *>(funcTypeCtx)) {
-        funcReturnType = type_attr{BasicType::TYPE_INT, static_cast<int64_t>(funcTypeCtx->getStart()->getLine())};
-    } else if (dynamic_cast<MiniCParser::FloatReturnContext *>(funcTypeCtx)) {
-        funcReturnType = type_attr{BasicType::TYPE_FLOAT, static_cast<int64_t>(funcTypeCtx->getStart()->getLine())};
-    } else if (dynamic_cast<MiniCParser::VoidReturnContext *>(funcTypeCtx)) {
-        funcReturnType = type_attr{BasicType::TYPE_VOID, static_cast<int64_t>(funcTypeCtx->getStart()->getLine())};
-    }
+    type_attr funcReturnType = std::any_cast<type_attr> (visitFuncType(ctx->funcType()));
     // 创建函数名的标识符终结符节点，终结符
     char * id = strdup(ctx->T_ID()->getText().c_str());
 
     var_id_attr funcId{id, (int64_t) ctx->T_ID()->getSymbol()->getLine()};
 
     // 形参结点目前没有，设置为空指针
+    // TODO:设置形参结点
     ast_node * formalParamsNode = nullptr;
 
     // 遍历block结点创建函数体节点，非终结符
@@ -106,28 +98,23 @@ std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
     // create_func_def函数内会释放funcId中指向的标识符空间，切记，之后不要再释放，之前一定要是通过strdup函数或者malloc分配的空间
     return create_func_def(funcReturnType, funcId, blockNode, formalParamsNode);
 }
-
-std::any MiniCCSTVisitor::visitIntegerReturn(MiniCParser::IntegerReturnContext * ctx)
+/// @brief 非终结运算符funcType的遍历
+/// @param ctx CST上下文
+std::any MiniCCSTVisitor::visitFuncType(MiniCParser::FuncTypeContext * ctx)
 {
-    // TODO
-    return nullptr;
-}
-
-std::any MiniCCSTVisitor::visitFloatReturn(MiniCParser::FloatReturnContext * ctx)
-{
-    // TODO
-    return nullptr;
-}
-
-std::any MiniCCSTVisitor::visitVoidReturn(MiniCParser::VoidReturnContext * ctx)
-{
-    // TODO
-    return nullptr;
+    type_attr attr{.type=BasicType::TYPE_VOID, .lineno=-1};
+	if(ctx->T_INT()){
+        attr.type = BasicType::TYPE_INT;
+        attr.lineno = (int64_t) ctx->T_INT()->getSymbol()->getLine();
+    } else if (ctx->T_FLOAT()) {
+        attr.type = BasicType::TYPE_FLOAT;
+        attr.lineno = (int64_t) ctx->T_FLOAT()->getSymbol()->getLine();
+    }
+    return attr;
 }
 
 std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx)
 {
-    // TODO
     return nullptr;
 }
 std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)

@@ -18,9 +18,9 @@ compileUnit: (funcDef | decl)* EOF;
 funcDef: funcType T_ID T_L_PAREN (funcFParams)? T_R_PAREN block;
 // 函数返回类型
 funcType:
-	T_INT		# integerReturn
-	| T_FLOAT	# floatReturn
-	| T_VOID	# voidReturn;
+	T_INT
+	| T_FLOAT
+	| T_VOID;
 //函数形参列表
 funcFParams: funcFParam (T_COMMA funcFParam)*;
 //函数形参
