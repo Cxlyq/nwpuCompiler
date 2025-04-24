@@ -48,11 +48,11 @@ constDecl:
 	T_CONST basicType constDef (T_COMMA constDef)* T_SEMICOLON;
 // 常量定义
 constDef:
-	T_ID (T_L_SQBRA constExp T_R_SQBRA)* T_EQUAL constInitVal;
+	T_ID (T_L_SQBRA constExp T_R_SQBRA)* T_ASSIGN constInitVal;
 // 常量初始化值
 constInitVal:
-	constExp											# singleConstVal
-	| T_L_BRACE (constInitVal (T_COMMA constInitVal)*)?	# multiConstVal;
+	constExp														# singleConstVal
+	| T_L_BRACE (constInitVal (T_COMMA constInitVal)*)? T_R_BRACE	# multiConstVal;
 
 // 变量声明，目前不支持变量含有初值
 varDecl: basicType varDef (T_COMMA varDef)* T_SEMICOLON;
@@ -73,9 +73,8 @@ statement:
 	| expr? T_SEMICOLON												# expressionStatement
 	| T_IF T_L_PAREN cond T_R_PAREN statement (T_ELSE statement)?	# ifelseStatement
 	| T_WHILE T_L_PAREN cond T_R_PAREN statement					# whileStatement
-	| T_BREAK T_SEMICOLON											# breakstatement
-	| T_CONTINUE T_SEMICOLON										# continuestatement;
-
+	| T_BREAK T_SEMICOLON											# breakStatement
+	| T_CONTINUE T_SEMICOLON										# continueStatement;
 // 表达式：多项算术表达式
 expr: cond; // ?表达式是否支持逻辑01 expr: addExp;
 // 条件表达式：多项逻辑表达式

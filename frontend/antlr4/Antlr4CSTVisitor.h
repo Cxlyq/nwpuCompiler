@@ -191,15 +191,15 @@ protected:
     /// @return AST的节点
     std::any visitWhileStatement(MiniCParser::WhileStatementContext * ctx) override;
 
-    /// @brief 非终结运算符breakstatement中的遍历
+    /// @brief 非终结运算符breakStatement中的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
-    std::any visitBreakstatement(MiniCParser::BreakstatementContext * ctx) override;
+    std::any visitBreakStatement(MiniCParser::BreakStatementContext * ctx) override;
 
-    /// @brief 非终结运算符continuestatement中的遍历
+    /// @brief 非终结运算符continueStatement中的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
-    std::any visitContinuestatement(MiniCParser::ContinuestatementContext * ctx) override;
+    std::any visitContinueStatement(MiniCParser::ContinueStatementContext * ctx) override;
 
     /// @brief 非终结运算符expr的遍历
     /// @param ctx CST上下文

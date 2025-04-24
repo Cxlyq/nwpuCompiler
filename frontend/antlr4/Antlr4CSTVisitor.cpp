@@ -45,7 +45,7 @@ ast_node * MiniCCSTVisitor::run(MiniCParser::CompileUnitContext * root)
 std::any MiniCCSTVisitor::visitCompileUnit(MiniCParser::CompileUnitContext * ctx)
 {
     // compileUnit: (funcDef | decl)* EOF
-    // VarDecl要改为Decl
+    // VarDecl改为Decl
     // 请注意这里必须先遍历全局变量后遍历函数。肯定可以确保全局变量先声明后使用的规则，但有些情况却不能检查出。
     // 事实上可能函数A后全局变量B后函数C，这时在函数A中是不能使用变量B的，需要报语义错误，但目前的处理不会。
     // 因此在进行语义检查时，可能追加检查行号和列号，如果函数的行号/列号在全局变量的行号/列号的前面则需要报语义错误
@@ -75,13 +75,13 @@ std::any MiniCCSTVisitor::visitCompileUnit(MiniCParser::CompileUnitContext * ctx
 
 /// @brief 非终结运算符funcDef的遍历
 /// @param ctx CST上下文
+// TODO:设置形参结点
 std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
 {
     // 识别的文法产生式：funcDef : T_INT T_ID T_L_PAREN T_R_PAREN block;
-    //初步修改了代码的表示
     // 函数返回类型，终结符
 
-    type_attr funcReturnType = std::any_cast<type_attr> (visitFuncType(ctx->funcType()));
+    type_attr funcReturnType = std::any_cast<type_attr>(visitFuncType(ctx->funcType()));
     // 创建函数名的标识符终结符节点，终结符
     char * id = strdup(ctx->T_ID()->getText().c_str());
 
@@ -102,8 +102,8 @@ std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncType(MiniCParser::FuncTypeContext * ctx)
 {
-    type_attr attr{.type=BasicType::TYPE_VOID, .lineno=-1};
-	if(ctx->T_INT()){
+    type_attr attr{.type = BasicType::TYPE_VOID, .lineno = -1};
+    if (ctx->T_INT()) {
         attr.type = BasicType::TYPE_INT;
         attr.lineno = (int64_t) ctx->T_INT()->getSymbol()->getLine();
     } else if (ctx->T_FLOAT()) {
@@ -112,11 +112,15 @@ std::any MiniCCSTVisitor::visitFuncType(MiniCParser::FuncTypeContext * ctx)
     }
     return attr;
 }
-
+/// @brief 非终结运算符funcFParams的遍历
+/// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx)
 {
+    // TODO
     return nullptr;
 }
+/// @brief 非终结运算符funcFParam的遍历
+/// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
 {
     // TODO
@@ -181,19 +185,25 @@ std::any MiniCCSTVisitor::visitBlockItem(MiniCParser::BlockItemContext * ctx)
 
 std::any MiniCCSTVisitor::visitDecl(MiniCParser::DeclContext * ctx)
 {
-    // TODO
+    if (ctx->constDecl()) {
+        return visitConstDecl(ctx->constDecl());
+    } else if (ctx->varDecl()) {
+        return visitVarDecl(ctx->varDecl());
+	}
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitBasicType(MiniCParser::BasicTypeContext * ctx)
 {
-    // basicType: T_INT;
+    // basicType: T_INT,T_FLOAT;
     type_attr attr{BasicType::TYPE_VOID, -1};
     if (ctx->T_INT()) {
         attr.type = BasicType::TYPE_INT;
         attr.lineno = (int64_t) ctx->T_INT()->getSymbol()->getLine();
+    } else if (ctx->T_FLOAT()) {
+        attr.type = BasicType::TYPE_FLOAT;
+        attr.lineno = (int64_t) ctx->T_FLOAT()->getSymbol()->getLine();
     }
-
     return attr;
 }
 
@@ -251,7 +261,7 @@ std::any MiniCCSTVisitor::visitVarDecl(MiniCParser::VarDeclContext * ctx)
 std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
 {
     // varDef: T_ID;
-
+    // TODO: 修改匹配为：T_ID (T_L_SQBRA constExp T_R_SQBRA)* (T_ASSIGN initVal)?;
     auto varId = ctx->T_ID()->getText();
 
     // 获取行号
@@ -276,10 +286,16 @@ std::any MiniCCSTVisitor::visitMultiVal(MiniCParser::MultiValContext * ctx)
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitStatement(MiniCParser::StatementContext * ctx)
 {
-    // 识别的文法产生式：statement: T_ID T_ASSIGN expr T_SEMICOLON  # assignStatement
-    // | T_RETURN expr T_SEMICOLON # returnStatement
-    // | block  # blockStatement
-    // | expr ? T_SEMICOLON #expressionStatement;
+    // 识别的文法产生式：
+	// statement:
+    // 	T_RETURN expr? T_SEMICOLON										# returnStatement
+    // 	| lVal T_ASSIGN expr T_SEMICOLON								# assignStatement
+    // 	| block															# blockStatement
+    // 	| expr? T_SEMICOLON												# expressionStatement
+    // 	| T_IF T_L_PAREN cond T_R_PAREN statement (T_ELSE statement)?	# ifelseStatement
+    // 	| T_WHILE T_L_PAREN cond T_R_PAREN statement					# whileStatement
+    // 	| T_BREAK T_SEMICOLON											# breakStatement
+    // 	| T_CONTINUE T_SEMICOLON										# continueStatement;
     if (Instanceof(assignCtx, MiniCParser::AssignStatementContext *, ctx)) {
         return visitAssignStatement(assignCtx);
     } else if (Instanceof(returnCtx, MiniCParser::ReturnStatementContext *, ctx)) {
@@ -288,8 +304,15 @@ std::any MiniCCSTVisitor::visitStatement(MiniCParser::StatementContext * ctx)
         return visitBlockStatement(blockCtx);
     } else if (Instanceof(exprCtx, MiniCParser::ExpressionStatementContext *, ctx)) {
         return visitExpressionStatement(exprCtx);
+    } else if (Instanceof(ifelseCtx, MiniCParser::IfelseStatementContext *, ctx)) {
+        return visitIfelseStatement(ifelseCtx);
+    } else if (Instanceof(whileCtx, MiniCParser::WhileStatementContext *, ctx)) {
+        return visitWhileStatement(whileCtx);
+    } else if (Instanceof(breakCtx, MiniCParser::BreakStatementContext *, ctx)) {
+        return visitBreakStatement(breakCtx);
+    } else if (Instanceof(continueCtx, MiniCParser::ContinueStatementContext *, ctx)) {
+        return visitContinueStatement(continueCtx);
     }
-
     return nullptr;
 }
 
@@ -356,13 +379,13 @@ std::any MiniCCSTVisitor::visitWhileStatement(MiniCParser::WhileStatementContext
     return nullptr;
 }
 
-std::any MiniCCSTVisitor::visitBreakstatement(MiniCParser::BreakstatementContext * ctx)
+std::any MiniCCSTVisitor::visitBreakStatement(MiniCParser::BreakStatementContext * ctx)
 {
     // TODO
     return nullptr;
 }
 
-std::any MiniCCSTVisitor::visitContinuestatement(MiniCParser::ContinuestatementContext * ctx)
+std::any MiniCCSTVisitor::visitContinueStatement(MiniCParser::ContinueStatementContext * ctx)
 {
     // TODO
     return nullptr;
