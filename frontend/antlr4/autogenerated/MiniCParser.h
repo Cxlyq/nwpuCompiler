@@ -1,5 +1,5 @@
 
-// Generated from MiniC.g4 by ANTLR 4.12.0
+// Generated from /home/code/compilerSys/develop/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -553,12 +553,13 @@ public:
    
   };
 
-  class  MonoOpContext : public UnaryExpContext {
+  class  MonoContext : public UnaryExpContext {
   public:
-    MonoOpContext(UnaryExpContext *ctx);
+    MonoContext(UnaryExpContext *ctx);
 
-    UnaryOpContext *unaryOp();
-    UnaryExpContext *unaryExp();
+    PrimaryExpContext *primaryExp();
+    std::vector<UnaryOpContext *> unaryOp();
+    UnaryOpContext* unaryOp(size_t i);
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
@@ -571,15 +572,6 @@ public:
     antlr4::tree::TerminalNode *T_L_PAREN();
     antlr4::tree::TerminalNode *T_R_PAREN();
     FuncRParamsContext *funcRParams();
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  class  PrimaryContext : public UnaryExpContext {
-  public:
-    PrimaryContext(UnaryExpContext *ctx);
-
-    PrimaryExpContext *primaryExp();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };

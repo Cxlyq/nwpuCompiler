@@ -489,19 +489,13 @@ std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
 //     }
 	return nullptr;
 }
-std::any MiniCCSTVisitor::visitPrimary(MiniCParser::PrimaryContext * ctx)
+std::any MiniCCSTVisitor::visitMono(MiniCParser::MonoContext * ctx)
 {
     // TODO
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitFuncCall(MiniCParser::FuncCallContext * ctx)
-{
-    // TODO
-    return nullptr;
-}
-
-std::any MiniCCSTVisitor::visitMonoOp(MiniCParser::MonoOpContext * ctx)
 {
     // TODO
     return nullptr;

@@ -1,5 +1,5 @@
 
-// Generated from MiniC.g4 by ANTLR 4.12.0
+// Generated from /home/code/compilerSys/develop/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -131,15 +131,11 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitPrimary(MiniCParser::PrimaryContext *ctx) override {
+  virtual std::any visitMono(MiniCParser::MonoContext *ctx) override {
     return visitChildren(ctx);
   }
 
   virtual std::any visitFuncCall(MiniCParser::FuncCallContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitMonoOp(MiniCParser::MonoOpContext *ctx) override {
     return visitChildren(ctx);
   }
 

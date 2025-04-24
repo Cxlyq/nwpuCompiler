@@ -179,7 +179,7 @@ protected:
     /// @return AST的节点
     std::any visitCond(MiniCParser::CondContext * ctx) override;
 
-    /// @brief 非终结符LVal的分析
+    /// @brief 非终结符lVal的分析
     /// @param ctx CST上下文
     /// @return std::any AST的节点
     std::any visitLVal(MiniCParser::LValContext * ctx) override;
@@ -199,20 +199,16 @@ protected:
     /// @return AST的节点
     std::any visitUnaryExp(MiniCParser::UnaryExpContext * ctx);
 
-    /// @brief 非终结符Primary的分析
+    /// @brief 非终结符mono的分析
     /// @param ctx CST上下文
     /// @return std::any AST的节点
-    std::any visitPrimary(MiniCParser::PrimaryContext * ctx) override;
+    std::any visitMono(MiniCParser::MonoContext * ctx) override;
 
-    /// @brief 非终结符FuncCall的分析
+    /// @brief 非终结符funcCall的分析
     /// @param ctx CST上下文
     /// @return std::any AST的节点
     std::any visitFuncCall(MiniCParser::FuncCallContext * ctx) override;
 
-    /// @brief 非终结符MonoOp的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    std::any visitMonoOp(MiniCParser::MonoOpContext * ctx) override;
 
     /// @brief 非终结运算符unaryOp中的遍历
     /// @param ctx CST上下文

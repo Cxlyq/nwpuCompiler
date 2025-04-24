@@ -44,14 +44,12 @@ basicType: T_INT | T_FLOAT;
 constDecl:
 	T_CONST basicType constDef (T_COMMA constDef)* T_SEMICOLON;
 // 常量定义
-constDef:
-	T_ID (T_L_SQBRA expr T_R_SQBRA)* T_ASSIGN initVal;
+constDef: T_ID (T_L_SQBRA expr T_R_SQBRA)* T_ASSIGN initVal;
 
 // 变量声明，目前不支持变量含有初值
 varDecl: basicType varDef (T_COMMA varDef)* T_SEMICOLON;
 // 变量定义
-varDef:
-	T_ID (T_L_SQBRA expr T_R_SQBRA)* (T_ASSIGN initVal)?;
+varDef: T_ID (T_L_SQBRA expr T_R_SQBRA)* (T_ASSIGN initVal)?;
 // 右值（数组{}赋值或单表达式）
 initVal:
 	expr												# singleVal
@@ -80,9 +78,8 @@ primaryExp: T_L_PAREN expr T_R_PAREN | lVal | number;
 number: T_DIGIT | T_FLOAT_LITERAL;
 // 一元表达式
 unaryExp:
-	primaryExp								# primary
-	| T_ID T_L_PAREN funcRParams? T_R_PAREN	# funcCall
-	| unaryOp unaryExp						# monoOp;
+	(unaryOp)* primaryExp					# mono
+	| T_ID T_L_PAREN funcRParams? T_R_PAREN	# funcCall;
 // 单目运算符
 unaryOp: T_ADD | T_SUB | T_NOT;
 // 实参列表
@@ -109,7 +106,6 @@ eqOp: T_EQUAL | T_NEQUAL;
 lAndExp: eqExp (T_AND eqExp)*; //eqExp | lAndExp T_AND eqExp;
 // 多项逻辑表达式（或表达式）
 lOrExp: lAndExp (T_OR lAndExp)*; //lAndExp | lOrExp T_OR lAndExp;
-
 
 // 用正规式来进行词法规则的描述
 

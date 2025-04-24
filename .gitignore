@@ -59,8 +59,6 @@ asm.s
 # Visual Studio
 .vs/
 
-# VSCode Settings
-.vscode/
 # VSCodeCounters
 .VSCodeCounter/
 
