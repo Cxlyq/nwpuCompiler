@@ -652,10 +652,12 @@ std::any MiniCCSTVisitor::visitAddExp(MiniCParser::AddExpContext * ctx)
 
 /// @brief 非终结运算符addOp的遍历
 /// @param ctx CST上下文
+/// @return [非结点] ast_operator_type 操作类型
+// TODO: [!!参考]注意上面的return,形成标准
 std::any MiniCCSTVisitor::visitAddOp(MiniCParser::AddOpContext * ctx)
 {
     // 识别的文法产生式：addOp : T_ADD | T_SUB
-
+	// TODO: [参考] 运算结点如何返回
     if (ctx->T_ADD()) {
         return ast_operator_type::AST_OP_ADD;
     } else {
@@ -664,33 +666,33 @@ std::any MiniCCSTVisitor::visitAddOp(MiniCParser::AddOpContext * ctx)
 }
 std::any MiniCCSTVisitor::visitRelExp(MiniCParser::RelExpContext * ctx)
 {
-    // TODO
+    // TODO: [逻辑] 大小比较结点
     return nullptr;
 }
 std::any MiniCCSTVisitor::visitRelOp(MiniCParser::RelOpContext * ctx)
 {
-    // TODO
+    // TODO: [逻辑] 大小比较算符（并入父节点？）
     return nullptr;
 }
 std::any MiniCCSTVisitor::visitEqExp(MiniCParser::EqExpContext * ctx)
 {
-    // TODO
+    // TODO: [逻辑] 判等结点
     return nullptr;
 }
 std::any MiniCCSTVisitor::visitEqOp(MiniCParser::EqOpContext * ctx)
 {
-    // TODO
+    // TODO: [逻辑] 判等算符（并入父节点？）
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitLAndExp(MiniCParser::LAndExpContext * ctx)
 {
-    // TODO
+    // TODO: [逻辑] 与运算结点
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitLOrExp(MiniCParser::LOrExpContext * ctx)
 {
-    // TODO
+    // TODO: [逻辑] 或运算结点
     return nullptr;
 }

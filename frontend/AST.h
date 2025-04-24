@@ -42,9 +42,9 @@ enum class ast_operator_type : int {
     /// @brief 变量ID叶子节点
     AST_OP_LEAF_VAR_ID,
 
+    // TODO: 复杂类型细化（数组...）
     /// @brief 复杂类型的节点
     AST_OP_LEAF_TYPE,
-    // TODO: 复杂类型细化（数组...）
 
     /* 以下为AST的内部节点，含根节点 */
 
@@ -92,7 +92,7 @@ enum class ast_operator_type : int {
 
     /// @brief 变量初始化
     AST_OP_INIT_VAL,
-    
+
     /// @brief 常量标识符
     AST_OP_CONST,
 
@@ -104,14 +104,14 @@ enum class ast_operator_type : int {
 
     /// @brief 二元运算符*
     AST_OP_MUL,
-    
+
     /// @brief 二元运算符/
     AST_OP_DIV,
 
     /// @brief 二元运算符%
     AST_OP_MOD,
 
-    // TODO 抽象语法树其它内部节点运算符追加
+    // TODO: 抽象语法树其它内部节点运算符追加
 
     /// @brief 最大标识符，表示非法运算符
     AST_OP_MAX,
