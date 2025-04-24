@@ -84,17 +84,33 @@ enum class ast_operator_type : int {
     /// @brief 变量声明
     AST_OP_VAR_DECL,
 
+    /// @brief 常量声明语句
+    AST_OP_CONST_DECL_STMT,
+
+    /// @brief 常量声明
+    AST_OP_CONST_VAR_DECL,
+
+    /// @brief 变量初始化
+    AST_OP_INIT_VAL,
+    
+    /// @brief 常量标识符
+    AST_OP_CONST,
+
     /// @brief 二元运算符+
     AST_OP_ADD,
 
     /// @brief 二元运算符-
     AST_OP_SUB,
 
-    // /// @brief 二元运算符*
-    // AST_OP_MUL,
+    /// @brief 二元运算符*
+    AST_OP_MUL,
+    
+    /// @brief 二元运算符/
+    AST_OP_DIV,
 
-    // /// @brief 二元运算符/
-    // AST_OP_DIV,
+    /// @brief 二元运算符%
+    AST_OP_MOD,
+
     // TODO 抽象语法树其它内部节点运算符追加
 
     /// @brief 最大标识符，表示非法运算符
