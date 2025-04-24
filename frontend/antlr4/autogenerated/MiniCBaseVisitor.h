@@ -1,5 +1,5 @@
 
-// Generated from MiniC.g4 by ANTLR 4.12.0
+// Generated from /home/code/compilerSys/develop/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -119,15 +119,55 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual std::any visitLVal(MiniCParser::LValContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
   virtual std::any visitPrimaryExp(MiniCParser::PrimaryExpContext *ctx) override {
     return visitChildren(ctx);
   }
 
+  virtual std::any visitLVal(MiniCParser::LValContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitNumber(MiniCParser::NumberContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLOrExp(MiniCParser::LOrExpContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitLAndExp(MiniCParser::LAndExpContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitEqExp(MiniCParser::EqExpContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitEqOp(MiniCParser::EqOpContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRelExp(MiniCParser::RelExpContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitRelOp(MiniCParser::RelOpContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitAddExp(MiniCParser::AddExpContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitAddOp(MiniCParser::AddOpContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitMulExp(MiniCParser::MulExpContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitMulOp(MiniCParser::MulOpContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -144,46 +184,6 @@ public:
   }
 
   virtual std::any visitFuncRParams(MiniCParser::FuncRParamsContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitMulExp(MiniCParser::MulExpContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitMulOp(MiniCParser::MulOpContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitAddExp(MiniCParser::AddExpContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitAddOp(MiniCParser::AddOpContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitRelExp(MiniCParser::RelExpContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitRelOp(MiniCParser::RelOpContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitEqExp(MiniCParser::EqExpContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitEqOp(MiniCParser::EqOpContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitLAndExp(MiniCParser::LAndExpContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitLOrExp(MiniCParser::LOrExpContext *ctx) override {
     return visitChildren(ctx);
   }
 

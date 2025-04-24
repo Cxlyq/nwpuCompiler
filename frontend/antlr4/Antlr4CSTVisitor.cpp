@@ -14,13 +14,16 @@
 /// <tr><td>2024-11-23 <td>1.1     <td>zenglj  <td>表达式版增强
 /// </table>
 ///
-
+// TODO: [完整性检查] 默认出口(nullptr?)
+#include <any>
+#include <cmath>
 #include <cstddef>
 #include <string>
 
 #include "Antlr4CSTVisitor.h"
 #include "AST.h"
 #include "AttrType.h"
+#include "MiniCParser.h"
 
 #define Instanceof(res, type, var) auto res = dynamic_cast<type>(var)
 
@@ -49,7 +52,7 @@ std::any MiniCCSTVisitor::visitCompileUnit(MiniCParser::CompileUnitContext * ctx
     // 请注意这里必须先遍历全局变量后遍历函数。肯定可以确保全局变量先声明后使用的规则，但有些情况却不能检查出。
     // 事实上可能函数A后全局变量B后函数C，这时在函数A中是不能使用变量B的，需要报语义错误，但目前的处理不会。
     // 因此在进行语义检查时，可能追加检查行号和列号，如果函数的行号/列号在全局变量的行号/列号的前面则需要报语义错误
-    // TODO 请追加实现。
+    // TODO: [语义检查] 追加实现行列号的变量检查
 
     ast_node * temp_node;
     ast_node * compileUnitNode = create_contain_node(ast_operator_type::AST_OP_COMPILE_UNIT);
@@ -75,7 +78,6 @@ std::any MiniCCSTVisitor::visitCompileUnit(MiniCParser::CompileUnitContext * ctx
 
 /// @brief 非终结运算符funcDef的遍历
 /// @param ctx CST上下文
-// TODO:设置形参结点
 std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
 {
     // 识别的文法产生式：funcDef : T_INT T_ID T_L_PAREN T_R_PAREN block;
@@ -89,7 +91,7 @@ std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
 
     // 形参结点目前没有，设置为空指针
     ast_node * formalParamsNode = nullptr;
-    // TODO:设置形参结点
+    // TODO: [函数] 设置形参结点入口
     // if (ctx->funcFParams()) {
     //     formalParamsNode = std::any_cast<ast_node *>(visitFuncFParams(ctx->funcFParams()));
     // }
@@ -119,7 +121,7 @@ std::any MiniCCSTVisitor::visitFuncType(MiniCParser::FuncTypeContext * ctx)
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx)
 {
-    // TODO: FIX BUG
+    // TODO: [函数] 形参列表结点
     // std::vector<ast_node *> params;
 
     // for (auto paramCtx : ctx->funcFParam()) {
@@ -134,7 +136,7 @@ std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
 {
-    // TODO: FIX BUG
+    // TODO: [函数] 形参结点
     // // 获取参数类型
     // type_attr paramType = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
 
@@ -450,25 +452,25 @@ std::any MiniCCSTVisitor::visitExpressionStatement(MiniCParser::ExpressionStatem
 
 std::any MiniCCSTVisitor::visitIfelseStatement(MiniCParser::IfelseStatementContext * ctx)
 {
-    // TODO
+    // TODO: [非线性] 分支语句结点
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitWhileStatement(MiniCParser::WhileStatementContext * ctx)
 {
-    // TODO
+    // TODO: [非线性] 循环语句结点
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitBreakStatement(MiniCParser::BreakStatementContext * ctx)
 {
-    // TODO
+    // TODO: [非线性] Break操作（结点？）
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitContinueStatement(MiniCParser::ContinueStatementContext * ctx)
 {
-    // TODO
+    // TODO: [非线性] Continue操作（结点？）
     return nullptr;
 }
 
@@ -477,15 +479,20 @@ std::any MiniCCSTVisitor::visitContinueStatement(MiniCParser::ContinueStatementC
 std::any MiniCCSTVisitor::visitExpr(MiniCParser::ExprContext * ctx)
 {
     // 识别产生式：expr: addExp;
-
-    return visitCond(ctx->cond()); //把addExp修改为cond
+    // TODO: [选择][交流] 是否考虑逻辑算术混合运算问题
+    return visitAddExp(ctx->addExp());
+    // return visitCond(ctx->cond()); //把addExp修改为cond
 }
+/// @brief 非终结运算符cond的遍历
+/// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitCond(MiniCParser::CondContext * ctx)
 {
-    // TODO
+    // TODO: [选择] 是否弃掉这层壳？
+    // TODO: [逻辑] 逻辑表达式
     return nullptr;
 }
-
+/// @brief 非终结运算符lVal的遍历
+/// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitLVal(MiniCParser::LValContext * ctx)
 {
     // 识别文法产生式：lVal: T_ID;
@@ -494,7 +501,10 @@ std::any MiniCCSTVisitor::visitLVal(MiniCParser::LValContext * ctx)
 
     // 获取行号
     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
-
+    // TODO: [数组] 完成数组匹配
+    // for (auto ctxarr: ctx->expr()) {
+        
+	// }
     return ast_node::New(varId, lineNo);
 }
 
@@ -506,11 +516,8 @@ std::any MiniCCSTVisitor::visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx)
 
     if (ctx->number()) {
         // 无符号整型字面量
-        // 识别 primaryExp: T_DIGIT
-
-        uint32_t val = (uint32_t) stoull(ctx->number()->getText());
-        int64_t lineNo = (int64_t) ctx->number()->T_DIGIT()->getSymbol()->getLine();
-        node = ast_node::New(digit_int_attr{val, lineNo});
+        // 识别 primaryExp: number
+		node = std::any_cast<ast_node *>(visitNumber(ctx->number()));
     } else if (ctx->lVal()) {
         // 具有左值的表达式
         // 识别 primaryExp: lVal
@@ -526,46 +533,62 @@ std::any MiniCCSTVisitor::visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx)
 
 std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
 {
-    // TODO
-    return nullptr;
+    ast_node * numberNode = nullptr;
+    if (ctx->T_DIGIT()) {
+        uint32_t val = (uint32_t) stoull(ctx->T_DIGIT()->getText());
+        int64_t lineNo = (int64_t) ctx->T_DIGIT()->getSymbol()->getLine();
+        numberNode=ast_node::New(digit_int_attr{val, lineNo});
+    }
+    // else if (ctx->T_FLOAT_LITERAL()) {
+	// 	   //TODO: [交流:fp]了解sysY的float标准
+    //     float_t val = (float_t) stoull(ctx->T_FLOAT_LITERAL()->getText());
+    //     int64_t lineNo = (int64_t) ctx->T_FLOAT_LITERAL()->getSymbol()->getLine();
+    //     //TODO: [fp]ast_node::New 扩展digit_float_attr
+    //     numberNode = ast_node::New(digit_float_attr{val, lineNo});
+    // }
+    return numberNode;
 }
 std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
-{ //     // 识别文法产生式：unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN;
-    //     if (ctx->primaryExp()) {//         // 普通表达式
-    //         return visitPrimaryExp(ctx->primaryExp());
-    //     } else if (ctx->T_ID()) {//         // 创建函数调用名终结符节点
-    //         ast_node * funcname_node = ast_node::New(ctx->T_ID()->getText(), (int64_t)
-    //         ctx->T_ID()->getSymbol()->getLine());//         // 实参列表
-    //         ast_node * paramListNode = nullptr;//         // 函数调用
-    //         if (ctx->realParamList()) {//             // 有参数
-    //             paramListNode = std::any_cast<ast_node *>(visitRealParamList(ctx->realParamList()));
-    //         }//         // 创建函数调用节点，其孩子为被调用函数名和实参，
-    //         return create_func_call(funcname_node, paramListNode);
-    //     }
-    return nullptr;
+{
+    // 识别文法产生式：unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN
+    // TODO: [选择] 考虑函数调用应该放在基本表达式还是一元表达式
+    if (Instanceof(monoCtx, MiniCParser::MonoContext *, ctx)) {
+        return visitMono(monoCtx);
+    } else if (Instanceof(funcCallCtx, MiniCParser::FuncCallContext *, ctx)) {
+        return visitFuncCall(funcCallCtx);
+    } else {
+        return nullptr;
+    }
 }
 std::any MiniCCSTVisitor::visitMono(MiniCParser::MonoContext * ctx)
 {
-    // TODO
+    // TODO: [单目] 单目运算表达式结点
+    // for (auto ctx:ctx->unaryOp()){
+    //
+    // }
+    if (ctx->primaryExp()) { //         // 普通表达式
+        return visitPrimaryExp(ctx->primaryExp());
+    }
+
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitFuncCall(MiniCParser::FuncCallContext * ctx)
 {
-    // TODO
+    // TODO: [函数] 函数调用结点（->实参）
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitUnaryOp(MiniCParser::UnaryOpContext * ctx)
 {
-    // TODO
+    // TODO: [单目] 单目运算符（并入表达式结点？）
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitFuncRParams(MiniCParser::FuncRParamsContext * ctx)
 {
     // 识别的文法产生式：realParamList : expr (T_COMMA expr)*;
-    // TODO
+    // TODO: [函数] 实参列表结点（确认数组支持）
     auto paramListNode = create_contain_node(ast_operator_type::AST_OP_FUNC_REAL_PARAMS);
 
     for (auto paramCtx: ctx->expr()) {
@@ -579,18 +602,19 @@ std::any MiniCCSTVisitor::visitFuncRParams(MiniCParser::FuncRParamsContext * ctx
 }
 std::any MiniCCSTVisitor::visitMulExp(MiniCParser::MulExpContext * ctx)
 {
-    // TODO
+    // TODO: [算术] 单项式结点
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitMulOp(MiniCParser::MulOpContext * ctx)
 {
-    // TODO
+    // TODO: [算术] 单项式运算符（并入单项式结点？）
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitAddExp(MiniCParser::AddExpContext * ctx)
 {
+    // TODO: [参考][算术] 多项式结点
     // 识别的文法产生式：addExp : unaryExp (addOp unaryExp)*;
 
     // if (ctx->addOp().empty()) {

@@ -70,13 +70,37 @@ statement:
 expr: cond; // ?表达式是否支持逻辑01 expr: addExp;
 // 条件表达式：多项逻辑表达式
 cond: lOrExp;
-// 左值表达式
-lVal: T_ID (T_L_SQBRA expr T_R_SQBRA)*;
 // 基本表达式：括号表达式、左值表达式、数值
 primaryExp: T_L_PAREN expr T_R_PAREN | lVal | number;
+// 左值表达式
+lVal: T_ID (T_L_SQBRA expr T_R_SQBRA)*;
 // 数值：整数/浮点数
 number: T_DIGIT | T_FLOAT_LITERAL;
+
+// 多项逻辑表达式（或表达式）
+lOrExp: lAndExp (T_OR lAndExp)*; //lAndExp | lOrExp T_OR lAndExp;
+// 单项逻辑表达式（与表达式）（多项相等性判断）
+lAndExp: eqExp (T_AND eqExp)*; //eqExp | lAndExp T_AND eqExp;
+// 相等性表达式（多项关系）
+eqExp: relExp (eqOp relExp)*; //relExp | eqExp eqOp relExp;
+// 相等性判断运算符
+eqOp: T_EQUAL | T_NEQUAL;
+// 关系表达式
+relExp: addExp (relOp addExp)*; //addExp | relExp relOp addExp;
+// 关系运算符
+relOp: T_GE | T_GREATER | T_LE | T_LESS;
+// 多项算术表达式
+addExp:
+	mulExp (addOp mulExp)*; //mulExp | addExp addOp mulExp;//mulExp (addOp mulExp)*;
+// 项间运算符
+addOp: T_ADD | T_SUB;
+// 单项算术表达式
+mulExp:
+	unaryExp (mulOp unaryExp)*; //unaryExp | mulExp mulOp unaryExp; //unaryExp (mulOp unaryExp)*;
+// 项内运算符
+mulOp: T_MUL | T_DIV | T_MOD;
 // 一元表达式
+// TODO: [选择]考虑函数调用应该放在基本表达式还是一元表达式
 unaryExp:
 	(unaryOp)* primaryExp					# mono
 	| T_ID T_L_PAREN funcRParams? T_R_PAREN	# funcCall;
@@ -84,28 +108,6 @@ unaryExp:
 unaryOp: T_ADD | T_SUB | T_NOT;
 // 实参列表
 funcRParams: expr (T_COMMA expr)*;
-// 单项算术表达式
-mulExp:
-	unaryExp (mulOp unaryExp)*; //unaryExp | mulExp mulOp unaryExp; //unaryExp (mulOp unaryExp)*;
-// 项内运算符
-mulOp: T_MUL | T_DIV | T_MOD;
-// 多项算术表达式
-addExp:
-	mulExp (addOp mulExp)*; //mulExp | addExp addOp mulExp;//mulExp (addOp mulExp)*;
-// 项间运算符
-addOp: T_ADD | T_SUB;
-// 关系表达式
-relExp: addExp (relOp addExp)*; //addExp | relExp relOp addExp;
-// 关系运算符
-relOp: T_GE | T_GREATER | T_LE | T_LESS;
-// 相等性表达式（多项关系）
-eqExp: relExp (eqOp relExp)*; //relExp | eqExp eqOp relExp;
-// 相等性判断运算符
-eqOp: T_EQUAL | T_NEQUAL;
-// 单项逻辑表达式（与表达式）（多项相等性判断）
-lAndExp: eqExp (T_AND eqExp)*; //eqExp | lAndExp T_AND eqExp;
-// 多项逻辑表达式（或表达式）
-lOrExp: lAndExp (T_OR lAndExp)*; //lAndExp | lOrExp T_OR lAndExp;
 
 // 用正规式来进行词法规则的描述
 
