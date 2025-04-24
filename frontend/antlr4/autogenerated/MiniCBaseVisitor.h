@@ -1,5 +1,5 @@
 
-// Generated from /home/code/compilerSys/develop/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
+// Generated from MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -60,14 +60,6 @@ public:
   }
 
   virtual std::any visitConstDef(MiniCParser::ConstDefContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitSingleConstVal(MiniCParser::SingleConstValContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitMultiConstVal(MiniCParser::MultiConstValContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -196,10 +188,6 @@ public:
   }
 
   virtual std::any visitLOrExp(MiniCParser::LOrExpContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual std::any visitConstExp(MiniCParser::ConstExpContext *ctx) override {
     return visitChildren(ctx);
   }
 

@@ -45,18 +45,14 @@ constDecl:
 	T_CONST basicType constDef (T_COMMA constDef)* T_SEMICOLON;
 // 常量定义
 constDef:
-	T_ID (T_L_SQBRA constExp T_R_SQBRA)* T_ASSIGN constInitVal;
-// 常量初始化值
-constInitVal:
-	constExp														# singleConstVal
-	| T_L_BRACE (constInitVal (T_COMMA constInitVal)*)? T_R_BRACE	# multiConstVal;
+	T_ID (T_L_SQBRA expr T_R_SQBRA)* T_ASSIGN initVal;
 
 // 变量声明，目前不支持变量含有初值
 varDecl: basicType varDef (T_COMMA varDef)* T_SEMICOLON;
 // 变量定义
 varDef:
-	T_ID (T_L_SQBRA constExp T_R_SQBRA)* (T_ASSIGN initVal)?;
-
+	T_ID (T_L_SQBRA expr T_R_SQBRA)* (T_ASSIGN initVal)?;
+// 右值（数组{}赋值或单表达式）
 initVal:
 	expr												# singleVal
 	| T_L_BRACE (initVal (T_COMMA initVal)*)? T_R_BRACE	# multiVal;
@@ -113,8 +109,7 @@ eqOp: T_EQUAL | T_NEQUAL;
 lAndExp: eqExp (T_AND eqExp)*; //eqExp | lAndExp T_AND eqExp;
 // 多项逻辑表达式（或表达式）
 lOrExp: lAndExp (T_OR lAndExp)*; //lAndExp | lOrExp T_OR lAndExp;
-// 常量表达式
-constExp: cond;
+
 
 // 用正规式来进行词法规则的描述
 

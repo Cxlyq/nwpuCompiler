@@ -252,22 +252,6 @@ std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
     // TODO
     return nullptr;
 }
-std::any MiniCCSTVisitor::visitConstInitVal(MiniCParser::ConstInitValContext * ctx)
-{
-    // TODO
-    return nullptr;
-}
-std::any MiniCCSTVisitor::visitSingleConstVal(MiniCParser::SingleConstValContext * ctx)
-{
-    // TODO
-    return nullptr;
-}
-
-std::any MiniCCSTVisitor::visitMultiConstVal(MiniCParser::MultiConstValContext * ctx)
-{
-    // TODO
-    return nullptr;
-}
 
 std::any MiniCCSTVisitor::visitVarDecl(MiniCParser::VarDeclContext * ctx)
 {
@@ -490,7 +474,21 @@ std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
     // TODO
     return nullptr;
 }
-
+std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
+{//     // 识别文法产生式：unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN;
+//     if (ctx->primaryExp()) {//         // 普通表达式
+//         return visitPrimaryExp(ctx->primaryExp());
+//     } else if (ctx->T_ID()) {//         // 创建函数调用名终结符节点
+//         ast_node * funcname_node = ast_node::New(ctx->T_ID()->getText(), (int64_t)
+//         ctx->T_ID()->getSymbol()->getLine());//         // 实参列表
+//         ast_node * paramListNode = nullptr;//         // 函数调用
+//         if (ctx->realParamList()) {//             // 有参数
+//             paramListNode = std::any_cast<ast_node *>(visitRealParamList(ctx->realParamList()));
+//         }//         // 创建函数调用节点，其孩子为被调用函数名和实参，
+//         return create_func_call(funcname_node, paramListNode);
+//     }
+	return nullptr;
+}
 std::any MiniCCSTVisitor::visitPrimary(MiniCParser::PrimaryContext * ctx)
 {
     // TODO
@@ -508,6 +506,7 @@ std::any MiniCCSTVisitor::visitMonoOp(MiniCParser::MonoOpContext * ctx)
     // TODO
     return nullptr;
 }
+
 std::any MiniCCSTVisitor::visitUnaryOp(MiniCParser::UnaryOpContext * ctx)
 {
     // TODO
@@ -622,37 +621,5 @@ std::any MiniCCSTVisitor::visitLOrExp(MiniCParser::LOrExpContext * ctx)
     // TODO
     return nullptr;
 }
-std::any MiniCCSTVisitor::visitConstExp(MiniCParser::ConstExpContext * ctx)
-{
-    // TODO
-    return nullptr;
-}
 
-// std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
-// {
-//     // 识别文法产生式：unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN;
 
-//     if (ctx->primaryExp()) {
-//         // 普通表达式
-//         return visitPrimaryExp(ctx->primaryExp());
-//     } else if (ctx->T_ID()) {
-
-//         // 创建函数调用名终结符节点
-//         ast_node * funcname_node = ast_node::New(ctx->T_ID()->getText(), (int64_t)
-//         ctx->T_ID()->getSymbol()->getLine());
-
-//         // 实参列表
-//         ast_node * paramListNode = nullptr;
-
-//         // 函数调用
-//         if (ctx->realParamList()) {
-//             // 有参数
-//             paramListNode = std::any_cast<ast_node *>(visitRealParamList(ctx->realParamList()));
-//         }
-
-//         // 创建函数调用节点，其孩子为被调用函数名和实参，
-//         return create_func_call(funcname_node, paramListNode);
-//     } else {
-//         return nullptr;
-//     }
-// }
