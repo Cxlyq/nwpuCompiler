@@ -1,5 +1,5 @@
 
-// Generated from MiniC.g4 by ANTLR 4.12.0
+// Generated from /home/code/compilerSys/develop/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -43,10 +43,6 @@ public:
 
     virtual std::any visitConstDef(MiniCParser::ConstDefContext *context) = 0;
 
-    virtual std::any visitSingleConstVal(MiniCParser::SingleConstValContext *context) = 0;
-
-    virtual std::any visitMultiConstVal(MiniCParser::MultiConstValContext *context) = 0;
-
     virtual std::any visitVarDecl(MiniCParser::VarDeclContext *context) = 0;
 
     virtual std::any visitVarDef(MiniCParser::VarDefContext *context) = 0;
@@ -81,11 +77,9 @@ public:
 
     virtual std::any visitNumber(MiniCParser::NumberContext *context) = 0;
 
-    virtual std::any visitPrimary(MiniCParser::PrimaryContext *context) = 0;
+    virtual std::any visitMono(MiniCParser::MonoContext *context) = 0;
 
     virtual std::any visitFuncCall(MiniCParser::FuncCallContext *context) = 0;
-
-    virtual std::any visitMonoOp(MiniCParser::MonoOpContext *context) = 0;
 
     virtual std::any visitUnaryOp(MiniCParser::UnaryOpContext *context) = 0;
 
@@ -110,8 +104,6 @@ public:
     virtual std::any visitLAndExp(MiniCParser::LAndExpContext *context) = 0;
 
     virtual std::any visitLOrExp(MiniCParser::LOrExpContext *context) = 0;
-
-    virtual std::any visitConstExp(MiniCParser::ConstExpContext *context) = 0;
 
 
 };

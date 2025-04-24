@@ -89,9 +89,10 @@ std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
 
     // 形参结点目前没有，设置为空指针
     ast_node * formalParamsNode = nullptr;
-    if (ctx->funcFParams()) {
-        formalParamsNode = std::any_cast<ast_node *>(visitFuncFParams(ctx->funcFParams()));
-    }
+    // TODO:设置形参结点
+    // if (ctx->funcFParams()) {
+    //     formalParamsNode = std::any_cast<ast_node *>(visitFuncFParams(ctx->funcFParams()));
+    // }
 
     // 遍历block结点创建函数体节点，非终结符
     auto blockNode = std::any_cast<ast_node *>(visitBlock(ctx->block()));
@@ -245,22 +246,11 @@ std::any MiniCCSTVisitor::visitBasicType(MiniCParser::BasicTypeContext * ctx)
 std::any MiniCCSTVisitor::visitConstDecl(MiniCParser::ConstDeclContext * ctx)
 {
     // TODO
+    
     return nullptr;
 }
 
 std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
-{
-    // TODO
-    return nullptr;
-}
-
-std::any MiniCCSTVisitor::visitSingleConstVal(MiniCParser::SingleConstValContext * ctx)
-{
-    // TODO
-    return nullptr;
-}
-
-std::any MiniCCSTVisitor::visitMultiConstVal(MiniCParser::MultiConstValContext * ctx)
 {
     // TODO
     return nullptr;
@@ -304,7 +294,11 @@ std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
 
     return ast_node::New(varId, lineNo);
 }
-
+std::any MiniCCSTVisitor::visitInitVal(MiniCParser::InitValContext * ctx)
+{
+    // TODO
+    return nullptr;
+}
 std::any MiniCCSTVisitor::visitSingleVal(MiniCParser::SingleValContext * ctx)
 {
     // TODO
@@ -483,8 +477,22 @@ std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
     // TODO
     return nullptr;
 }
-
-std::any MiniCCSTVisitor::visitPrimary(MiniCParser::PrimaryContext * ctx)
+std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
+{//     // 识别文法产生式：unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN;
+//     if (ctx->primaryExp()) {//         // 普通表达式
+//         return visitPrimaryExp(ctx->primaryExp());
+//     } else if (ctx->T_ID()) {//         // 创建函数调用名终结符节点
+//         ast_node * funcname_node = ast_node::New(ctx->T_ID()->getText(), (int64_t)
+//         ctx->T_ID()->getSymbol()->getLine());//         // 实参列表
+//         ast_node * paramListNode = nullptr;//         // 函数调用
+//         if (ctx->realParamList()) {//             // 有参数
+//             paramListNode = std::any_cast<ast_node *>(visitRealParamList(ctx->realParamList()));
+//         }//         // 创建函数调用节点，其孩子为被调用函数名和实参，
+//         return create_func_call(funcname_node, paramListNode);
+//     }
+	return nullptr;
+}
+std::any MiniCCSTVisitor::visitMono(MiniCParser::MonoContext * ctx)
 {
     // TODO
     return nullptr;
@@ -496,11 +504,6 @@ std::any MiniCCSTVisitor::visitFuncCall(MiniCParser::FuncCallContext * ctx)
     return nullptr;
 }
 
-std::any MiniCCSTVisitor::visitMonoOp(MiniCParser::MonoOpContext * ctx)
-{
-    // TODO
-    return nullptr;
-}
 std::any MiniCCSTVisitor::visitUnaryOp(MiniCParser::UnaryOpContext * ctx)
 {
     // TODO
@@ -615,37 +618,5 @@ std::any MiniCCSTVisitor::visitLOrExp(MiniCParser::LOrExpContext * ctx)
     // TODO
     return nullptr;
 }
-std::any MiniCCSTVisitor::visitConstExp(MiniCParser::ConstExpContext * ctx)
-{
-    // TODO
-    return nullptr;
-}
 
-// std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
-// {
-//     // 识别文法产生式：unaryExp: primaryExp | T_ID T_L_PAREN realParamList? T_R_PAREN;
 
-//     if (ctx->primaryExp()) {
-//         // 普通表达式
-//         return visitPrimaryExp(ctx->primaryExp());
-//     } else if (ctx->T_ID()) {
-
-//         // 创建函数调用名终结符节点
-//         ast_node * funcname_node = ast_node::New(ctx->T_ID()->getText(), (int64_t)
-//         ctx->T_ID()->getSymbol()->getLine());
-
-//         // 实参列表
-//         ast_node * paramListNode = nullptr;
-
-//         // 函数调用
-//         if (ctx->realParamList()) {
-//             // 有参数
-//             paramListNode = std::any_cast<ast_node *>(visitRealParamList(ctx->realParamList()));
-//         }
-
-//         // 创建函数调用节点，其孩子为被调用函数名和实参，
-//         return create_func_call(funcname_node, paramListNode);
-//     } else {
-//         return nullptr;
-//     }
-// }

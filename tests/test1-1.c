@@ -1,4 +1,4 @@
-int main()
+int add(int a)
 {
     int a;
     int b;

@@ -1,5 +1,5 @@
 
-// Generated from MiniC.g4 by ANTLR 4.12.0
+// Generated from /home/code/compilerSys/develop/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -26,12 +26,11 @@ public:
     RuleCompileUnit = 0, RuleFuncDef = 1, RuleFuncType = 2, RuleFuncFParams = 3, 
     RuleFuncFParam = 4, RuleBlock = 5, RuleBlockItemList = 6, RuleBlockItem = 7, 
     RuleDecl = 8, RuleBasicType = 9, RuleConstDecl = 10, RuleConstDef = 11, 
-    RuleConstInitVal = 12, RuleVarDecl = 13, RuleVarDef = 14, RuleInitVal = 15, 
-    RuleStatement = 16, RuleExpr = 17, RuleCond = 18, RuleLVal = 19, RulePrimaryExp = 20, 
-    RuleNumber = 21, RuleUnaryExp = 22, RuleUnaryOp = 23, RuleFuncRParams = 24, 
-    RuleMulExp = 25, RuleMulOp = 26, RuleAddExp = 27, RuleAddOp = 28, RuleRelExp = 29, 
-    RuleRelOp = 30, RuleEqExp = 31, RuleEqOp = 32, RuleLAndExp = 33, RuleLOrExp = 34, 
-    RuleConstExp = 35
+    RuleVarDecl = 12, RuleVarDef = 13, RuleInitVal = 14, RuleStatement = 15, 
+    RuleExpr = 16, RuleCond = 17, RuleLVal = 18, RulePrimaryExp = 19, RuleNumber = 20, 
+    RuleUnaryExp = 21, RuleUnaryOp = 22, RuleFuncRParams = 23, RuleMulExp = 24, 
+    RuleMulOp = 25, RuleAddExp = 26, RuleAddOp = 27, RuleRelExp = 28, RuleRelOp = 29, 
+    RuleEqExp = 30, RuleEqOp = 31, RuleLAndExp = 32, RuleLOrExp = 33
   };
 
   explicit MiniCParser(antlr4::TokenStream *input);
@@ -63,7 +62,6 @@ public:
   class BasicTypeContext;
   class ConstDeclContext;
   class ConstDefContext;
-  class ConstInitValContext;
   class VarDeclContext;
   class VarDefContext;
   class InitValContext;
@@ -85,8 +83,7 @@ public:
   class EqExpContext;
   class EqOpContext;
   class LAndExpContext;
-  class LOrExpContext;
-  class ConstExpContext; 
+  class LOrExpContext; 
 
   class  CompileUnitContext : public antlr4::ParserRuleContext {
   public:
@@ -270,11 +267,11 @@ public:
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *T_ID();
     antlr4::tree::TerminalNode *T_ASSIGN();
-    ConstInitValContext *constInitVal();
+    InitValContext *initVal();
     std::vector<antlr4::tree::TerminalNode *> T_L_SQBRA();
     antlr4::tree::TerminalNode* T_L_SQBRA(size_t i);
-    std::vector<ConstExpContext *> constExp();
-    ConstExpContext* constExp(size_t i);
+    std::vector<ExprContext *> expr();
+    ExprContext* expr(size_t i);
     std::vector<antlr4::tree::TerminalNode *> T_R_SQBRA();
     antlr4::tree::TerminalNode* T_R_SQBRA(size_t i);
 
@@ -284,44 +281,6 @@ public:
   };
 
   ConstDefContext* constDef();
-
-  class  ConstInitValContext : public antlr4::ParserRuleContext {
-  public:
-    ConstInitValContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-   
-    ConstInitValContext() = default;
-    void copyFrom(ConstInitValContext *context);
-    using antlr4::ParserRuleContext::copyFrom;
-
-    virtual size_t getRuleIndex() const override;
-
-   
-  };
-
-  class  SingleConstValContext : public ConstInitValContext {
-  public:
-    SingleConstValContext(ConstInitValContext *ctx);
-
-    ConstExpContext *constExp();
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  class  MultiConstValContext : public ConstInitValContext {
-  public:
-    MultiConstValContext(ConstInitValContext *ctx);
-
-    antlr4::tree::TerminalNode *T_L_BRACE();
-    antlr4::tree::TerminalNode *T_R_BRACE();
-    std::vector<ConstInitValContext *> constInitVal();
-    ConstInitValContext* constInitVal(size_t i);
-    std::vector<antlr4::tree::TerminalNode *> T_COMMA();
-    antlr4::tree::TerminalNode* T_COMMA(size_t i);
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  ConstInitValContext* constInitVal();
 
   class  VarDeclContext : public antlr4::ParserRuleContext {
   public:
@@ -348,8 +307,8 @@ public:
     antlr4::tree::TerminalNode *T_ID();
     std::vector<antlr4::tree::TerminalNode *> T_L_SQBRA();
     antlr4::tree::TerminalNode* T_L_SQBRA(size_t i);
-    std::vector<ConstExpContext *> constExp();
-    ConstExpContext* constExp(size_t i);
+    std::vector<ExprContext *> expr();
+    ExprContext* expr(size_t i);
     std::vector<antlr4::tree::TerminalNode *> T_R_SQBRA();
     antlr4::tree::TerminalNode* T_R_SQBRA(size_t i);
     antlr4::tree::TerminalNode *T_ASSIGN();
@@ -594,12 +553,13 @@ public:
    
   };
 
-  class  MonoOpContext : public UnaryExpContext {
+  class  MonoContext : public UnaryExpContext {
   public:
-    MonoOpContext(UnaryExpContext *ctx);
+    MonoContext(UnaryExpContext *ctx);
 
-    UnaryOpContext *unaryOp();
-    UnaryExpContext *unaryExp();
+    PrimaryExpContext *primaryExp();
+    std::vector<UnaryOpContext *> unaryOp();
+    UnaryOpContext* unaryOp(size_t i);
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
@@ -612,15 +572,6 @@ public:
     antlr4::tree::TerminalNode *T_L_PAREN();
     antlr4::tree::TerminalNode *T_R_PAREN();
     FuncRParamsContext *funcRParams();
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  class  PrimaryContext : public UnaryExpContext {
-  public:
-    PrimaryContext(UnaryExpContext *ctx);
-
-    PrimaryExpContext *primaryExp();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
@@ -662,9 +613,10 @@ public:
   public:
     MulExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    UnaryExpContext *unaryExp();
-    MulOpContext *mulOp();
-    MulExpContext *mulExp();
+    std::vector<UnaryExpContext *> unaryExp();
+    UnaryExpContext* unaryExp(size_t i);
+    std::vector<MulOpContext *> mulOp();
+    MulOpContext* mulOp(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -692,9 +644,10 @@ public:
   public:
     AddExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    MulExpContext *mulExp();
-    AddOpContext *addOp();
-    AddExpContext *addExp();
+    std::vector<MulExpContext *> mulExp();
+    MulExpContext* mulExp(size_t i);
+    std::vector<AddOpContext *> addOp();
+    AddOpContext* addOp(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -721,9 +674,10 @@ public:
   public:
     RelExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    AddExpContext *addExp();
-    RelOpContext *relOp();
-    RelExpContext *relExp();
+    std::vector<AddExpContext *> addExp();
+    AddExpContext* addExp(size_t i);
+    std::vector<RelOpContext *> relOp();
+    RelOpContext* relOp(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -752,9 +706,10 @@ public:
   public:
     EqExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    RelExpContext *relExp();
-    EqOpContext *eqOp();
-    EqExpContext *eqExp();
+    std::vector<RelExpContext *> relExp();
+    RelExpContext* relExp(size_t i);
+    std::vector<EqOpContext *> eqOp();
+    EqOpContext* eqOp(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -781,9 +736,10 @@ public:
   public:
     LAndExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    EqExpContext *eqExp();
-    antlr4::tree::TerminalNode *T_AND();
-    LAndExpContext *lAndExp();
+    std::vector<EqExpContext *> eqExp();
+    EqExpContext* eqExp(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> T_AND();
+    antlr4::tree::TerminalNode* T_AND(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -796,9 +752,10 @@ public:
   public:
     LOrExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    LAndExpContext *lAndExp();
-    antlr4::tree::TerminalNode *T_OR();
-    LOrExpContext *lOrExp();
+    std::vector<LAndExpContext *> lAndExp();
+    LAndExpContext* lAndExp(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> T_OR();
+    antlr4::tree::TerminalNode* T_OR(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -806,19 +763,6 @@ public:
   };
 
   LOrExpContext* lOrExp();
-
-  class  ConstExpContext : public antlr4::ParserRuleContext {
-  public:
-    ConstExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-    virtual size_t getRuleIndex() const override;
-    AddExpContext *addExp();
-
-
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
-  };
-
-  ConstExpContext* constExp();
 
 
   // By default the static state used to implement the parser is lazily initialized during the first
