@@ -17,10 +17,7 @@ compileUnit: (funcDef | decl)* EOF;
 // 函数定义，目前不支持形参，也不支持返回void类型等
 funcDef: funcType T_ID T_L_PAREN (funcFParams)? T_R_PAREN block;
 // 函数返回类型
-funcType:
-	T_INT
-	| T_FLOAT
-	| T_VOID;
+funcType: T_INT | T_FLOAT | T_VOID;
 //函数形参列表
 funcFParams: funcFParam (T_COMMA funcFParam)*;
 //函数形参
@@ -96,28 +93,28 @@ unaryOp: T_ADD | T_SUB | T_NOT;
 funcRParams: expr (T_COMMA expr)*;
 // 单项算术表达式
 mulExp:
-	unaryExp (mulOp mulExp)?; //unaryExp | mulExp mulOp unaryExp; //unaryExp (mulOp unaryExp)*;
+	unaryExp (mulOp unaryExp)*; //unaryExp | mulExp mulOp unaryExp; //unaryExp (mulOp unaryExp)*;
 // 项内运算符
 mulOp: T_MUL | T_DIV | T_MOD;
 // 多项算术表达式
 addExp:
-	mulExp (addOp addExp)?; //mulExp | addExp addOp mulExp;//mulExp (addOp mulExp)*;
+	mulExp (addOp mulExp)*; //mulExp | addExp addOp mulExp;//mulExp (addOp mulExp)*;
 // 项间运算符
 addOp: T_ADD | T_SUB;
 // 关系表达式
-relExp: addExp (relOp relExp)?; //addExp | relExp relOp addExp;
+relExp: addExp (relOp addExp)*; //addExp | relExp relOp addExp;
 // 关系运算符
 relOp: T_GE | T_GREATER | T_LE | T_LESS;
 // 相等性表达式（多项关系）
-eqExp: relExp (eqOp eqExp)?; //relExp | eqExp eqOp relExp;
+eqExp: relExp (eqOp relExp)*; //relExp | eqExp eqOp relExp;
 // 相等性判断运算符
 eqOp: T_EQUAL | T_NEQUAL;
 // 单项逻辑表达式（与表达式）（多项相等性判断）
-lAndExp: eqExp (T_AND lAndExp)?; //eqExp | lAndExp T_AND eqExp;
+lAndExp: eqExp (T_AND eqExp)*; //eqExp | lAndExp T_AND eqExp;
 // 多项逻辑表达式（或表达式）
-lOrExp: lAndExp (T_OR lOrExp)?; //lAndExp | lOrExp T_OR lAndExp;
+lOrExp: lAndExp (T_OR lAndExp)*; //lAndExp | lOrExp T_OR lAndExp;
 // 常量表达式
-constExp: addExp;
+constExp: cond;
 
 // 用正规式来进行词法规则的描述
 
@@ -173,7 +170,7 @@ T_DIGIT:
 T_FLOAT_LITERAL: ([0-9]+ '.' [0-9]* | '.' [0-9]+ | [0-9]+ '.') (
 		([eE][+-]? [0-9]+)?
 	);
-	
+
 /* 空白符丢弃 */
 WS: [ \r\n\t]+ -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;

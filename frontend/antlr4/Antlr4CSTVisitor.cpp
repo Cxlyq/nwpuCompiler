@@ -89,9 +89,10 @@ std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
 
     // 形参结点目前没有，设置为空指针
     ast_node * formalParamsNode = nullptr;
-    if (ctx->funcFParams()) {
-        formalParamsNode = std::any_cast<ast_node *>(visitFuncFParams(ctx->funcFParams()));
-    }
+    // TODO:设置形参结点
+    // if (ctx->funcFParams()) {
+    //     formalParamsNode = std::any_cast<ast_node *>(visitFuncFParams(ctx->funcFParams()));
+    // }
 
     // 遍历block结点创建函数体节点，非终结符
     auto blockNode = std::any_cast<ast_node *>(visitBlock(ctx->block()));
@@ -118,6 +119,7 @@ std::any MiniCCSTVisitor::visitFuncType(MiniCParser::FuncTypeContext * ctx)
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx)
 {
+    // TODO: FIX BUG
     // std::vector<ast_node *> params;
 
     // for (auto paramCtx : ctx->funcFParam()) {
@@ -132,7 +134,7 @@ std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
 {
-    // TODO
+    // TODO: FIX BUG
     // // 获取参数类型
     // type_attr paramType = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
 
@@ -241,6 +243,7 @@ std::any MiniCCSTVisitor::visitBasicType(MiniCParser::BasicTypeContext * ctx)
 std::any MiniCCSTVisitor::visitConstDecl(MiniCParser::ConstDeclContext * ctx)
 {
     // TODO
+    
     return nullptr;
 }
 
@@ -249,7 +252,11 @@ std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
     // TODO
     return nullptr;
 }
-
+std::any MiniCCSTVisitor::visitConstInitVal(MiniCParser::ConstInitValContext * ctx)
+{
+    // TODO
+    return nullptr;
+}
 std::any MiniCCSTVisitor::visitSingleConstVal(MiniCParser::SingleConstValContext * ctx)
 {
     // TODO
@@ -300,7 +307,11 @@ std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
 
     return ast_node::New(varId, lineNo);
 }
-
+std::any MiniCCSTVisitor::visitInitVal(MiniCParser::InitValContext * ctx)
+{
+    // TODO
+    return nullptr;
+}
 std::any MiniCCSTVisitor::visitSingleVal(MiniCParser::SingleValContext * ctx)
 {
     // TODO

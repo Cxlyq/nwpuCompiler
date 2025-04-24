@@ -52,39 +52,14 @@ protected:
     /// @return AST的节点
     std::any visitFuncType(MiniCParser::FuncTypeContext * ctx) override;
 
-    ///
-    // /// @brief 非终结符IntegerReturn的分析
-    // /// @param ctx CST上下文
-    // /// @return std::any AST的节点
-    // ///
-    // std::any visitIntegerReturn(MiniCParser::IntegerReturnContext * ctx) override;
-
-    // ///
-    // /// @brief 非终结符FloatReturn的分析
-    // /// @param ctx CST上下文
-    // /// @return std::any AST的节点
-    // ///
-    // std::any visitFloatReturn(MiniCParser::FloatReturnContext * ctx) override;
-
-    // ///
-    // /// @brief 非终结符VoidReturn的分析
-    // /// @param ctx CST上下文
-    // /// @return std::any AST的节点
-    // ///
-    // std::any visitVoidReturn(MiniCParser::VoidReturnContext * ctx) override;
-
-    ///
     /// @brief 非终结符FuncFParams的分析
     /// @param ctx CST上下文
     /// @return std::any AST的节点
-    ///
     std::any visitFuncFParams(MiniCParser::FuncFParamsContext * ctx) override;
 
-    ///
     /// @brief 非终结符FuncRParam的分析
     /// @param ctx CST上下文
     /// @return std::any AST的节点
-    ///
     std::any visitFuncFParam(MiniCParser::FuncFParamContext * ctx) override;
 
     /// @brief 非终结运算符block的遍历
@@ -102,11 +77,9 @@ protected:
     /// @return AST的节点
     std::any visitBlockItem(MiniCParser::BlockItemContext * ctx) override;
 
-    ///
     /// @brief 非终结符decl的分析
     /// @param ctx CST上下文
     /// @return std::any AST的节点
-    ///
     std::any visitDecl(MiniCParser::DeclContext * ctx) override;
 
     ///
@@ -126,6 +99,11 @@ protected:
     /// @param ctx CST上下文
     /// @return AST的节点
     std::any visitConstDef(MiniCParser::ConstDefContext * ctx) override;
+    
+    /// @brief 非终结运算符constInitVal中的遍历
+    /// @param ctx CST上下文
+    /// @return AST的节点
+    std::any visitConstInitVal(MiniCParser::ConstInitValContext * ctx);
 
     /// @brief 非终结运算符singleConstVal中的遍历
     /// @param ctx CST上下文
@@ -146,7 +124,12 @@ protected:
     /// @param ctx CST上下文
     /// @return AST的节点
     std::any visitVarDef(MiniCParser::VarDefContext * ctx) override;
-
+    
+    /// @brief 非终结运算符initVal中的遍历
+    /// @param ctx CST上下文
+    /// @return AST的节点
+    std::any visitInitVal(MiniCParser::InitValContext * ctx);
+    
     /// @brief 非终结运算符singleVal中的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
@@ -156,7 +139,11 @@ protected:
     /// @param ctx CST上下文
     /// @return AST的节点
     std::any visitMultiVal(MiniCParser::MultiValContext * ctx) override;
-
+    
+    /// @brief 非终结运算符statement中的遍历
+    /// @param ctx CST上下文
+    /// @return AST的节点
+    std::any visitStatement(MiniCParser::StatementContext * ctx);
     /// @brief 非终结运算符statement中的returnStatement的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
@@ -315,9 +302,5 @@ protected:
     /// @param ctx CST上下文
     /// @return AST的节点
     std::any visitConstExp(MiniCParser::ConstExpContext * ctx) override;
-    ///
-    /// @brief 非终结运算符statement中的遍历
-    /// @param ctx CST上下文
-    /// @return AST的节点
-    std::any visitStatement(MiniCParser::StatementContext * ctx);
+
 };

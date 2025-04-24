@@ -1,5 +1,5 @@
 
-// Generated from MiniC.g4 by ANTLR 4.12.0
+// Generated from /home/code/compilerSys/develop/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -662,9 +662,10 @@ public:
   public:
     MulExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    UnaryExpContext *unaryExp();
-    MulOpContext *mulOp();
-    MulExpContext *mulExp();
+    std::vector<UnaryExpContext *> unaryExp();
+    UnaryExpContext* unaryExp(size_t i);
+    std::vector<MulOpContext *> mulOp();
+    MulOpContext* mulOp(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -692,9 +693,10 @@ public:
   public:
     AddExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    MulExpContext *mulExp();
-    AddOpContext *addOp();
-    AddExpContext *addExp();
+    std::vector<MulExpContext *> mulExp();
+    MulExpContext* mulExp(size_t i);
+    std::vector<AddOpContext *> addOp();
+    AddOpContext* addOp(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -721,9 +723,10 @@ public:
   public:
     RelExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    AddExpContext *addExp();
-    RelOpContext *relOp();
-    RelExpContext *relExp();
+    std::vector<AddExpContext *> addExp();
+    AddExpContext* addExp(size_t i);
+    std::vector<RelOpContext *> relOp();
+    RelOpContext* relOp(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -752,9 +755,10 @@ public:
   public:
     EqExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    RelExpContext *relExp();
-    EqOpContext *eqOp();
-    EqExpContext *eqExp();
+    std::vector<RelExpContext *> relExp();
+    RelExpContext* relExp(size_t i);
+    std::vector<EqOpContext *> eqOp();
+    EqOpContext* eqOp(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -781,9 +785,10 @@ public:
   public:
     LAndExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    EqExpContext *eqExp();
-    antlr4::tree::TerminalNode *T_AND();
-    LAndExpContext *lAndExp();
+    std::vector<EqExpContext *> eqExp();
+    EqExpContext* eqExp(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> T_AND();
+    antlr4::tree::TerminalNode* T_AND(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -796,9 +801,10 @@ public:
   public:
     LOrExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    LAndExpContext *lAndExp();
-    antlr4::tree::TerminalNode *T_OR();
-    LOrExpContext *lOrExp();
+    std::vector<LAndExpContext *> lAndExp();
+    LAndExpContext* lAndExp(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> T_OR();
+    antlr4::tree::TerminalNode* T_OR(size_t i);
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -811,7 +817,7 @@ public:
   public:
     ConstExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    AddExpContext *addExp();
+    CondContext *cond();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
