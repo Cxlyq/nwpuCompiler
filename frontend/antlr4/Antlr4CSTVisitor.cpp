@@ -15,6 +15,7 @@
 /// </table>
 ///
 // TODO: [完整性检查] 默认出口(nullptr?)
+// TODO: [语义检查] 每个Visitor函数都需要进行语义分析，throw error.
 #include <any>
 #include <cmath>
 #include <cstddef>
@@ -138,7 +139,6 @@ std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx
 std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
 {
     // TODO: [函数] 形参结点
-    // // 获取参数类型
     // 获取参数类型
     type_attr paramType = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
 
