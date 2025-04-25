@@ -18,6 +18,7 @@
 
 #include "AST.h"
 #include "MiniCBaseVisitor.h"
+#include "MiniCParser.h"
 
 /// @brief 遍历具体语法树产生抽象语法树
 class MiniCCSTVisitor : public MiniCBaseVisitor {
@@ -232,17 +233,32 @@ protected:
     /// @brief 非终结运算符unaryExp中的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
-    std::any visitUnaryExp(MiniCParser::UnaryExpContext * ctx);
-
-    /// @brief 非终结符mono的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    std::any visitMono(MiniCParser::MonoContext * ctx) override;
+    std::any visitUnaryExp(MiniCParser::UnaryExpContext * ctx) override;
 
     /// @brief 非终结运算符unaryOp中的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
     std::any visitUnaryOp(MiniCParser::UnaryOpContext * ctx) override;
+
+    /// @brief 非终结符PrimaryExp的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    std::any visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx);
+
+    /// @brief 非终结符parenExpr的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    std::any visitParenExpr(MiniCParser::ParenExprContext * ctx) override;
+
+    /// @brief 非终结符leftValue的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    std::any visitLeftValue(MiniCParser::LeftValueContext * ctx) override;
+
+    /// @brief 非终结符basicNum的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    std::any visitBasicNum(MiniCParser::BasicNumContext * ctx) override;
 
     /// @brief 非终结符funcCall的分析
     /// @param ctx CST上下文
@@ -253,11 +269,6 @@ protected:
     /// @param ctx CST上下文
     /// @return std::any AST的节点
     std::any visitFuncRParams(MiniCParser::FuncRParamsContext * ctx) override;
-
-    /// @brief 非终结符PrimaryExp的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    std::any visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx) override;
 
     /// @brief 非终结符lVal的分析
     /// @param ctx CST上下文

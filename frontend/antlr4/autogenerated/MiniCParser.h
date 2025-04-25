@@ -1,5 +1,5 @@
 
-// Generated from /home/code/compilerSys/develop/frontend/antlr4/MiniC.g4 by ANTLR 4.12.0
+// Generated from MiniC.g4 by ANTLR 4.12.0
 
 #pragma once
 
@@ -648,37 +648,14 @@ public:
   class  UnaryExpContext : public antlr4::ParserRuleContext {
   public:
     UnaryExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
-   
-    UnaryExpContext() = default;
-    void copyFrom(UnaryExpContext *context);
-    using antlr4::ParserRuleContext::copyFrom;
-
     virtual size_t getRuleIndex() const override;
-
-   
-  };
-
-  class  MonoContext : public UnaryExpContext {
-  public:
-    MonoContext(UnaryExpContext *ctx);
-
     PrimaryExpContext *primaryExp();
     std::vector<UnaryOpContext *> unaryOp();
     UnaryOpContext* unaryOp(size_t i);
 
-    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-  };
-
-  class  FuncCallContext : public UnaryExpContext {
-  public:
-    FuncCallContext(UnaryExpContext *ctx);
-
-    antlr4::tree::TerminalNode *T_ID();
-    antlr4::tree::TerminalNode *T_L_PAREN();
-    antlr4::tree::TerminalNode *T_R_PAREN();
-    FuncRParamsContext *funcRParams();
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
   };
 
   UnaryExpContext* unaryExp();
@@ -717,16 +694,55 @@ public:
   class  PrimaryExpContext : public antlr4::ParserRuleContext {
   public:
     PrimaryExpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+   
+    PrimaryExpContext() = default;
+    void copyFrom(PrimaryExpContext *context);
+    using antlr4::ParserRuleContext::copyFrom;
+
     virtual size_t getRuleIndex() const override;
+
+   
+  };
+
+  class  LeftValueContext : public PrimaryExpContext {
+  public:
+    LeftValueContext(PrimaryExpContext *ctx);
+
+    LValContext *lVal();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  BasicNumContext : public PrimaryExpContext {
+  public:
+    BasicNumContext(PrimaryExpContext *ctx);
+
+    NumberContext *number();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  FuncCallContext : public PrimaryExpContext {
+  public:
+    FuncCallContext(PrimaryExpContext *ctx);
+
+    antlr4::tree::TerminalNode *T_ID();
+    antlr4::tree::TerminalNode *T_L_PAREN();
+    antlr4::tree::TerminalNode *T_R_PAREN();
+    FuncRParamsContext *funcRParams();
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
+  class  ParenExprContext : public PrimaryExpContext {
+  public:
+    ParenExprContext(PrimaryExpContext *ctx);
+
     antlr4::tree::TerminalNode *T_L_PAREN();
     ExprContext *expr();
     antlr4::tree::TerminalNode *T_R_PAREN();
-    LValContext *lVal();
-    NumberContext *number();
-
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
-   
   };
 
   PrimaryExpContext* primaryExp();

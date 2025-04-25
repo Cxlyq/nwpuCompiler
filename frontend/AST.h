@@ -79,7 +79,7 @@ enum class ast_operator_type : int {
     AST_OP_ASSIGN,
 
     /// @brief 变量声明语句
-    AST_OP_DECL_STMT,
+    AST_OP_VAR_DECL_STMT,
 
     /// @brief 变量声明
     AST_OP_VAR_DECL,
@@ -88,7 +88,7 @@ enum class ast_operator_type : int {
     AST_OP_CONST_DECL_STMT,
 
     /// @brief 常量声明
-    AST_OP_CONST_VAR_DECL,
+    AST_OP_CONST_DECL,
 
     /// @brief 变量初始化
     AST_OP_INIT_VAL,
@@ -111,7 +111,22 @@ enum class ast_operator_type : int {
     /// @brief 二元运算符%
     AST_OP_MOD,
 
-    // TODO: 抽象语法树其它内部节点运算符追加
+    /// @brief 二元运算符&&
+    AST_OP_AND,
+
+    /// @brief 二元运算符||
+    AST_OP_OR,
+
+    /// @brief 一元运算符+
+    AST_OP_POS,
+
+    /// @brief 一元运算符-
+    AST_OP_NEG,
+
+    /// @brief 一元运算符!
+    AST_OP_NOT,
+
+    // TODO: 抽象语法树其它内部节点运算符追加，现在缺比较和判等运算符
 
     /// @brief 最大标识符，表示非法运算符
     AST_OP_MAX,

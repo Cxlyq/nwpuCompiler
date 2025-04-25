@@ -329,7 +329,7 @@ ast_node * create_func_call(ast_node * funcname_node, ast_node * params_node)
 ast_node * create_var_decl_stmt_node(ast_node * first_child)
 {
     // 创建变量声明语句
-    ast_node * stmt_node = create_contain_node(ast_operator_type::AST_OP_DECL_STMT);
+    ast_node * stmt_node = create_contain_node(ast_operator_type::AST_OP_VAR_DECL_STMT);
 
     if (first_child) {
 
@@ -380,7 +380,7 @@ ast_node * create_var_decl_stmt_node(type_attr & type, var_id_attr & id)
     ast_node * decl_node = createVarDeclNode(type, id);
 
     // 创建变量声明语句
-    ast_node * stmt_node = create_contain_node(ast_operator_type::AST_OP_DECL_STMT);
+    ast_node * stmt_node = create_contain_node(ast_operator_type::AST_OP_VAR_DECL_STMT);
 
     stmt_node->type = decl_node->type;
 

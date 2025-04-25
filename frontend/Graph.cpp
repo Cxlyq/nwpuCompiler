@@ -63,14 +63,44 @@ string getNodeName(ast_node * astnode)
         case ast_operator_type::AST_OP_VAR_DECL:
             nodeName = "var-decl";
             break;
-        case ast_operator_type::AST_OP_DECL_STMT:
-            nodeName = "decl-stmt";
+        case ast_operator_type::AST_OP_CONST_DECL:
+            nodeName = "const-decl";
+            break;
+        case ast_operator_type::AST_OP_VAR_DECL_STMT:
+            nodeName = "var-decl-stmt";
+            break;
+        case ast_operator_type::AST_OP_CONST_DECL_STMT:
+            nodeName = "const-decl-stmt";
             break;
         case ast_operator_type::AST_OP_ADD:
             nodeName = "+";
             break;
         case ast_operator_type::AST_OP_SUB:
             nodeName = "-";
+            break;
+        case ast_operator_type::AST_OP_MUL:
+            nodeName = "*";
+            break;
+        case ast_operator_type::AST_OP_DIV:
+            nodeName = "/";
+            break;
+        case ast_operator_type::AST_OP_MOD:
+            nodeName = "%";
+            break;
+        case ast_operator_type::AST_OP_AND:
+            nodeName = "&&";
+            break;
+        case ast_operator_type::AST_OP_OR:
+            nodeName = "||";
+            break;
+        case ast_operator_type::AST_OP_POS:
+            nodeName = "+'";
+            break;
+        case ast_operator_type::AST_OP_NEG:
+            nodeName = "-'";
+            break;
+        case ast_operator_type::AST_OP_NOT:
+            nodeName = "!";
             break;
         case ast_operator_type::AST_OP_ASSIGN:
             nodeName = "=";

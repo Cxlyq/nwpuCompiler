@@ -22,8 +22,9 @@
 		],
 		"description": "function of (overriding) CSTVisitor produced by antlr",
 		"body": [
-			"\/\/\/ @brief ${1:brief}",
-			"\/\/\/ @param ctx CSTcontext",
+			"\/\/\/ @brief 非终结运算符${1:rulename}的遍历",
+			"\/\/\/ @param ctx CST上下文",
+			"\/\/\/ @return ${3:returnWho}",
 			"std::any MiniCCSTVisitor::visit${1:rulename}(MiniCParser::${1:rulename}Context * ctx)",
 			"{",
 			"\t\/*TODO:${2:TODOs}*\/",
@@ -32,5 +33,4 @@
 		],
 		"scope": "cpp"
 	}
-
 }
