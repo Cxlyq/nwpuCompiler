@@ -36,7 +36,7 @@ public:
 
 protected:
     /* 下面的函数都是从MiniCBaseVisitor继承下来的虚拟函数，需要重载实现 */
-	/* 少数几个并非虚拟函数，不带override */
+    /* 少数几个并非虚拟函数，不带override */
     /// @brief 非终结运算符compileUnit的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
@@ -179,76 +179,15 @@ protected:
     /// @return AST的节点
     std::any visitCond(MiniCParser::CondContext * ctx) override;
 
-    /// @brief 非终结符lVal的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    std::any visitLVal(MiniCParser::LValContext * ctx) override;
-
-    /// @brief 非终结符PrimaryExp的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    std::any visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx) override;
-
-    /// @brief 非终结运算符number中的遍历
+    /// @brief 非终结运算符lOrExp中的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
-    std::any visitNumber(MiniCParser::NumberContext * ctx) override;
+    std::any visitLOrExp(MiniCParser::LOrExpContext * ctx) override;
 
-    /// @brief 非终结运算符unaryExp中的遍历
+    /// @brief 非终结运算符andExp中的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
-    std::any visitUnaryExp(MiniCParser::UnaryExpContext * ctx);
-
-    /// @brief 非终结符mono的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    std::any visitMono(MiniCParser::MonoContext * ctx) override;
-
-    /// @brief 非终结符funcCall的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    std::any visitFuncCall(MiniCParser::FuncCallContext * ctx) override;
-
-
-    /// @brief 非终结运算符unaryOp中的遍历
-    /// @param ctx CST上下文
-    /// @return AST的节点
-    std::any visitUnaryOp(MiniCParser::UnaryOpContext * ctx) override;
-
-    /// @brief 非终结符FuncRParams的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    std::any visitFuncRParams(MiniCParser::FuncRParamsContext * ctx) override;
-
-    /// @brief 非终结运算符mulExp中的遍历
-    /// @param ctx CST上下文
-    /// @return AST的节点
-    std::any visitMulExp(MiniCParser::MulExpContext * ctx) override;
-
-    /// @brief 非终结运算符mulOp中的遍历
-    /// @param ctx CST上下文
-    /// @return AST的节点
-    std::any visitMulOp(MiniCParser::MulOpContext * ctx) override;
-
-    /// @brief 非终结运算符addExp中的遍历
-    /// @param ctx CST上下文
-    /// @return AST的节点
-    std::any visitAddExp(MiniCParser::AddExpContext * ctx) override;
-
-    /// @brief 非终结运算符addOp中的遍历
-    /// @param ctx CST上下文
-    /// @return AST的节点
-    std::any visitAddOp(MiniCParser::AddOpContext * ctx) override;
-
-    /// @brief 非终结运算符relExp中的遍历
-    /// @param ctx CST上下文
-    /// @return AST的节点
-    std::any visitRelExp(MiniCParser::RelExpContext * ctx) override;
-
-    /// @brief 非终结运算符relOp中的遍历
-    /// @param ctx CST上下文
-    /// @return AST的节点
-    std::any visitRelOp(MiniCParser::RelOpContext * ctx) override;
+    std::any visitLAndExp(MiniCParser::LAndExpContext * ctx) override;
 
     /// @brief 非终结运算符eqExp中的遍历
     /// @param ctx CST上下文
@@ -260,13 +199,73 @@ protected:
     /// @return AST的节点
     std::any visitEqOp(MiniCParser::EqOpContext * ctx) override;
 
-    /// @brief 非终结运算符andExp中的遍历
+    /// @brief 非终结运算符relExp中的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
-    std::any visitLAndExp(MiniCParser::LAndExpContext * ctx) override;
+    std::any visitRelExp(MiniCParser::RelExpContext * ctx) override;
 
-    /// @brief 非终结运算符lOrExp中的遍历
+    /// @brief 非终结运算符relOp中的遍历
     /// @param ctx CST上下文
     /// @return AST的节点
-    std::any visitLOrExp(MiniCParser::LOrExpContext * ctx) override;
+    std::any visitRelOp(MiniCParser::RelOpContext * ctx) override;
+
+    /// @brief 非终结运算符addExp中的遍历
+    /// @param ctx CST上下文
+    /// @return AST的节点
+    std::any visitAddExp(MiniCParser::AddExpContext * ctx) override;
+
+    /// @brief 非终结运算符addOp中的遍历
+    /// @param ctx CST上下文
+    /// @return AST的节点
+    std::any visitAddOp(MiniCParser::AddOpContext * ctx) override;
+
+    /// @brief 非终结运算符mulExp中的遍历
+    /// @param ctx CST上下文
+    /// @return AST的节点
+    std::any visitMulExp(MiniCParser::MulExpContext * ctx) override;
+
+    /// @brief 非终结运算符mulOp中的遍历
+    /// @param ctx CST上下文
+    /// @return AST的节点
+    std::any visitMulOp(MiniCParser::MulOpContext * ctx) override;
+
+    /// @brief 非终结运算符unaryExp中的遍历
+    /// @param ctx CST上下文
+    /// @return AST的节点
+    std::any visitUnaryExp(MiniCParser::UnaryExpContext * ctx);
+
+    /// @brief 非终结符mono的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    std::any visitMono(MiniCParser::MonoContext * ctx) override;
+
+    /// @brief 非终结运算符unaryOp中的遍历
+    /// @param ctx CST上下文
+    /// @return AST的节点
+    std::any visitUnaryOp(MiniCParser::UnaryOpContext * ctx) override;
+
+    /// @brief 非终结符funcCall的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    std::any visitFuncCall(MiniCParser::FuncCallContext * ctx) override;
+
+    /// @brief 非终结符FuncRParams的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    std::any visitFuncRParams(MiniCParser::FuncRParamsContext * ctx) override;
+
+    /// @brief 非终结符PrimaryExp的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    std::any visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx) override;
+
+    /// @brief 非终结符lVal的分析
+    /// @param ctx CST上下文
+    /// @return std::any AST的节点
+    std::any visitLVal(MiniCParser::LValContext * ctx) override;
+
+    /// @brief 非终结运算符number中的遍历
+    /// @param ctx CST上下文
+    /// @return AST的节点
+    std::any visitNumber(MiniCParser::NumberContext * ctx) override;
 };

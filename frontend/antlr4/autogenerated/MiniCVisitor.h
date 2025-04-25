@@ -71,12 +71,6 @@ public:
 
     virtual std::any visitCond(MiniCParser::CondContext *context) = 0;
 
-    virtual std::any visitPrimaryExp(MiniCParser::PrimaryExpContext *context) = 0;
-
-    virtual std::any visitLVal(MiniCParser::LValContext *context) = 0;
-
-    virtual std::any visitNumber(MiniCParser::NumberContext *context) = 0;
-
     virtual std::any visitLOrExp(MiniCParser::LOrExpContext *context) = 0;
 
     virtual std::any visitLAndExp(MiniCParser::LAndExpContext *context) = 0;
@@ -104,6 +98,12 @@ public:
     virtual std::any visitUnaryOp(MiniCParser::UnaryOpContext *context) = 0;
 
     virtual std::any visitFuncRParams(MiniCParser::FuncRParamsContext *context) = 0;
+
+    virtual std::any visitPrimaryExp(MiniCParser::PrimaryExpContext *context) = 0;
+
+    virtual std::any visitLVal(MiniCParser::LValContext *context) = 0;
+
+    virtual std::any visitNumber(MiniCParser::NumberContext *context) = 0;
 
 
 };

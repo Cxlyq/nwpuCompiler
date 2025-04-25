@@ -70,13 +70,6 @@ statement:
 expr: addExp; // ?表达式是否支持逻辑01 expr: cond;
 // 条件表达式：多项逻辑表达式
 cond: lOrExp;
-// 基本表达式：括号表达式、左值表达式、数值
-primaryExp: T_L_PAREN expr T_R_PAREN | lVal | number;
-// 左值表达式
-lVal: T_ID (T_L_SQBRA expr T_R_SQBRA)*;
-// 数值：整数/浮点数
-number: T_DIGIT | T_FLOAT_LITERAL;
-
 // 多项逻辑表达式（或表达式）
 lOrExp: lAndExp (T_OR lAndExp)*; //lAndExp | lOrExp T_OR lAndExp;
 // 单项逻辑表达式（与表达式）（多项相等性判断）
@@ -108,6 +101,12 @@ unaryExp:
 unaryOp: T_ADD | T_SUB | T_NOT;
 // 实参列表
 funcRParams: expr (T_COMMA expr)*;
+// 基本表达式：括号表达式、左值表达式、数值
+primaryExp: T_L_PAREN expr T_R_PAREN | lVal | number;
+// 左值表达式
+lVal: T_ID (T_L_SQBRA expr T_R_SQBRA)*;
+// 数值：整数/浮点数
+number: T_DIGIT | T_FLOAT_LITERAL;
 
 // 用正规式来进行词法规则的描述
 
