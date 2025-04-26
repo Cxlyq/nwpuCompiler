@@ -148,7 +148,7 @@ std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
     // 获取参数名称
     char * id = strdup(ctx->T_ID()->getText().c_str());
     var_id_attr paramId{id, (int64_t) ctx->T_ID()->getSymbol()->getLine()};
-    
+
     // 判断是否是数组参数
     bool isArray = ctx->T_L_SQBRA().size() > 0;
 
@@ -959,7 +959,13 @@ std::any MiniCCSTVisitor::visitFuncCall(MiniCParser::FuncCallContext * ctx)
 {
     // 识别的文法产生式：T_ID T_L_PAREN funcRParams? T_R_PAREN
     // TODO: [函数] 函数调用结点（->实参）
-    return nullptr;
+    char * id = strdup(ctx->T_ID()->getText().c_str());
+    ast_node * funcname_node = ast_node::New(id, (int64_t) ctx->T_ID()->getSymbol()->getLine());
+    ast_node * formalParamsNode = nullptr;
+    if (ctx->funcRParams()) {
+        formalParamsNode = std::any_cast<ast_node *>(visitFuncRParams(ctx->funcRParams()));
+    }
+    return create_func_call(funcname_node,formalParamsNode);
 }
 std::any MiniCCSTVisitor::visitFuncRParams(MiniCParser::FuncRParamsContext * ctx)
 {
