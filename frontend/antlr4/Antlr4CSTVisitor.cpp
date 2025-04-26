@@ -289,7 +289,7 @@ std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
     // T_ID (T_L_SQBRA expr T_R_SQBRA)* T_ASSIGN initVal;
 
     // 声明语句节点
-    ast_node * const_def_node = create_contain_node(ast_operator_type::AST_OP_CONST_DECL);
+    ast_node * const_def_node = create_contain_node(ast_operator_type::AST_OP_CONST_DEF);
 
     auto constId = ctx->T_ID()->getText();
     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
@@ -342,7 +342,7 @@ std::any MiniCCSTVisitor::visitVarDecl(MiniCParser::VarDeclContext * ctx)
 std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
 {
     // varDef: T_ID (T_L_SQBRA expr T_R_SQBRA)* (T_ASSIGN initVal)?;
-    ast_node * var_def_node = create_contain_node(ast_operator_type::AST_OP_VAR_DECL);
+    ast_node * var_def_node = create_contain_node(ast_operator_type::AST_OP_VAR_DEF);
     auto varId = ctx->T_ID()->getText();
     // 获取行号
     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
@@ -358,8 +358,7 @@ std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
         auto initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
         (void) var_def_node->insert_son_node(initValNode);
     }
-
-    return ast_node::New(varId, lineNo);
+    return var_def_node;
 }
 /// @brief 非终结运算符InitVal的遍历
 /// @param ctx CST上下文

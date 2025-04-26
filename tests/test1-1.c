@@ -1,7 +1,7 @@
 int add()
 {
-	int a,b=2;
-    const int c = 3;
-    a = b+c/-c;
-    return a + b + 2;
+	int a = 1, b = 2, c = 3;
+    const int d = 4;
+    a = (b + c) * 2;
+    return a + d;
 }
