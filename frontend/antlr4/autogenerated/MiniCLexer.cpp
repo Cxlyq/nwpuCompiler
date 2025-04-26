@@ -50,10 +50,10 @@ void miniclexerLexerInitialize() {
     std::vector<std::string>{
       "T_SEMICOLON", "T_L_BRACE", "T_R_BRACE", "T_L_PAREN", "T_R_PAREN", 
       "T_L_SQBRA", "T_R_SQBRA", "T_NOT", "T_MUL", "T_DIV", "T_MOD", "T_ADD", 
-      "T_SUB", "T_GE", "T_LE", "T_GREATER", "T_LESS", "T_EQUAL", "T_NEQUAL", 
-      "T_ASSIGN", "T_COMMA", "T_AND", "T_OR", "T_RETURN", "T_INT", "T_FLOAT", 
-      "T_VOID", "T_IF", "T_ELSE", "T_CONST", "T_WHILE", "T_BREAK", "T_CONTINUE", 
-      "T_ID", "T_INT_DIGIT", "T_FLOAT_DIGIT", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
+      "T_SUB", "T_GE", "T_LE", "T_GREATER", "T_LESS", "T_EQ", "T_NEQ", "T_ASSIGN", 
+      "T_COMMA", "T_AND", "T_OR", "T_RETURN", "T_INT", "T_FLOAT", "T_VOID", 
+      "T_IF", "T_ELSE", "T_CONST", "T_WHILE", "T_BREAK", "T_CONTINUE", "T_ID", 
+      "T_INT_DIGIT", "T_FLOAT_DIGIT", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
     },
     std::vector<std::string>{
       "DEFAULT_TOKEN_CHANNEL", "HIDDEN"
@@ -70,10 +70,10 @@ void miniclexerLexerInitialize() {
     std::vector<std::string>{
       "", "T_SEMICOLON", "T_L_BRACE", "T_R_BRACE", "T_L_PAREN", "T_R_PAREN", 
       "T_L_SQBRA", "T_R_SQBRA", "T_NOT", "T_MUL", "T_DIV", "T_MOD", "T_ADD", 
-      "T_SUB", "T_GE", "T_LE", "T_GREATER", "T_LESS", "T_EQUAL", "T_NEQUAL", 
-      "T_ASSIGN", "T_COMMA", "T_AND", "T_OR", "T_RETURN", "T_INT", "T_FLOAT", 
-      "T_VOID", "T_IF", "T_ELSE", "T_CONST", "T_WHILE", "T_BREAK", "T_CONTINUE", 
-      "T_ID", "T_INT_DIGIT", "T_FLOAT_DIGIT", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
+      "T_SUB", "T_GE", "T_LE", "T_GREATER", "T_LESS", "T_EQ", "T_NEQ", "T_ASSIGN", 
+      "T_COMMA", "T_AND", "T_OR", "T_RETURN", "T_INT", "T_FLOAT", "T_VOID", 
+      "T_IF", "T_ELSE", "T_CONST", "T_WHILE", "T_BREAK", "T_CONTINUE", "T_ID", 
+      "T_INT_DIGIT", "T_FLOAT_DIGIT", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
     }
   );
   static const int32_t serializedATNSegment[] = {

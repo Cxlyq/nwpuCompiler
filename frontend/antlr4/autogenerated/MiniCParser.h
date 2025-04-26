@@ -15,11 +15,10 @@ public:
     T_SEMICOLON = 1, T_L_BRACE = 2, T_R_BRACE = 3, T_L_PAREN = 4, T_R_PAREN = 5, 
     T_L_SQBRA = 6, T_R_SQBRA = 7, T_NOT = 8, T_MUL = 9, T_DIV = 10, T_MOD = 11, 
     T_ADD = 12, T_SUB = 13, T_GE = 14, T_LE = 15, T_GREATER = 16, T_LESS = 17, 
-    T_EQUAL = 18, T_NEQUAL = 19, T_ASSIGN = 20, T_COMMA = 21, T_AND = 22, 
-    T_OR = 23, T_RETURN = 24, T_INT = 25, T_FLOAT = 26, T_VOID = 27, T_IF = 28, 
-    T_ELSE = 29, T_CONST = 30, T_WHILE = 31, T_BREAK = 32, T_CONTINUE = 33, 
-    T_ID = 34, T_INT_DIGIT = 35, T_FLOAT_DIGIT = 36, WS = 37, LINE_COMMENT = 38, 
-    BLOCK_COMMENT = 39
+    T_EQ = 18, T_NEQ = 19, T_ASSIGN = 20, T_COMMA = 21, T_AND = 22, T_OR = 23, 
+    T_RETURN = 24, T_INT = 25, T_FLOAT = 26, T_VOID = 27, T_IF = 28, T_ELSE = 29, 
+    T_CONST = 30, T_WHILE = 31, T_BREAK = 32, T_CONTINUE = 33, T_ID = 34, 
+    T_INT_DIGIT = 35, T_FLOAT_DIGIT = 36, WS = 37, LINE_COMMENT = 38, BLOCK_COMMENT = 39
   };
 
   enum {
@@ -468,7 +467,7 @@ public:
   public:
     ExprContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    AddExpContext *addExp();
+    CondContext *cond();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
@@ -542,8 +541,8 @@ public:
   public:
     EqOpContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *T_EQUAL();
-    antlr4::tree::TerminalNode *T_NEQUAL();
+    antlr4::tree::TerminalNode *T_EQ();
+    antlr4::tree::TerminalNode *T_NEQ();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;

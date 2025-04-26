@@ -78,6 +78,9 @@ enum class ast_operator_type : int {
     /// @brief 赋值语句运算符
     AST_OP_ASSIGN,
 
+	/// @brief 选择语句运算符
+	AST_OP_IFELSE,
+
     /// @brief 变量声明语句
     AST_OP_VAR_DECL_STMT,
 
@@ -116,6 +119,24 @@ enum class ast_operator_type : int {
 
     /// @brief 二元运算符||
     AST_OP_OR,
+
+	/// @brief 二元运算符==
+	AST_OP_EQ,
+
+	/// @brief 二元运算符!=
+	AST_OP_NEQ,
+
+	/// @brief 二元运算符>=
+	AST_OP_GE,
+
+	/// @brief 二元运算符<=
+	AST_OP_LE,
+
+	/// @brief 二元运算符>
+	AST_OP_GNE,
+
+	/// @brief 二元运算符<
+	AST_OP_LNE,
 
     /// @brief 一元运算符+
     AST_OP_POS,

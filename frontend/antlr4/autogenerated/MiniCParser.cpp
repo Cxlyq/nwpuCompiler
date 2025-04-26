@@ -59,10 +59,10 @@ void minicParserInitialize() {
     std::vector<std::string>{
       "", "T_SEMICOLON", "T_L_BRACE", "T_R_BRACE", "T_L_PAREN", "T_R_PAREN", 
       "T_L_SQBRA", "T_R_SQBRA", "T_NOT", "T_MUL", "T_DIV", "T_MOD", "T_ADD", 
-      "T_SUB", "T_GE", "T_LE", "T_GREATER", "T_LESS", "T_EQUAL", "T_NEQUAL", 
-      "T_ASSIGN", "T_COMMA", "T_AND", "T_OR", "T_RETURN", "T_INT", "T_FLOAT", 
-      "T_VOID", "T_IF", "T_ELSE", "T_CONST", "T_WHILE", "T_BREAK", "T_CONTINUE", 
-      "T_ID", "T_INT_DIGIT", "T_FLOAT_DIGIT", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
+      "T_SUB", "T_GE", "T_LE", "T_GREATER", "T_LESS", "T_EQ", "T_NEQ", "T_ASSIGN", 
+      "T_COMMA", "T_AND", "T_OR", "T_RETURN", "T_INT", "T_FLOAT", "T_VOID", 
+      "T_IF", "T_ELSE", "T_CONST", "T_WHILE", "T_BREAK", "T_CONTINUE", "T_ID", 
+      "T_INT_DIGIT", "T_FLOAT_DIGIT", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
     }
   );
   static const int32_t serializedATNSegment[] = {
@@ -146,7 +146,7 @@ void minicParserInitialize() {
   	5,5,0,0,225,226,3,30,15,0,226,232,1,0,0,0,227,228,5,32,0,0,228,232,5,
   	1,0,0,229,230,5,33,0,0,230,232,5,1,0,0,231,197,1,0,0,0,231,202,1,0,0,
   	0,231,207,1,0,0,0,231,209,1,0,0,0,231,212,1,0,0,0,231,221,1,0,0,0,231,
-  	227,1,0,0,0,231,229,1,0,0,0,232,31,1,0,0,0,233,234,3,48,24,0,234,33,1,
+  	227,1,0,0,0,231,229,1,0,0,0,232,31,1,0,0,0,233,234,3,34,17,0,234,33,1,
   	0,0,0,235,236,3,36,18,0,236,35,1,0,0,0,237,242,3,38,19,0,238,239,5,23,
   	0,0,239,241,3,38,19,0,240,238,1,0,0,0,241,244,1,0,0,0,242,240,1,0,0,0,
   	242,243,1,0,0,0,243,37,1,0,0,0,244,242,1,0,0,0,245,250,3,40,20,0,246,
@@ -1893,8 +1893,8 @@ MiniCParser::ExprContext::ExprContext(ParserRuleContext *parent, size_t invoking
   : ParserRuleContext(parent, invokingState) {
 }
 
-MiniCParser::AddExpContext* MiniCParser::ExprContext::addExp() {
-  return getRuleContext<MiniCParser::AddExpContext>(0);
+MiniCParser::CondContext* MiniCParser::ExprContext::cond() {
+  return getRuleContext<MiniCParser::CondContext>(0);
 }
 
 
@@ -1924,7 +1924,7 @@ MiniCParser::ExprContext* MiniCParser::expr() {
   try {
     enterOuterAlt(_localctx, 1);
     setState(233);
-    addExp();
+    cond();
    
   }
   catch (RecognitionException &e) {
@@ -2187,9 +2187,9 @@ MiniCParser::EqExpContext* MiniCParser::eqExp() {
     setState(259);
     _errHandler->sync(this);
     _la = _input->LA(1);
-    while (_la == MiniCParser::T_EQUAL
+    while (_la == MiniCParser::T_EQ
 
-    || _la == MiniCParser::T_NEQUAL) {
+    || _la == MiniCParser::T_NEQ) {
       setState(254);
       eqOp();
       setState(255);
@@ -2215,12 +2215,12 @@ MiniCParser::EqOpContext::EqOpContext(ParserRuleContext *parent, size_t invoking
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* MiniCParser::EqOpContext::T_EQUAL() {
-  return getToken(MiniCParser::T_EQUAL, 0);
+tree::TerminalNode* MiniCParser::EqOpContext::T_EQ() {
+  return getToken(MiniCParser::T_EQ, 0);
 }
 
-tree::TerminalNode* MiniCParser::EqOpContext::T_NEQUAL() {
-  return getToken(MiniCParser::T_NEQUAL, 0);
+tree::TerminalNode* MiniCParser::EqOpContext::T_NEQ() {
+  return getToken(MiniCParser::T_NEQ, 0);
 }
 
 
@@ -2252,9 +2252,9 @@ MiniCParser::EqOpContext* MiniCParser::eqOp() {
     enterOuterAlt(_localctx, 1);
     setState(262);
     _la = _input->LA(1);
-    if (!(_la == MiniCParser::T_EQUAL
+    if (!(_la == MiniCParser::T_EQ
 
-    || _la == MiniCParser::T_NEQUAL)) {
+    || _la == MiniCParser::T_NEQ)) {
     _errHandler->recoverInline(this);
     }
     else {
