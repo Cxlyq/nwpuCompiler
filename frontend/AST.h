@@ -156,6 +156,12 @@ enum class ast_operator_type : int {
     /// @brief 一元运算符!
     AST_OP_NOT,
 
+    /// @brief break是叶子节点
+    AST_OP_BREAK,
+
+    /// @brief continue是叶子节点
+    AST_OP_CONTINUE,
+
     // TODO: 抽象语法树其它内部节点运算符追加，现在缺比较和判等运算符
 
     /// @brief 最大标识符，表示非法运算符
