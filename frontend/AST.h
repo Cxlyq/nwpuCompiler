@@ -69,7 +69,7 @@ enum class ast_operator_type : int {
     /// @brief 多个语句组成的块运算符，也称为复合语句
     AST_OP_BLOCK,
 
-    /// @brief 符合语句，也就是语句块，两个名字一个运算符
+    /// @brief 复合语句，也就是语句块，两个名字一个运算符
     AST_OP_COMPOUNDSTMT = AST_OP_BLOCK,
 
     /// @brief return语句运算符
@@ -80,6 +80,9 @@ enum class ast_operator_type : int {
 
 	/// @brief 选择语句运算符
 	AST_OP_IFELSE,
+
+	/// @brief 循环语句运算符
+	AST_OP_WHILE,
 
     /// @brief 变量声明语句
     AST_OP_VAR_DECL_STMT,

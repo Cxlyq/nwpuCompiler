@@ -148,7 +148,7 @@ std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
     // 获取参数名称
     char * id = strdup(ctx->T_ID()->getText().c_str());
     var_id_attr paramId{id, (int64_t) ctx->T_ID()->getSymbol()->getLine()};
-    
+
     // 判断是否是数组参数
     bool isArray = ctx->T_L_SQBRA().size() > 0;
 
@@ -295,14 +295,14 @@ std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
     auto constIdNode = ast_node::New(constId, lineNo);
     (void) const_def_node->insert_son_node(constIdNode);
-    // TODO: [交流] 统一数组结点格式
+    // TODO: [交流:array] 统一数组结点格式
     for (auto & exprCtx: ctx->expr()) {
         // 多维数组节点
         ast_node * const_val_node = std::any_cast<ast_node *>(visitExpr(exprCtx));
         (void) const_def_node->insert_son_node(const_val_node);
     }
     if (!ctx->initVal()) {
-        // TODO:处理throw问题
+        // TODO: [语义检查] 处理throw问题
         printf("const without initialization.");
         return const_def_node;
     } else {
@@ -497,14 +497,20 @@ std::any MiniCCSTVisitor::visitExpressionStatement(MiniCParser::ExpressionStatem
 
 std::any MiniCCSTVisitor::visitIfelseStatement(MiniCParser::IfelseStatementContext * ctx)
 {
-    // TODO: [非线性] 分支语句结点
-    return nullptr;
+    // TODO: [选择：非线性] 是否需要加一层结点表明各块功能？
+    auto condNode = std::any_cast<ast_node *>(visitCond(ctx->cond()));
+    auto ifstmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()[0]));
+    ast_node * elsestmtNode = nullptr;
+    if (ctx->T_ELSE()) {
+        elsestmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()[1]));
+    }
+    return ast_node::New(ast_operator_type::AST_OP_IFELSE, condNode, ifstmtNode, elsestmtNode, nullptr);
 }
-
 std::any MiniCCSTVisitor::visitWhileStatement(MiniCParser::WhileStatementContext * ctx)
 {
-    // TODO: [非线性] 循环语句结点
-    return nullptr;
+    auto condNode = std::any_cast<ast_node *>(visitCond(ctx->cond()));
+	auto stmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()));
+    return ast_node::New(ast_operator_type::AST_OP_WHILE, condNode, stmtNode, nullptr);
 }
 
 std::any MiniCCSTVisitor::visitBreakStatement(MiniCParser::BreakStatementContext * ctx)
@@ -671,8 +677,6 @@ std::any MiniCCSTVisitor::visitRelExp(MiniCParser::RelExpContext * ctx)
 
     // 有操作符，肯定会进循环，使得right设置正确的值
     for (int k = 0; k < (int) opsCtxVec.size(); k++) {
-        // TODO：[参考]需要区分位置的同类子结点可以直接使用forautoin，否则确定下标
-
         // 获取运算符
         ast_operator_type op = std::any_cast<ast_operator_type>(visitRelOp(opsCtxVec[k]));
 
@@ -726,7 +730,7 @@ std::any MiniCCSTVisitor::visitAddExp(MiniCParser::AddExpContext * ctx)
 
     // 有操作符，肯定会进循环，使得right设置正确的值
     for (int k = 0; k < (int) opsCtxVec.size(); k++) {
-        // TODO：[参考]需要区分位置的同类子结点可以直接使用forautoin，否则确定下标
+        // TODO: [参考]需要区分位置的同类子结点可以直接使用forautoin，否则确定下标
 
         // 获取运算符
         ast_operator_type op = std::any_cast<ast_operator_type>(visitAddOp(opsCtxVec[k]));
@@ -964,7 +968,8 @@ std::any MiniCCSTVisitor::visitFuncCall(MiniCParser::FuncCallContext * ctx)
 std::any MiniCCSTVisitor::visitFuncRParams(MiniCParser::FuncRParamsContext * ctx)
 {
     // 识别的文法产生式：realParamList : expr (T_COMMA expr)*;
-    // TODO: [函数] 实参列表结点（确认数组支持）
+    // TODO: [函数] 实参列表结点
+    // TODO: [数组] 确认数组支持
     auto paramListNode = create_contain_node(ast_operator_type::AST_OP_FUNC_REAL_PARAMS);
 
     for (auto paramCtx: ctx->expr()) {

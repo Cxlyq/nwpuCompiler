@@ -51,6 +51,12 @@ string getNodeName(ast_node * astnode)
         case ast_operator_type::AST_OP_RETURN:
             nodeName = "return";
             break;
+        case ast_operator_type::AST_OP_IFELSE:
+            nodeName = "cond-if-else";
+            break;
+        case ast_operator_type::AST_OP_WHILE:
+            nodeName = "while-cond-movement";
+            break;
         case ast_operator_type::AST_OP_FUNC_DEF:
             nodeName = "func-def";
             break;
