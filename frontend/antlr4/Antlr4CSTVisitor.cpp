@@ -530,11 +530,17 @@ std::any MiniCCSTVisitor::visitExpr(MiniCParser::ExprContext * ctx)
     return visitCond(ctx->cond()); //把addExp修改为cond
 }
 
+/// @brief 非终结运算符cond的遍历
+/// @param ctx CST上下文
+/// @return 下级结点
 std::any MiniCCSTVisitor::visitCond(MiniCParser::CondContext * ctx)
 {
     // TODO: [选择] 是否弃掉这层壳？
     return visitLOrExp(ctx->lOrExp());
 }
+/// @brief 非终结运算符lOrExp的遍历
+/// @param ctx CST上下文
+/// @return 或运算（左结合后）的根结点
 std::any MiniCCSTVisitor::visitLOrExp(MiniCParser::LOrExpContext * ctx)
 {
     // 识别的文法产生式：lOrExp : lAndExp (T_OR lAndExp)*;
@@ -569,6 +575,9 @@ std::any MiniCCSTVisitor::visitLOrExp(MiniCParser::LOrExpContext * ctx)
 
     return left;
 }
+/// @brief 非终结运算符lAndExp的遍历
+/// @param ctx CST上下文
+/// @return 与运算（左结合后）的根结点
 std::any MiniCCSTVisitor::visitLAndExp(MiniCParser::LAndExpContext * ctx)
 {
     // 识别的文法产生式：lOrExp : eqExp (T_AND eqExp)*;
@@ -594,9 +603,11 @@ std::any MiniCCSTVisitor::visitLAndExp(MiniCParser::LAndExpContext * ctx)
     }
     return left;
 }
+/// @brief 非终结运算符eqExp的遍历
+/// @param ctx CST上下文
+/// @return 判等运算（左结合后）的根结点
 std::any MiniCCSTVisitor::visitEqExp(MiniCParser::EqExpContext * ctx)
 {
-    // TODO: [逻辑] 判等结点
     // 识别的文法产生式：eqExp : relExp (eqOp relExp)*;
     if (ctx->eqOp().empty()) {
         // 没有eqOp运算符，则说明闭包识别为0，只识别了第一个非终结符relExp
@@ -629,9 +640,11 @@ std::any MiniCCSTVisitor::visitEqExp(MiniCParser::EqExpContext * ctx)
 
     return left;
 }
+/// @brief 非终结运算符eqOp的遍历
+/// @param ctx CST上下文
+/// @return [非结点] ast_operator_type 操作类型
 std::any MiniCCSTVisitor::visitEqOp(MiniCParser::EqOpContext * ctx)
 {
-    // TODO: [逻辑] 判等算符（并入父节点？）
     if (ctx->T_EQ()) {
         return ast_operator_type::AST_OP_EQ;
     } else if (ctx->T_NEQ()) {
@@ -640,6 +653,9 @@ std::any MiniCCSTVisitor::visitEqOp(MiniCParser::EqOpContext * ctx)
         return ast_operator_type::AST_OP_MAX;
     }
 }
+/// @brief 非终结运算符relExp的遍历
+/// @param ctx CST上下文
+/// @return 比较运算（左结合后）的根结点
 std::any MiniCCSTVisitor::visitRelExp(MiniCParser::RelExpContext * ctx)
 {
     // 识别的文法产生式：relExp : addExp (relOp addExp)*;
@@ -675,6 +691,9 @@ std::any MiniCCSTVisitor::visitRelExp(MiniCParser::RelExpContext * ctx)
 
     return left;
 }
+/// @brief 非终结运算符relOp的遍历
+/// @param ctx CST上下文
+/// @return [非结点] ast_operator_type 操作类型
 std::any MiniCCSTVisitor::visitRelOp(MiniCParser::RelOpContext * ctx)
 {
     if (ctx->T_GE()) {
