@@ -62,7 +62,7 @@ void minicParserInitialize() {
       "T_SUB", "T_GE", "T_LE", "T_GREATER", "T_LESS", "T_EQUAL", "T_NEQUAL", 
       "T_ASSIGN", "T_COMMA", "T_AND", "T_OR", "T_RETURN", "T_INT", "T_FLOAT", 
       "T_VOID", "T_IF", "T_ELSE", "T_CONST", "T_WHILE", "T_BREAK", "T_CONTINUE", 
-      "T_ID", "T_DIGIT", "T_FLOAT_LITERAL", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
+      "T_ID", "T_INT_DIGIT", "T_FLOAT_DIGIT", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
     }
   );
   static const int32_t serializedATNSegment[] = {
@@ -836,8 +836,8 @@ MiniCParser::BlockItemContext* MiniCParser::blockItem() {
       case MiniCParser::T_BREAK:
       case MiniCParser::T_CONTINUE:
       case MiniCParser::T_ID:
-      case MiniCParser::T_DIGIT:
-      case MiniCParser::T_FLOAT_LITERAL: {
+      case MiniCParser::T_INT_DIGIT:
+      case MiniCParser::T_FLOAT_DIGIT: {
         enterOuterAlt(_localctx, 1);
         setState(122);
         statement();
@@ -1471,8 +1471,8 @@ MiniCParser::InitValContext* MiniCParser::initVal() {
       case MiniCParser::T_ADD:
       case MiniCParser::T_SUB:
       case MiniCParser::T_ID:
-      case MiniCParser::T_DIGIT:
-      case MiniCParser::T_FLOAT_LITERAL: {
+      case MiniCParser::T_INT_DIGIT:
+      case MiniCParser::T_FLOAT_DIGIT: {
         _localctx = _tracker.createInstance<MiniCParser::SingleValContext>(_localctx);
         enterOuterAlt(_localctx, 1);
         setState(182);
@@ -3174,12 +3174,12 @@ MiniCParser::NumberContext::NumberContext(ParserRuleContext *parent, size_t invo
   : ParserRuleContext(parent, invokingState) {
 }
 
-tree::TerminalNode* MiniCParser::NumberContext::T_DIGIT() {
-  return getToken(MiniCParser::T_DIGIT, 0);
+tree::TerminalNode* MiniCParser::NumberContext::T_INT_DIGIT() {
+  return getToken(MiniCParser::T_INT_DIGIT, 0);
 }
 
-tree::TerminalNode* MiniCParser::NumberContext::T_FLOAT_LITERAL() {
-  return getToken(MiniCParser::T_FLOAT_LITERAL, 0);
+tree::TerminalNode* MiniCParser::NumberContext::T_FLOAT_DIGIT() {
+  return getToken(MiniCParser::T_FLOAT_DIGIT, 0);
 }
 
 
@@ -3211,9 +3211,9 @@ MiniCParser::NumberContext* MiniCParser::number() {
     enterOuterAlt(_localctx, 1);
     setState(339);
     _la = _input->LA(1);
-    if (!(_la == MiniCParser::T_DIGIT
+    if (!(_la == MiniCParser::T_INT_DIGIT
 
-    || _la == MiniCParser::T_FLOAT_LITERAL)) {
+    || _la == MiniCParser::T_FLOAT_DIGIT)) {
     _errHandler->recoverInline(this);
     }
     else {

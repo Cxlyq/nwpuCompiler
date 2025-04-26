@@ -18,7 +18,7 @@ public:
     T_EQUAL = 18, T_NEQUAL = 19, T_ASSIGN = 20, T_COMMA = 21, T_AND = 22, 
     T_OR = 23, T_RETURN = 24, T_INT = 25, T_FLOAT = 26, T_VOID = 27, T_IF = 28, 
     T_ELSE = 29, T_CONST = 30, T_WHILE = 31, T_BREAK = 32, T_CONTINUE = 33, 
-    T_ID = 34, T_DIGIT = 35, T_FLOAT_LITERAL = 36, WS = 37, LINE_COMMENT = 38, 
+    T_ID = 34, T_INT_DIGIT = 35, T_FLOAT_DIGIT = 36, WS = 37, LINE_COMMENT = 38, 
     BLOCK_COMMENT = 39
   };
 
@@ -770,8 +770,8 @@ public:
   public:
     NumberContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
-    antlr4::tree::TerminalNode *T_DIGIT();
-    antlr4::tree::TerminalNode *T_FLOAT_LITERAL();
+    antlr4::tree::TerminalNode *T_INT_DIGIT();
+    antlr4::tree::TerminalNode *T_FLOAT_DIGIT();
 
 
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;

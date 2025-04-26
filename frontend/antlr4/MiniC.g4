@@ -105,7 +105,7 @@ primaryExp:
 // 左值表达式
 lVal: T_ID (T_L_SQBRA expr T_R_SQBRA)*;
 // 数值：整数/浮点数
-number: T_DIGIT | T_FLOAT_LITERAL;
+number: T_INT_DIGIT | T_FLOAT_DIGIT;
 
 // 用正规式来进行词法规则的描述
 
@@ -153,12 +153,12 @@ T_BREAK: 'break';
 T_CONTINUE: 'continue';
 
 T_ID: [a-zA-Z_][a-zA-Z0-9_]*;
-T_DIGIT:
+T_INT_DIGIT:
 	'0' [xX][0-9a-fA-F]+
 	| '0' [0-7]*
 	| [1-9][0-9]*
 	| '0';
-T_FLOAT_LITERAL: ([0-9]+ '.' [0-9]* | '.' [0-9]+ | [0-9]+ '.') (
+T_FLOAT_DIGIT: ([0-9]+ '.' [0-9]* | '.' [0-9]+ | [0-9]+ '.') (
 		([eE][+-]? [0-9]+)?
 	);
 

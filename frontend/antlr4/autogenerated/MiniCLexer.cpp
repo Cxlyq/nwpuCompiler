@@ -53,7 +53,7 @@ void miniclexerLexerInitialize() {
       "T_SUB", "T_GE", "T_LE", "T_GREATER", "T_LESS", "T_EQUAL", "T_NEQUAL", 
       "T_ASSIGN", "T_COMMA", "T_AND", "T_OR", "T_RETURN", "T_INT", "T_FLOAT", 
       "T_VOID", "T_IF", "T_ELSE", "T_CONST", "T_WHILE", "T_BREAK", "T_CONTINUE", 
-      "T_ID", "T_DIGIT", "T_FLOAT_LITERAL", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
+      "T_ID", "T_INT_DIGIT", "T_FLOAT_DIGIT", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
     },
     std::vector<std::string>{
       "DEFAULT_TOKEN_CHANNEL", "HIDDEN"
@@ -73,7 +73,7 @@ void miniclexerLexerInitialize() {
       "T_SUB", "T_GE", "T_LE", "T_GREATER", "T_LESS", "T_EQUAL", "T_NEQUAL", 
       "T_ASSIGN", "T_COMMA", "T_AND", "T_OR", "T_RETURN", "T_INT", "T_FLOAT", 
       "T_VOID", "T_IF", "T_ELSE", "T_CONST", "T_WHILE", "T_BREAK", "T_CONTINUE", 
-      "T_ID", "T_DIGIT", "T_FLOAT_LITERAL", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
+      "T_ID", "T_INT_DIGIT", "T_FLOAT_DIGIT", "WS", "LINE_COMMENT", "BLOCK_COMMENT"
     }
   );
   static const int32_t serializedATNSegment[] = {

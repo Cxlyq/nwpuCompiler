@@ -717,8 +717,7 @@ std::any MiniCCSTVisitor::visitUnaryOp(MiniCParser::UnaryOpContext * ctx)
 /// @return 下级结点
 std::any MiniCCSTVisitor::visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx)
 {
-    // 识别文法产生式 primaryExp: T_L_PAREN expr T_R_PAREN | T_DIGIT | lVal | T_ID T_L_PAREN funcRParams? T_R_PAREN;
-    // 将T_DIGIT修改为number
+    // 识别文法产生式 primaryExp: T_L_PAREN expr T_R_PAREN | number | lVal | T_ID T_L_PAREN funcRParams? T_R_PAREN;
     if (Instanceof(pexprCtx, MiniCParser::ParenExprContext *, ctx)) {
         return visitParenExpr(pexprCtx);
     } else if (Instanceof(lvalCtx, MiniCParser::LeftValueContext *, ctx)) {
@@ -795,15 +794,15 @@ std::any MiniCCSTVisitor::visitBasicNum(MiniCParser::BasicNumContext * ctx)
 std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
 {
     ast_node * numberNode = nullptr;
-    if (ctx->T_DIGIT()) {
-        uint32_t val = (uint32_t) stoull(ctx->T_DIGIT()->getText());
-        int64_t lineNo = (int64_t) ctx->T_DIGIT()->getSymbol()->getLine();
+    if (ctx->T_INT_DIGIT()) {
+        uint32_t val = (uint32_t) stoull(ctx->T_INT_DIGIT()->getText());
+        int64_t lineNo = (int64_t) ctx->T_INT_DIGIT()->getSymbol()->getLine();
         numberNode = ast_node::New(digit_int_attr{val, lineNo});
     }
-    // else if (ctx->T_FLOAT_LITERAL()) {
+    // else if (ctx->T_FLOAT_DIGIT()) {
     // 	   //TODO: [交流:fp]了解sysY的float标准
-    //     float_t val = (float_t) stoull(ctx->T_FLOAT_LITERAL()->getText());
-    //     int64_t lineNo = (int64_t) ctx->T_FLOAT_LITERAL()->getSymbol()->getLine();
+    //     float_t val = (float_t) stoull(ctx->T_FLOAT_DIGIT()->getText());
+    //     int64_t lineNo = (int64_t) ctx->T_FLOAT_DIGIT()->getSymbol()->getLine();
     //     //TODO: [fp]ast_node::New 扩展digit_float_attr
     //     numberNode = ast_node::New(digit_float_attr{val, lineNo});
     // }
