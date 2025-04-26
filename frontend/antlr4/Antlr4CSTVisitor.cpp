@@ -510,13 +510,13 @@ std::any MiniCCSTVisitor::visitWhileStatement(MiniCParser::WhileStatementContext
 std::any MiniCCSTVisitor::visitBreakStatement(MiniCParser::BreakStatementContext * ctx)
 {
     // TODO: [非线性] Break操作（结点？）
-    return nullptr;
+    return ast_node::New(ast_operator_type::AST_OP_BREAK, nullptr);
 }
 
 std::any MiniCCSTVisitor::visitContinueStatement(MiniCParser::ContinueStatementContext * ctx)
 {
     // TODO: [非线性] Continue操作（结点？）
-    return nullptr;
+    return ast_node::New(ast_operator_type::AST_OP_CONTINUE, nullptr);
 }
 
 /// @brief 非终结运算符expr的遍历

@@ -75,6 +75,8 @@ bool ast_node::isLeafNode()
         case ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT:
         case ast_operator_type::AST_OP_LEAF_VAR_ID:
         case ast_operator_type::AST_OP_LEAF_TYPE:
+        case ast_operator_type::AST_OP_CONTINUE:
+        case ast_operator_type::AST_OP_BREAK:
             is_leaf = true;
             break;
         default:
