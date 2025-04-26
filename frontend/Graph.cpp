@@ -102,6 +102,24 @@ string getNodeName(ast_node * astnode)
         case ast_operator_type::AST_OP_OR:
             nodeName = "||";
             break;
+        case ast_operator_type::AST_OP_EQ:
+            nodeName = "==";
+            break;
+        case ast_operator_type::AST_OP_NEQ:
+            nodeName = "!=";
+            break;
+        case ast_operator_type::AST_OP_GE:
+            nodeName = ">=";
+            break;
+        case ast_operator_type::AST_OP_LE:
+            nodeName = "<=";
+            break;
+        case ast_operator_type::AST_OP_GNE:
+            nodeName = ">";
+            break;
+        case ast_operator_type::AST_OP_LNE:
+            nodeName = "<";
+            break;
         case ast_operator_type::AST_OP_POS:
             nodeName = "+'";
             break;

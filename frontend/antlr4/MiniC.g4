@@ -67,7 +67,7 @@ statement:
 	| T_BREAK T_SEMICOLON											# breakStatement
 	| T_CONTINUE T_SEMICOLON										# continueStatement;
 // 表达式：多项算术表达式
-expr: addExp; // ?表达式是否支持逻辑01 expr: cond;
+expr: cond; // ?表达式是否支持逻辑01 expr: cond;
 // 条件表达式：多项逻辑表达式
 cond: lOrExp;
 // 多项逻辑表达式（或表达式）
@@ -77,7 +77,7 @@ lAndExp: eqExp (T_AND eqExp)*;
 // 相等性表达式（多项关系）
 eqExp: relExp (eqOp relExp)*;
 // 相等性判断运算符
-eqOp: T_EQUAL | T_NEQUAL;
+eqOp: T_EQ | T_NEQ;
 // 关系表达式
 relExp: addExp (relOp addExp)*;
 // 关系运算符
@@ -132,8 +132,8 @@ T_LE: '<=';
 T_GREATER: '>';
 T_LESS: '<';
 
-T_EQUAL: '==';
-T_NEQUAL: '!=';
+T_EQ: '==';
+T_NEQ: '!=';
 
 T_ASSIGN: '=';
 T_COMMA: ',';

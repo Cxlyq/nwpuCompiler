@@ -301,9 +301,15 @@ std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
         ast_node * const_val_node = std::any_cast<ast_node *>(visitExpr(exprCtx));
         (void) const_def_node->insert_son_node(const_val_node);
     }
-    auto initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
-    (void) const_def_node->insert_son_node(initValNode);
-    return const_def_node;
+    if (!ctx->initVal()) {
+        // TODO:处理throw问题
+        printf("const without initialization.");
+        return const_def_node;
+    } else {
+        auto initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
+        (void) const_def_node->insert_son_node(initValNode);
+        return const_def_node;
+    }
 }
 
 /// @brief 非终结运算符varDecl的遍历
@@ -520,60 +526,202 @@ std::any MiniCCSTVisitor::visitExpr(MiniCParser::ExprContext * ctx)
 {
     // 识别产生式：expr: addExp;
     // TODO: [选择][交流] 是否考虑逻辑算术混合运算问题
-    return visitAddExp(ctx->addExp());
-    // return visitCond(ctx->cond()); //把addExp修改为cond
+    // return visitAddExp(ctx->addExp());
+    return visitCond(ctx->cond()); //把addExp修改为cond
 }
 
+/// @brief 非终结运算符cond的遍历
+/// @param ctx CST上下文
+/// @return 下级结点
 std::any MiniCCSTVisitor::visitCond(MiniCParser::CondContext * ctx)
 {
     // TODO: [选择] 是否弃掉这层壳？
-    // TODO: [逻辑] 逻辑表达式
-    return nullptr;
+    return visitLOrExp(ctx->lOrExp());
 }
+/// @brief 非终结运算符lOrExp的遍历
+/// @param ctx CST上下文
+/// @return 或运算（左结合后）的根结点
 std::any MiniCCSTVisitor::visitLOrExp(MiniCParser::LOrExpContext * ctx)
 {
-    // TODO: [逻辑] 或运算结点
-    return nullptr;
+    // 识别的文法产生式：lOrExp : lAndExp (T_OR lAndExp)*;
+    if (ctx->T_OR().empty()) {
+        // 没有'||'运算符，则说明闭包识别为0，只识别了第一个非终结符lAndExp
+        return visitLAndExp(ctx->lAndExp()[0]);
+    }
+
+    ast_node *left, *right;
+
+    // 存在'||'运算符，记录方便按个数进行遍历
+    auto opsCtxVec = ctx->T_OR();
+
+    // 有操作符，肯定会进循环，使得right设置正确的值
+    for (int k = 0; k < (int) opsCtxVec.size(); k++) {
+
+        // 获取运算符
+        ast_operator_type op = ast_operator_type::AST_OP_OR;
+
+        if (k == 0) {
+
+            // 左操作数
+            left = std::any_cast<ast_node *>(visitLAndExp(ctx->lAndExp()[k]));
+        }
+
+        // 右操作数
+        right = std::any_cast<ast_node *>(visitLAndExp(ctx->lAndExp()[k + 1]));
+
+        // 新建结点作为下一个运算符的左操作符
+        left = ast_node::New(op, left, right, nullptr);
+    }
+
+    return left;
 }
+/// @brief 非终结运算符lAndExp的遍历
+/// @param ctx CST上下文
+/// @return 与运算（左结合后）的根结点
 std::any MiniCCSTVisitor::visitLAndExp(MiniCParser::LAndExpContext * ctx)
 {
-    // TODO: [逻辑] 与运算结点
-    return nullptr;
+    // 识别的文法产生式：lOrExp : eqExp (T_AND eqExp)*;
+    if (ctx->T_AND().empty()) {
+        // 没有'&&'运算符，则说明闭包识别为0，只识别了第一个非终结符eqExp
+        return visitEqExp(ctx->eqExp()[0]);
+    }
+    ast_node *left, *right;
+    // 存在'&&'运算符，记录方便按个数进行遍历
+    auto opsCtxVec = ctx->T_AND();
+    // 有操作符，肯定会进循环，使得right设置正确的值
+    for (int k = 0; k < (int) opsCtxVec.size(); k++) {
+        // 获取运算符
+        ast_operator_type op = ast_operator_type::AST_OP_AND;
+        if (k == 0) {
+            // 左操作数
+            left = std::any_cast<ast_node *>(visitEqExp(ctx->eqExp()[k]));
+        }
+        // 右操作数
+        right = std::any_cast<ast_node *>(visitEqExp(ctx->eqExp()[k + 1]));
+        // 新建结点作为下一个运算符的左操作符
+        left = ast_node::New(op, left, right, nullptr);
+    }
+    return left;
 }
+/// @brief 非终结运算符eqExp的遍历
+/// @param ctx CST上下文
+/// @return 判等运算（左结合后）的根结点
 std::any MiniCCSTVisitor::visitEqExp(MiniCParser::EqExpContext * ctx)
 {
-    // TODO: [逻辑] 判等结点
-    return nullptr;
+    // 识别的文法产生式：eqExp : relExp (eqOp relExp)*;
+    if (ctx->eqOp().empty()) {
+        // 没有eqOp运算符，则说明闭包识别为0，只识别了第一个非终结符relExp
+        return visitRelExp(ctx->relExp()[0]);
+    }
+
+    ast_node *left, *right;
+
+    // 存在eqOp运算符，记录方便按个数进行遍历
+    auto opsCtxVec = ctx->eqOp();
+
+    // 有操作符，肯定会进循环，使得right设置正确的值
+    for (int k = 0; k < (int) opsCtxVec.size(); k++) {
+
+        // 获取运算符
+        ast_operator_type op = std::any_cast<ast_operator_type>(visitEqOp(opsCtxVec[k]));
+
+        if (k == 0) {
+
+            // 左操作数
+            left = std::any_cast<ast_node *>(visitRelExp(ctx->relExp()[k]));
+        }
+
+        // 右操作数
+        right = std::any_cast<ast_node *>(visitRelExp(ctx->relExp()[k + 1]));
+
+        // 新建结点作为下一个运算符的左操作符
+        left = ast_node::New(op, left, right, nullptr);
+    }
+
+    return left;
 }
+/// @brief 非终结运算符eqOp的遍历
+/// @param ctx CST上下文
+/// @return [非结点] ast_operator_type 操作类型
 std::any MiniCCSTVisitor::visitEqOp(MiniCParser::EqOpContext * ctx)
 {
-    // TODO: [逻辑] 判等算符（并入父节点？）
-    return nullptr;
+    if (ctx->T_EQ()) {
+        return ast_operator_type::AST_OP_EQ;
+    } else if (ctx->T_NEQ()) {
+        return ast_operator_type::AST_OP_NEQ;
+    } else {
+        return ast_operator_type::AST_OP_MAX;
+    }
 }
+/// @brief 非终结运算符relExp的遍历
+/// @param ctx CST上下文
+/// @return 比较运算（左结合后）的根结点
 std::any MiniCCSTVisitor::visitRelExp(MiniCParser::RelExpContext * ctx)
 {
-    // TODO: [逻辑] 大小比较结点
-    return nullptr;
+    // 识别的文法产生式：relExp : addExp (relOp addExp)*;
+    if (ctx->relOp().empty()) {
+        // 没有relOp运算符，则说明闭包识别为0，只识别了第一个非终结符addExp
+        return visitAddExp(ctx->addExp()[0]);
+    }
+
+    ast_node *left, *right;
+
+    // 存在relOp运算符，记录方便按个数进行遍历
+    auto opsCtxVec = ctx->relOp();
+
+    // 有操作符，肯定会进循环，使得right设置正确的值
+    for (int k = 0; k < (int) opsCtxVec.size(); k++) {
+        // TODO：[参考]需要区分位置的同类子结点可以直接使用forautoin，否则确定下标
+
+        // 获取运算符
+        ast_operator_type op = std::any_cast<ast_operator_type>(visitRelOp(opsCtxVec[k]));
+
+        if (k == 0) {
+
+            // 左操作数
+            left = std::any_cast<ast_node *>(visitAddExp(ctx->addExp()[k]));
+        }
+
+        // 右操作数
+        right = std::any_cast<ast_node *>(visitAddExp(ctx->addExp()[k + 1]));
+
+        // 新建结点作为下一个运算符的左操作符
+        left = ast_node::New(op, left, right, nullptr);
+    }
+
+    return left;
 }
+/// @brief 非终结运算符relOp的遍历
+/// @param ctx CST上下文
+/// @return [非结点] ast_operator_type 操作类型
 std::any MiniCCSTVisitor::visitRelOp(MiniCParser::RelOpContext * ctx)
 {
-    // TODO: [逻辑] 大小比较算符（并入父节点？）
-    return nullptr;
+    if (ctx->T_GE()) {
+        return ast_operator_type::AST_OP_GE;
+    } else if (ctx->T_LE()) {
+        return ast_operator_type::AST_OP_LE;
+    } else if (ctx->T_GREATER()) {
+        return ast_operator_type::AST_OP_GNE;
+    } else if (ctx->T_LESS()) {
+        return ast_operator_type::AST_OP_LNE;
+    } else {
+        return ast_operator_type::AST_OP_MAX;
+    }
 }
 /// @brief 非终结运算符addExp的遍历
 /// @param ctx CST上下文
 /// @return 加减运算（左结合后）的根结点
 std::any MiniCCSTVisitor::visitAddExp(MiniCParser::AddExpContext * ctx)
 {
-    // 识别的文法产生式：addExp : unaryExp (addOp unaryExp)*;
+    // 识别的文法产生式：addExp : mulExp (addOp mulExp)*;
     if (ctx->addOp().empty()) {
-        // 没有addOp运算符，则说明闭包识别为0，只识别了第一个非终结符unaryExp
+        // 没有addOp运算符，则说明闭包识别为0，只识别了第一个非终结符mulExp
         return visitMulExp(ctx->mulExp()[0]);
     }
 
     ast_node *left, *right;
 
-    // 存在addOp运算符，自
+    // 存在addOp运算符，记录方便按个数进行遍历
     auto opsCtxVec = ctx->addOp();
 
     // 有操作符，肯定会进循环，使得right设置正确的值
@@ -627,7 +775,7 @@ std::any MiniCCSTVisitor::visitMulExp(MiniCParser::MulExpContext * ctx)
 
     ast_node *left, *right;
 
-    // 存在mulOp运算符，自
+    // 存在mulOp运算符，记录方便按个数进行遍历
     auto opsCtxVec = ctx->mulOp();
 
     // 有操作符，肯定会进循环，使得right设置正确的值
@@ -678,8 +826,8 @@ std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
         // 没有unaryOp运算符，则说明闭包识别为0，只识别了唯一的primaryExp
         return visitPrimaryExp(ctx->primaryExp());
     }
-    ast_node *right;
-    // 存在unaryOp运算符，自
+    ast_node * right;
+    // 存在unaryOp运算符，记录方便按个数进行遍历
     auto opsCtxVec = ctx->unaryOp();
 
     // 有操作符，肯定会进循环，使得right设置正确的值
@@ -751,15 +899,15 @@ std::any MiniCCSTVisitor::visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx)
 /// @return 括号结点
 std::any MiniCCSTVisitor::visitParenExpr(MiniCParser::ParenExprContext * ctx)
 {
-    //TODO:完成括号结点（？还是说就这？）
-	return visitExpr(ctx->expr());
+    // TODO:完成括号结点（？还是说就这？）
+    return visitExpr(ctx->expr());
 }
 /// @brief 非终结运算符LeftValue的遍历
 /// @param ctx CST上下文
 /// @return 下级结点
 std::any MiniCCSTVisitor::visitLeftValue(MiniCParser::LeftValueContext * ctx)
 {
-	return visitLVal(ctx->lVal());
+    return visitLVal(ctx->lVal());
 }
 /// @brief 非终结运算符lVal的遍历
 /// @param ctx CST上下文
