@@ -87,11 +87,17 @@ enum class ast_operator_type : int {
     /// @brief 变量声明
     AST_OP_VAR_DECL,
 
+    /// @brief 变量定义
+    AST_OP_VAR_DEF,
+
     /// @brief 常量声明语句
     AST_OP_CONST_DECL_STMT,
 
     /// @brief 常量声明
     AST_OP_CONST_DECL,
+
+    /// @brief 常量定义
+    AST_OP_CONST_DEF,
 
     /// @brief 变量初始化
     AST_OP_INIT_VAL,
