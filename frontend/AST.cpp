@@ -415,7 +415,10 @@ ast_node* create_var_param(type_attr dataType, var_id_attr idAttr)
 {
     Type* type = convert_basic_type(dataType.type);
     ast_node* paramNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAM, type, idAttr.lineno);
-    paramNode->name = idAttr.id; // id 已通过 strdup 分配
+    ast_node * type_node = create_type_node(dataType);
+    ast_node * id_node = ast_node::New(idAttr.id, idAttr.lineno);
+    paramNode->insert_son_node(type_node); // id 已通过 strdup 分配
+    paramNode->insert_son_node(id_node);
     return paramNode;
 }
 

@@ -21,11 +21,11 @@
 #include <cmath>
 #include <cstddef>
 #include <string>
-
 #include "Antlr4CSTVisitor.h"
 #include "AST.h"
 #include "AttrType.h"
 #include "MiniCParser.h"
+#include "iostream"
 
 #define Instanceof(res, type, var) auto res = dynamic_cast<type>(var)
 
@@ -96,9 +96,9 @@ std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
     // 形参结点目前没有，设置为空指针
     ast_node * formalParamsNode = nullptr;
     // TODO: [函数] 设置形参结点入口
-    // if (ctx->funcFParams()) {
-    //     formalParamsNode = std::any_cast<ast_node *>(visitFuncFParams(ctx->funcFParams()));
-    // }
+    if (ctx->funcFParams()) {
+        formalParamsNode = std::any_cast<ast_node *>(visitFuncFParams(ctx->funcFParams()));
+    }
 
     // 遍历block结点创建函数体节点，非终结符
     auto blockNode = std::any_cast<ast_node *>(visitBlock(ctx->block()));
@@ -148,7 +148,7 @@ std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
     // 获取参数名称
     char * id = strdup(ctx->T_ID()->getText().c_str());
     var_id_attr paramId{id, (int64_t) ctx->T_ID()->getSymbol()->getLine()};
-
+    
     // 判断是否是数组参数
     bool isArray = ctx->T_L_SQBRA().size() > 0;
 

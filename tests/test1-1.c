@@ -1,7 +1,9 @@
-int add()
+
+int add(int k,int w)
 {
-	int a = 1, b = 2, c = 3;
+	k=5;
+    int a = 1, b = 2,c=3,e=0;
     const int d = 4;
-    a = (b + c) * 2;
-    return a + d;
+    a = +a*b/c%e;
+    return a + d+k;
 }
