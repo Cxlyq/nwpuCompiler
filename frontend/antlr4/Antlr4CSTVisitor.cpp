@@ -955,17 +955,17 @@ std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
 {
     ast_node * numberNode = nullptr;
     if (ctx->T_INT_DIGIT()) {
-        uint32_t val = (uint32_t) stoull(ctx->T_INT_DIGIT()->getText());
+        uint32_t val = (uint32_t) stoull(ctx->T_INT_DIGIT()->getText(),nullptr, 0);
         int64_t lineNo = (int64_t) ctx->T_INT_DIGIT()->getSymbol()->getLine();
         numberNode = ast_node::New(digit_int_attr{val, lineNo});
     }
-    // else if (ctx->T_FLOAT_DIGIT()) {
-    // 	   //TODO: [交流:fp]了解sysY的float标准
-    //     float_t val = (float_t) stoull(ctx->T_FLOAT_DIGIT()->getText());
-    //     int64_t lineNo = (int64_t) ctx->T_FLOAT_DIGIT()->getSymbol()->getLine();
-    //     //TODO: [fp]ast_node::New 扩展digit_float_attr
-    //     numberNode = ast_node::New(digit_float_attr{val, lineNo});
-    // }
+    else if (ctx->T_FLOAT_DIGIT()) {
+    	   //TODO: [交流:fp]了解sysY的float标准
+        float_t val = (float_t) stoull(ctx->T_FLOAT_DIGIT()->getText());
+        int64_t lineNo = (int64_t) ctx->T_FLOAT_DIGIT()->getSymbol()->getLine();
+        //TODO: [fp]ast_node::New 扩展digit_float_attr
+        numberNode = ast_node::New(digit_float_attr{val, lineNo});
+    }
     return numberNode;
 }
 std::any MiniCCSTVisitor::visitFuncCall(MiniCParser::FuncCallContext * ctx)
