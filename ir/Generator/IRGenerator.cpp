@@ -254,7 +254,7 @@ bool IRGenerator::ir_function_define(ast_node * node)
 /// @return 翻译是否成功，true：成功，false：失败
 bool IRGenerator::ir_function_formal_params(ast_node * node)
 {
-    // TODO 目前形参还不支持，直接返回true
+    // TODO: [函数] 目前形参还不支持，直接返回true
 
     // 每个形参变量都创建对应的临时变量，用于表达实参转递的值
     // 而真实的形参则创建函数内的局部变量。
