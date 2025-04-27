@@ -48,6 +48,14 @@ ast_node::ast_node(digit_int_attr attr)
     integer_val = attr.val;
 }
 
+/// @brief 针对浮点数字面量的构造函数
+/// @param attr 浮点数字面量
+ast_node::ast_node(digit_float_attr attr)
+    : ast_node(ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT, FloatType::getType(), attr.lineno)
+{
+    float_val = attr.val;
+}
+
 /// @brief 针对标识符ID的叶子构造函数
 /// @param attr 字符型字面量
 ast_node::ast_node(var_id_attr attr) : ast_node(ast_operator_type::AST_OP_LEAF_VAR_ID, VoidType::getType(), attr.lineno)
@@ -138,6 +146,15 @@ ast_node * ast_node::insert_son_node(ast_node * node)
 /// @brief 创建无符号整数的叶子节点
 /// @param attr 无符号整数字面量
 ast_node * ast_node::New(digit_int_attr attr)
+{
+    ast_node * node = new ast_node(attr);
+
+    return node;
+}
+
+/// @brief 创建浮点数的叶子节点
+/// @param attr 浮点数字面量
+ast_node * ast_node::New(digit_float_attr attr)
 {
     ast_node * node = new ast_node(attr);
 
@@ -284,7 +301,9 @@ Type * typeAttr2Type(type_attr & attr)
 {
     if (attr.type == BasicType::TYPE_INT) {
         return IntegerType::getTypeInt();
-    } else {
+    }else if (attr.type == BasicType::TYPE_FLOAT) {
+        return FloatType::getType();
+    }else{
         return VoidType::getType();
     }
 }

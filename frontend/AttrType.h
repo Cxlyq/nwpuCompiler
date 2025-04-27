@@ -28,6 +28,7 @@ enum class BasicType : std::int8_t {
     TYPE_MAX,   // 其它类型，未知类型
 };
 
+
 ///
 /// @brief 词法与语法通信的无符号整数字面量属性
 ///
@@ -39,10 +40,10 @@ typedef struct digit_int_attr {
 ///
 /// @brief 词法与语法通信的单精度浮点数字面量属性
 ///
-typedef struct digit_real_attr {
-    double val;     // C语言默认实数为double类型
+typedef struct digit_float_attr {
+    double val;     // float类型
     int64_t lineno; // 行号
-} digit_real_attr;
+} digit_float_attr;
 
 ///
 /// @brief 词法与语法通信的标识符（变量名、函数名等）
