@@ -916,20 +916,29 @@ std::any MiniCCSTVisitor::visitLeftValue(MiniCParser::LeftValueContext * ctx)
 /// @brief 非终结运算符lVal的遍历
 /// @param ctx CST上下文
 /// @return LValnode
-std::any MiniCCSTVisitor::visitLVal(MiniCParser::LValContext * ctx)
-{
-    // 识别文法产生式：lVal: T_ID;
+std::any MiniCCSTVisitor::visitLVal(MiniCParser::LValContext * ctx) {
+    // 识别的文法产生式：lVal: T_ID (T_L_SQBRA expr T_R_SQBRA)*;
     // 获取ID的名字
     auto varId = ctx->T_ID()->getText();
 
     // 获取行号
     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
-    // TODO: [数组] 完成数组匹配
-    // for (auto ctxarr: ctx->expr()) {
 
-    // }
-    return ast_node::New(varId, lineNo);
+    // 初始化变量节点，表示变量的标识符
+    ast_node *node = new ast_node(varId, lineNo);
+
+    // 如果存在下标表达式，则处理数组访问
+    for (auto exprCtx : ctx->expr()) {
+        // 访问每个下标表达式并生成对应的 AST 节点
+        ast_node *indexNode = std::any_cast<ast_node *>(visit(exprCtx));
+
+        // 创建一个新的节点表示数组访问（将标识符和下标组合）
+        node = ast_node::New(ast_operator_type::AST_OP_ARRAY_ACCESS, node, indexNode, nullptr);
+    }
+
+    return node;
 }
+
 
 /// @brief 非终结运算符BasicNum的遍历
 /// @param ctx CST上下文

@@ -162,6 +162,9 @@ enum class ast_operator_type : int {
     /// @brief continue是叶子节点
     AST_OP_CONTINUE,
 
+    /// @brief 数组访问
+    AST_OP_ARRAY_ACCESS,
+
     // TODO: 抽象语法树其它内部节点运算符追加，现在缺比较和判等运算符
 
     /// @brief 最大标识符，表示非法运算符
@@ -271,6 +274,11 @@ public:
     /// @param node
     ///
     static void Delete(ast_node * node);
+
+
+
+    /// @brief 创建数组访问节点
+    static ast_node * creatr_array_access(ast_operator_type type, ...);
 };
 
 /// @brief AST资源清理

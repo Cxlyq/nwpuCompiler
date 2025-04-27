@@ -280,6 +280,8 @@ ast_node * create_contain_node(ast_operator_type node_type,
     return node;
 }
 
+
+
 Type * typeAttr2Type(type_attr & attr)
 {
     if (attr.type == BasicType::TYPE_INT) {
