@@ -46,7 +46,7 @@ enum RDTokenType {
 union RDSType {
     ast_node * node;
     digit_int_attr integer_num; // 整型字面量
-    digit_real_attr float_num;  // 实数字面量
+    digit_float_attr float_num;  // 实数字面量
     var_id_attr var_id;         // 标识符（变量名）
     type_attr type;             // 类型
 };

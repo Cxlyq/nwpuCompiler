@@ -23,7 +23,7 @@ void yyerror(char * msg);
     class ast_node * node;
 
     struct digit_int_attr integer_num;
-    struct digit_real_attr float_num;
+    struct digit_float_attr float_num;
     struct var_id_attr var_id;
     struct type_attr type;
     int op_class;
