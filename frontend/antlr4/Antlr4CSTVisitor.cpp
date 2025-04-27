@@ -352,14 +352,32 @@ std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
     auto varId = ctx->T_ID()->getText();
     // 获取行号
     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
-    auto varIdNode = ast_node::New(varId, lineNo);
-    (void) var_def_node->insert_son_node(varIdNode);
+    // auto varIdNode = ast_node::New(varId, lineNo);
+    // (void) var_def_node->insert_son_node(varIdNode);
     // TODO: [交流] 统一数组相关结点的表示方式
-    for (auto & exprCtx: ctx->expr()) {
-        // 多维数组节点
-        ast_node * temp = std::any_cast<ast_node *>(visitExpr(exprCtx));
-        (void) var_def_node->insert_son_node(temp);
+    // for (auto & exprCtx: ctx->expr()) {
+    //     // 多维数组节点
+    //     ast_node * temp = std::any_cast<ast_node *>(visitExpr(exprCtx));
+    //     (void) var_def_node->insert_son_node(temp);
+    // }
+
+
+    // auto varId = ctx->T_ID()->getText();
+
+    // // 获取行号
+    // int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
+
+    // // 初始化变量节点，表示变量的标识符
+    ast_node *node = new ast_node(varId, lineNo);
+    for (auto exprCtx : ctx->expr()) {
+        // 访问每个下标表达式并生成对应的 AST 节点
+        ast_node *indexNode = std::any_cast<ast_node *>(visit(exprCtx));
+
+        // 创建一个新的节点表示数组访问（将标识符和下标组合）
+        node = ast_node::New(ast_operator_type::AST_OP_ARRAY_ACCESS, node, indexNode, nullptr);
+
     }
+    (void) var_def_node->insert_son_node(node);
     if (ctx->initVal()) {
         auto initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
         (void) var_def_node->insert_son_node(initValNode);
