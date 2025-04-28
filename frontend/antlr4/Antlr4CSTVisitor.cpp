@@ -95,7 +95,7 @@ std::any MiniCCSTVisitor::visitFuncDef(MiniCParser::FuncDefContext * ctx)
 
     // 形参结点目前没有，设置为空指针
     ast_node * formalParamsNode = nullptr;
-    // TODO: [函数] 设置形参结点入口
+
     if (ctx->funcFParams()) {
         formalParamsNode = std::any_cast<ast_node *>(visitFuncFParams(ctx->funcFParams()));
     }
@@ -126,7 +126,6 @@ std::any MiniCCSTVisitor::visitFuncType(MiniCParser::FuncTypeContext * ctx)
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx)
 {
-    // TODO: [函数] 形参列表结点
     std::vector<ast_node *> params;
 
     for (auto paramCtx: ctx->funcFParam()) {
@@ -141,7 +140,6 @@ std::any MiniCCSTVisitor::visitFuncFParams(MiniCParser::FuncFParamsContext * ctx
 /// @param ctx CST上下文
 std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
 {
-    // TODO: [函数] 形参结点
     // 获取参数类型
     type_attr paramType = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
 
@@ -533,13 +531,11 @@ std::any MiniCCSTVisitor::visitWhileStatement(MiniCParser::WhileStatementContext
 
 std::any MiniCCSTVisitor::visitBreakStatement(MiniCParser::BreakStatementContext * ctx)
 {
-    // TODO: [非线性] Break操作（结点？）
     return ast_node::New(ast_operator_type::AST_OP_BREAK, nullptr);
 }
 
 std::any MiniCCSTVisitor::visitContinueStatement(MiniCParser::ContinueStatementContext * ctx)
 {
-    // TODO: [非线性] Continue操作（结点？）
     return ast_node::New(ast_operator_type::AST_OP_CONTINUE, nullptr);
 }
 
@@ -843,7 +839,6 @@ std::any MiniCCSTVisitor::visitMulOp(MiniCParser::MulOpContext * ctx)
 std::any MiniCCSTVisitor::visitUnaryExp(MiniCParser::UnaryExpContext * ctx)
 {
     // 识别文法产生式：unaryExp: (unaryOp)* primaryExp
-    // TODO: [单目] 单目运算表达式结点
     if (ctx->unaryOp().empty()) {
         // 没有unaryOp运算符，则说明闭包识别为0，只识别了唯一的primaryExp
         return visitPrimaryExp(ctx->primaryExp());
@@ -898,22 +893,7 @@ std::any MiniCCSTVisitor::visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx)
     } else {
         return nullptr;
     }
-    // TODO: 完成基本表达式匹配
     ast_node * node = nullptr;
-    // if (ctx->number()) {
-    //     // 无符号整型字面量
-    //     // 识别 primaryExp: number
-    //     node = std::any_cast<ast_node *>(visitNumber(ctx->number()));
-    // } else if (ctx->lVal()) {
-    //     // 具有左值的表达式
-    //     // 识别 primaryExp: lVal
-    //     node = std::any_cast<ast_node *>(visitLVal(ctx->lVal()));
-    // } else if (ctx->expr()) {
-    //     // 带有括号的表达式
-    //     // primaryExp: T_L_PAREN expr T_R_PAREN
-    //     node = std::any_cast<ast_node *>(visitExpr(ctx->expr()));
-    // }
-
     return node;
 }
 /// @brief 非终结运算符parenExpr的遍历
@@ -921,7 +901,6 @@ std::any MiniCCSTVisitor::visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx)
 /// @return 括号结点
 std::any MiniCCSTVisitor::visitParenExpr(MiniCParser::ParenExprContext * ctx)
 {
-    // TODO:完成括号结点（？还是说就这？）
     return visitExpr(ctx->expr());
 }
 /// @brief 非终结运算符LeftValue的遍历
@@ -978,10 +957,8 @@ std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
         numberNode = ast_node::New(digit_int_attr{val, lineNo});
     }
     else if (ctx->T_FLOAT_DIGIT()) {
-    	   //TODO: [交流:fp]了解sysY的float标准
         float_t val = (float_t) stof(ctx->T_FLOAT_DIGIT()->getText());
         int64_t lineNo = (int64_t) ctx->T_FLOAT_DIGIT()->getSymbol()->getLine();
-        //TODO: [fp]ast_node::New 扩展digit_float_attr
         numberNode = ast_node::New(digit_float_attr{val, lineNo});
     }
     return numberNode;
@@ -989,7 +966,6 @@ std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
 std::any MiniCCSTVisitor::visitFuncCall(MiniCParser::FuncCallContext * ctx)
 {
     // 识别的文法产生式：T_ID T_L_PAREN funcRParams? T_R_PAREN
-    // TODO: [函数] 函数调用结点（->实参）
     char * id = strdup(ctx->T_ID()->getText().c_str());
     ast_node * funcname_node = ast_node::New(id, (int64_t) ctx->T_ID()->getSymbol()->getLine());
     ast_node * formalParamsNode = nullptr;
@@ -1001,8 +977,7 @@ std::any MiniCCSTVisitor::visitFuncCall(MiniCParser::FuncCallContext * ctx)
 std::any MiniCCSTVisitor::visitFuncRParams(MiniCParser::FuncRParamsContext * ctx)
 {
     // 识别的文法产生式：realParamList : expr (T_COMMA expr)*;
-    // TODO: [函数] 实参列表结点
-    // TODO: [数组] 确认数组支持
+    // TODO: [数组] 调整数组结点位置（同层：（变量名）-子结点-维数）
     auto paramListNode = create_contain_node(ast_operator_type::AST_OP_FUNC_REAL_PARAMS);
 
     for (auto paramCtx: ctx->expr()) {
