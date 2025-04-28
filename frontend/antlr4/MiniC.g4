@@ -23,7 +23,7 @@ funcFParams: funcFParam (T_COMMA funcFParam)*;
 //函数形参
 funcFParam:
 	basicType T_ID (
-		T_L_SQBRA T_R_SQBRA (T_L_SQBRA expr T_R_SQBRA)*
+		T_L_SQBRA (expr)? T_R_SQBRA (T_L_SQBRA expr T_R_SQBRA)*
 	)?;
 
 //----------------------语句块---------------------------

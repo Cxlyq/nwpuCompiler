@@ -456,10 +456,21 @@ ast_node* create_array_param(type_attr dataType, var_id_attr idAttr, const std::
 {
     Type* type = convert_basic_type(dataType.type);
     ast_node* arrayParamNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAM, type, idAttr.lineno);
-    arrayParamNode->name = idAttr.id;
-    arrayParamNode->sons = dimensions; // 每个维度表达式作为一个子节点
+
+    ast_node* type_node = create_type_node(dataType);
+    ast_node* id_node = ast_node::New(idAttr.id, idAttr.lineno);
+
+    arrayParamNode->insert_son_node(type_node);
+    arrayParamNode->insert_son_node(id_node);
+
+    // 把维度信息挂到arrayParamNode下面
+    for (auto dim : dimensions) {
+        arrayParamNode->insert_son_node(dim);
+    }
+
     return arrayParamNode;
 }
+
 
 /// @brief 创建参数列表节点
 /// @param params 形参列表
