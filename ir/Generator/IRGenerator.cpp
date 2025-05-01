@@ -134,6 +134,26 @@ ast_node * IRGenerator::ir_visit_ast_node(ast_node * node)
     return node;
 }
 
+/// @brief 遍历数组节点，提取数组名和维度信息
+/// @param array_node 数组节点
+/// @param name 数组名
+/// @param dims 数组维度
+/// @note 该函数会遍历数组节点，提取数组名和维度信息
+void extract_array_info(ast_node* array_node, std::string& name, std::vector<ast_node*>& dims) {
+    while (array_node->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // 使用 if/else 替代 assert
+        if (array_node->sons.size() != 2) {
+            std::fprintf(stderr, "Assertion failed: array_node->sons.size() == 2, file %s, line %d\n", __FILE__, __LINE__);
+            std::abort();
+        }
+                
+        dims.insert(dims.begin(), array_node->sons[1]);  // 从右向左插入维度
+        array_node = array_node->sons[0];  // 向左深入
+    }
+    name = array_node->name;  // 最左侧是变量标识符
+}
+
+
 /// @brief 未知节点类型的节点处理
 /// @param node AST节点
 /// @return 翻译是否成功，true：成功，false：失败
@@ -1172,11 +1192,31 @@ bool IRGenerator::ir_declare_statment(ast_node * node)
 /// @return 翻译是否成功，true：成功，false：失败
 bool IRGenerator::ir_variable_declare(ast_node * node)
 {
-    // 共有两个孩子，第一个类型，第二个变量名
+    // 第一个孩子：类型，第二个孩子：变量名（数组或普通变量），第三个孩子：初值（如果有）
+    ast_node *type_node = node->sons[0];  // 类型节点
+    ast_node *id_node = node->sons[1];    // 变量名节点（支持数组的情况）
+    ast_node *init_val_node = (node->sons.size() > 2) ? node->sons[2] : nullptr;  // 初始值节点（可选）
 
-    // TODO 这里可强化类型等检查
+    Type *var_type = type_node->type;
 
-    node->val = module->newVarValue(node->sons[0]->type, node->sons[1]->name);
+    if (id_node->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // 是数组变量，提取数组名和维度表达式
+        std::string array_name;
+        std::vector<ast_node*> dims;
+        extract_array_info(id_node, array_name, dims);
+
+        // 调用 module->newArrayVarValue 分配数组变量
+        //TODO node->val = module->newArrayVarValue(var_type, array_name, dims);
+    } else {
+        // 普通变量
+        std::string var_name = id_node->name;
+        node->val = module->newVarValue(var_type, var_name);
+    }
+
+    // 处理初值
+    if (init_val_node) {
+        //TODO ir_assign_value(node, init_val_node);  // 你应实现这个函数处理赋值IR
+    }
 
     return true;
 }

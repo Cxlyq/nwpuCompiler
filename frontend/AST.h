@@ -177,6 +177,10 @@ enum class ast_operator_type : int {
 ///
 class ast_node {
 public:
+
+    /// @brief 深拷贝当前节点
+    ast_node *deep_copy() const;
+
     /// @brief 节点类型
     ast_operator_type node_type;
 
@@ -385,3 +389,4 @@ ast_node* create_param_list(const std::vector<ast_node*>& params);
 /// @param bt 基本类型
 /// @return 对应的 Type 指针
 Type* convert_basic_type(BasicType bt);
+
