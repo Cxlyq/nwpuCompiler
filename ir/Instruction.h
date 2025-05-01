@@ -40,6 +40,48 @@ enum class IRInstOperator : std::int8_t {
     /// @brief 整数的减法指令，二元运算
     IRINST_OP_SUB_I,
 
+    /// @brief 整数的乘法指令，二元运算
+    IRINST_OP_MUL_I,
+
+    /// @brief 整数的除法指令，二元运算
+    IRINST_OP_DIV_I,
+
+    /// @brief 整数的取余指令，二元运算
+    IRINST_OP_MOD_I,
+
+    /// @brief 逻辑与指令，二元运算
+    IRINST_OP_AND,
+
+    /// @brief 逻辑或指令，二元运算
+    IRINST_OP_OR,
+
+    /// @brief 逻辑相等指令，二元运算
+    IRINST_OP_EQ,
+
+    /// @brief 逻辑不等指令，二元运算
+    IRINST_OP_NEQ,
+
+    /// @brief 大于等于指令，二元运算
+    IRINST_OP_GE,
+
+    /// @brief 小于等于指令，二元运算
+    IRINST_OP_LE,
+
+    /// @brief 大于指令，二元运算
+    IRINST_OP_GNE,
+
+    /// @brief 小于指令，二元运算
+    IRINST_OP_LNE,
+
+    /// @brief 单目正指令，一元运算
+    IRINST_OP_POS,
+
+    /// @brief 单目负指令，一元运算
+    IRINST_OP_NEG,
+
+    /// @brief 逻辑非指令，一元运算
+    IRINST_OP_NOT,
+
     /// @brief 赋值指令，一元运算
     IRINST_OP_ASSIGN,
 
