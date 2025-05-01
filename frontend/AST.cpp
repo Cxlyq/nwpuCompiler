@@ -499,3 +499,19 @@ Type* convert_basic_type(BasicType bt)
     }
 }
 
+/// @brief 深拷贝当前节点
+ast_node *ast_node::deep_copy() const {
+    ast_node *copy = new ast_node(*this);  // 复制当前节点（浅拷贝）
+
+    copy->sons.clear();  // 避免拷贝旧指针
+
+    for (auto *son : this->sons) {
+        if (son) {
+            copy->sons.push_back(son->deep_copy());  // 递归深拷贝
+        }
+    }
+
+    return copy;
+}
+
+

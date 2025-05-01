@@ -252,136 +252,240 @@ std::any MiniCCSTVisitor::visitBasicType(MiniCParser::BasicTypeContext * ctx)
 /// @brief 非终结运算符constDecl的遍历
 /// @param ctx CST上下文
 ///	@return 常量声明结点（含子结点）
+// std::any MiniCCSTVisitor::visitConstDecl(MiniCParser::ConstDeclContext * ctx)
+// {
+//     // constDecl: T_CONST basicType constDef (T_COMMA constDef)* T_SEMICOLON;
+
+//     // 声明语句节点
+//     ast_node * const_stmt_node = create_contain_node(ast_operator_type::AST_OP_CONST_DECL_STMT);
+
+//     // 类型节点
+//     type_attr typeAttr = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
+
+//     for (auto & constCtx: ctx->constDef()) {
+
+//         // 常量名节点
+//         ast_node * id_node = std::any_cast<ast_node *>(visitConstDef(constCtx));
+
+//         // 创建类型节点
+//         ast_node * type_node = create_type_node(typeAttr);
+
+//         // 创建常量定义节点
+//         ast_node * decl_node = ast_node::New(ast_operator_type::AST_OP_CONST_DECL, type_node, id_node, nullptr);
+
+//         // 插入到变量声明语句
+//         (void) const_stmt_node->insert_son_node(decl_node);
+//     }
+//     return const_stmt_node;
+// }
 std::any MiniCCSTVisitor::visitConstDecl(MiniCParser::ConstDeclContext * ctx)
 {
     // constDecl: T_CONST basicType constDef (T_COMMA constDef)* T_SEMICOLON;
 
-    // 声明语句节点
     ast_node * const_stmt_node = create_contain_node(ast_operator_type::AST_OP_CONST_DECL_STMT);
 
-    // 类型节点
     type_attr typeAttr = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
+    ast_node * type_node = create_type_node(typeAttr);
 
     for (auto & constCtx: ctx->constDef()) {
+        auto [id_node, initValNode] = std::any_cast<std::pair<ast_node *, ast_node *>>(visitConstDef(constCtx));
 
-        // 常量名节点
-        ast_node * id_node = std::any_cast<ast_node *>(visitConstDef(constCtx));
+        ast_node * decl_node = new ast_node(ast_operator_type::AST_OP_CONST_DECL);
+        decl_node->insert_son_node(type_node->deep_copy());
+        decl_node->insert_son_node(id_node);
+        if (initValNode) {
+            decl_node->insert_son_node(initValNode);
+        }
 
-        // 创建类型节点
-        ast_node * type_node = create_type_node(typeAttr);
-
-        // 创建常量定义节点
-        ast_node * decl_node = ast_node::New(ast_operator_type::AST_OP_CONST_DECL, type_node, id_node, nullptr);
-
-        // 插入到变量声明语句
-        (void) const_stmt_node->insert_son_node(decl_node);
+        const_stmt_node->insert_son_node(decl_node);
     }
+
     return const_stmt_node;
 }
+
+
+
 
 /// @brief 非终结运算符constDef的遍历
 /// @param ctx CST上下文
 ///	@return 常量定义结点
+// std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
+// {
+//     // T_ID (T_L_SQBRA expr T_R_SQBRA)* T_ASSIGN initVal;
+
+//     // 声明语句节点
+//     ast_node * const_def_node = create_contain_node(ast_operator_type::AST_OP_CONST_DEF);
+
+//     auto constId = ctx->T_ID()->getText();
+//     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
+//     auto constIdNode = ast_node::New(constId, lineNo);
+//     (void) const_def_node->insert_son_node(constIdNode);
+//     // TODO: [交流:array] 统一数组结点格式
+//     for (auto & exprCtx: ctx->expr()) {
+//         // 多维数组节点
+//         ast_node * const_val_node = std::any_cast<ast_node *>(visitExpr(exprCtx));
+//         (void) const_def_node->insert_son_node(const_val_node);
+//     }
+//     if (!ctx->initVal()) {
+//         // TODO: [语义检查] 处理throw问题
+//         printf("const without initialization.");
+//         return const_def_node;
+//     } else {
+//         auto initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
+//         (void) const_def_node->insert_son_node(initValNode);
+//         return const_def_node;
+//     }
+// }
 std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
 {
     // T_ID (T_L_SQBRA expr T_R_SQBRA)* T_ASSIGN initVal;
 
-    // 声明语句节点
-    ast_node * const_def_node = create_contain_node(ast_operator_type::AST_OP_CONST_DEF);
-
     auto constId = ctx->T_ID()->getText();
     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
-    auto constIdNode = ast_node::New(constId, lineNo);
-    (void) const_def_node->insert_son_node(constIdNode);
-    // TODO: [交流:array] 统一数组结点格式
-    for (auto & exprCtx: ctx->expr()) {
-        // 多维数组节点
-        ast_node * const_val_node = std::any_cast<ast_node *>(visitExpr(exprCtx));
-        (void) const_def_node->insert_son_node(const_val_node);
+    ast_node *id_node = new ast_node(constId, lineNo);
+
+    // 支持数组形式（多维数组定义）
+    for (auto exprCtx : ctx->expr()) {
+        ast_node *indexNode = std::any_cast<ast_node *>(visit(exprCtx));
+        id_node = ast_node::New(ast_operator_type::AST_OP_ARRAY_ACCESS, id_node, indexNode, nullptr);
     }
-    if (!ctx->initVal()) {
-        // TODO: [语义检查] 处理throw问题
-        printf("const without initialization.");
-        return const_def_node;
+
+    ast_node *initValNode = nullptr;
+    if (ctx->initVal()) {
+        initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
     } else {
-        auto initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
-        (void) const_def_node->insert_son_node(initValNode);
-        return const_def_node;
+        printf("const without initialization.\n");
     }
+
+    return std::make_pair(id_node, initValNode);
 }
+
+
+
+
 
 /// @brief 非终结运算符varDecl的遍历
 /// @param ctx CST上下文
 ///	@return 变量声明结点（含子结点）
+// std::any MiniCCSTVisitor::visitVarDecl(MiniCParser::VarDeclContext * ctx)
+// {
+//     // varDecl: basicType varDef (T_COMMA varDef)* T_SEMICOLON;
+
+//     // 声明语句节点
+//     ast_node * stmt_node = create_contain_node(ast_operator_type::AST_OP_VAR_DECL_STMT);
+
+//     // 类型节点
+//     type_attr typeAttr = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
+
+//     for (auto & varCtx: ctx->varDef()) {
+//         // 变量名节点
+//         ast_node * id_node = std::any_cast<ast_node *>(visitVarDef(varCtx));
+
+//         // 创建类型节点
+//         ast_node * type_node = create_type_node(typeAttr);
+
+//         // 创建变量定义节点
+//         ast_node * decl_node = ast_node::New(ast_operator_type::AST_OP_VAR_DECL, type_node, id_node, nullptr);
+
+//         // 插入到变量声明语句
+//         (void) stmt_node->insert_son_node(decl_node);
+//     }
+
+//     return stmt_node;
+// }
 std::any MiniCCSTVisitor::visitVarDecl(MiniCParser::VarDeclContext * ctx)
 {
     // varDecl: basicType varDef (T_COMMA varDef)* T_SEMICOLON;
-
-    // 声明语句节点
     ast_node * stmt_node = create_contain_node(ast_operator_type::AST_OP_VAR_DECL_STMT);
 
-    // 类型节点
     type_attr typeAttr = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
+    ast_node * type_node = create_type_node(typeAttr);
 
     for (auto & varCtx: ctx->varDef()) {
-        // 变量名节点
-        ast_node * id_node = std::any_cast<ast_node *>(visitVarDef(varCtx));
+        // 解包 varDef 返回的 pair：变量名/数组访问 + 初始值
+        auto [id_node, initValNode] = std::any_cast<std::pair<ast_node *, ast_node *>>(visitVarDef(varCtx));
 
-        // 创建类型节点
-        ast_node * type_node = create_type_node(typeAttr);
+        // 构造 decl 节点，顺序是：类型 → 名称 → 初值
+        ast_node * decl_node = new ast_node(ast_operator_type::AST_OP_VAR_DECL);
+        decl_node->insert_son_node(type_node->deep_copy());
+        decl_node->insert_son_node(id_node);
+        if (initValNode) {
+            decl_node->insert_son_node(initValNode);
+        }
 
-        // 创建变量定义节点
-        ast_node * decl_node = ast_node::New(ast_operator_type::AST_OP_VAR_DECL, type_node, id_node, nullptr);
-
-        // 插入到变量声明语句
-        (void) stmt_node->insert_son_node(decl_node);
+        stmt_node->insert_son_node(decl_node);
     }
 
     return stmt_node;
 }
 
+
+
 /// @brief 非终结运算符varDef的遍历
 /// @param ctx CST上下文
 ///	@return 变量定义结点
+// std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
+// {
+//     // varDef: T_ID (T_L_SQBRA expr T_R_SQBRA)* (T_ASSIGN initVal)?;
+//     ast_node * var_def_node = create_contain_node(ast_operator_type::AST_OP_VAR_DEF);
+//     auto varId = ctx->T_ID()->getText();
+//     // 获取行号
+//     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
+//     // auto varIdNode = ast_node::New(varId, lineNo);
+//     // (void) var_def_node->insert_son_node(varIdNode);
+//     // TODO: [交流] 统一数组相关结点的表示方式
+//     // for (auto & exprCtx: ctx->expr()) {
+//     //     // 多维数组节点
+//     //     ast_node * temp = std::any_cast<ast_node *>(visitExpr(exprCtx));
+//     //     (void) var_def_node->insert_son_node(temp);
+//     // }
+
+
+//     // auto varId = ctx->T_ID()->getText();
+
+//     // // 获取行号
+//     // int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
+
+//     // // 初始化变量节点，表示变量的标识符
+//     ast_node *node = new ast_node(varId, lineNo);
+//     for (auto exprCtx : ctx->expr()) {
+//         // 访问每个下标表达式并生成对应的 AST 节点
+//         ast_node *indexNode = std::any_cast<ast_node *>(visit(exprCtx));
+
+//         // 创建一个新的节点表示数组访问（将标识符和下标组合）
+//         node = ast_node::New(ast_operator_type::AST_OP_ARRAY_ACCESS, node, indexNode, nullptr);
+
+//     }
+//     (void) var_def_node->insert_son_node(node);
+//     if (ctx->initVal()) {
+//         auto initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
+//         (void) var_def_node->insert_son_node(initValNode);
+//     }
+//     return var_def_node;
+// }
 std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
 {
     // varDef: T_ID (T_L_SQBRA expr T_R_SQBRA)* (T_ASSIGN initVal)?;
-    ast_node * var_def_node = create_contain_node(ast_operator_type::AST_OP_VAR_DEF);
+    
     auto varId = ctx->T_ID()->getText();
-    // 获取行号
     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
-    // auto varIdNode = ast_node::New(varId, lineNo);
-    // (void) var_def_node->insert_son_node(varIdNode);
-    // TODO: [交流] 统一数组相关结点的表示方式
-    // for (auto & exprCtx: ctx->expr()) {
-    //     // 多维数组节点
-    //     ast_node * temp = std::any_cast<ast_node *>(visitExpr(exprCtx));
-    //     (void) var_def_node->insert_son_node(temp);
-    // }
-
-
-    // auto varId = ctx->T_ID()->getText();
-
-    // // 获取行号
-    // int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
-
-    // // 初始化变量节点，表示变量的标识符
     ast_node *node = new ast_node(varId, lineNo);
+
     for (auto exprCtx : ctx->expr()) {
-        // 访问每个下标表达式并生成对应的 AST 节点
         ast_node *indexNode = std::any_cast<ast_node *>(visit(exprCtx));
-
-        // 创建一个新的节点表示数组访问（将标识符和下标组合）
         node = ast_node::New(ast_operator_type::AST_OP_ARRAY_ACCESS, node, indexNode, nullptr);
+    }
 
-    }
-    (void) var_def_node->insert_son_node(node);
+    ast_node *initValNode = nullptr;
     if (ctx->initVal()) {
-        auto initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
-        (void) var_def_node->insert_son_node(initValNode);
+        initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
     }
-    return var_def_node;
+
+    // 打包两个节点作为 pair 返回（或自定义结构）
+    return std::make_pair(node, initValNode);
 }
+
+
 /// @brief 非终结运算符InitVal的遍历
 /// @param ctx CST上下文
 ///	@return 下级结点
