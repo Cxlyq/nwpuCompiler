@@ -55,32 +55,59 @@ enum class IRInstOperator : std::int8_t {
     /// @brief 逻辑或指令，二元运算
     IRINST_OP_OR,
 
-    /// @brief 逻辑相等指令，二元运算
-    IRINST_OP_EQ,
+    /// @brief 整数相等指令，二元运算
+    IRINST_OP_EQ_I,
 
-    /// @brief 逻辑不等指令，二元运算
-    IRINST_OP_NEQ,
+    /// @brief 浮点数相等指令，二元运算
+    IRINST_OP_EQ_F,
 
-    /// @brief 大于等于指令，二元运算
-    IRINST_OP_GE,
+    /// @brief 整数不等指令，二元运算
+    IRINST_OP_NEQ_I,
 
-    /// @brief 小于等于指令，二元运算
-    IRINST_OP_LE,
+    /// @brief 浮点数不等指令，二元运算
+    IRINST_OP_NEQ_F,
 
-    /// @brief 大于指令，二元运算
-    IRINST_OP_GNE,
+    /// @brief 整数大于等于指令，二元运算
+    IRINST_OP_GE_I,
 
-    /// @brief 小于指令，二元运算
-    IRINST_OP_LNE,
+    /// @brief 浮点数大于等于指令，二元运算
+    IRINST_OP_GE_F,
 
-    /// @brief 单目正指令，一元运算
-    IRINST_OP_POS,
+    /// @brief 整数小于等于指令，二元运算
+    IRINST_OP_LE_I,
 
-    /// @brief 单目负指令，一元运算
-    IRINST_OP_NEG,
+    /// @brief 浮点数小于等于指令，二元运算
+    IRINST_OP_LE_F,
 
-    /// @brief 逻辑非指令，一元运算
-    IRINST_OP_NOT,
+    /// @brief 整数大于指令，二元运算
+    IRINST_OP_GNE_I,
+
+    /// @brief 浮点数大于指令，二元运算
+    IRINST_OP_GNE_F,
+
+    /// @brief 整数小于指令，二元运算
+    IRINST_OP_LNE_I,
+
+    /// @brief 浮点数小于指令，二元运算
+    IRINST_OP_LNE_F,
+
+    /// @brief 整数单目正指令，一元运算
+    IRINST_OP_POS_I,
+
+    /// @brief 浮点数单目正指令，一元运算
+    IRINST_OP_POS_F,
+
+    /// @brief 整数单目负指令，一元运算
+    IRINST_OP_NEG_I,
+
+    /// @brief 浮点数单目负指令，一元运算
+    IRINST_OP_NEG_F,
+
+    /// @brief 整数逻辑非指令，一元运算
+    IRINST_OP_NOT_I,
+
+    /// @brief 浮点数逻辑非指令，一元运算
+    IRINST_OP_NOT_F,
 
     /// @brief 浮点数的乘法指令，二元运算·
     IRINST_OP_ADD_F,
