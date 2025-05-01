@@ -16,6 +16,33 @@
 ///
 #include "BinaryInstruction.h"
 
+#include "Function.h"
+#include "IntegerType.h"
+#include "FloatType.h"
+#include "VoidType.h"
+
+///@brief 选择一个二元操作指令
+/// @param func 函数对象
+/// @param lhs 左操作数
+/// @param rhs 右操作数
+/// @param intOp 整数操作符
+/// @param floatOp 浮点操作符
+/// @return BinaryInstruction* 二元操作指令对象
+/// @note 该函数会自动判断操作数的类型，选择合适的操作符
+BinaryInstruction * BinaryInstruction::createAutoTyped(Function * func,
+    Value * lhs,
+    Value * rhs,
+    IRInstOperator intOp,
+    IRInstOperator floatOp) {
+bool isFloat = lhs->getType()->isFloatType() || rhs->getType()->isFloatType();
+IRInstOperator op = isFloat ? floatOp : intOp;
+Type * type = isFloat ? FloatType::getInstance() : IntegerType::getInstance();
+return new BinaryInstruction(func, op, lhs, rhs, type);
+}
+
+
+
+
 /// @brief 构造函数
 /// @param _op 操作符
 /// @param _result 结果操作数

@@ -140,6 +140,14 @@ void Module::insertConstIntDirectly(ConstInt * val)
     constIntMap.emplace(val->getVal(), val);
 }
 
+/// @brief Value直接插入到符号表中的全局变量中
+/// @param name Value的名称
+/// @param val Value信息
+void Module::insertConstFloatDirectly(ConstFloat * val)
+{
+    constFloatMap.emplace(val->getVal(), val);
+}
+
 /// @brief 新建一个整型数值的Value，并加入到符号表，用于后续释放空间
 /// @param intVal 整数值
 /// @return 常量Value
@@ -173,6 +181,39 @@ ConstInt * Module::findConstInt(int32_t val)
 
     return temp;
 }
+
+/// @brief 新建局部变量或者全局变量，并加入到当前作用域中
+/// @param floatVal 浮点数值
+/// @return 浮点数值
+ConstFloat * Module::newConstFloat(float floatVal)
+{
+    // 查找是否已有相同值的浮点常量
+    ConstFloat * val = findConstFloat(floatVal);
+    if (!val) {
+        // 不存在则新建
+        val = new ConstFloat(floatVal);
+        insertConstFloatDirectly(val);
+    }
+
+    return val;
+}
+
+/// @brief 根据浮点值获取当前符号
+/// @param name 变量名
+/// @return 变量对应的值
+ConstFloat * Module::findConstFloat(float val)
+{
+    ConstFloat * temp = nullptr;
+
+    auto pIter = constFloatMap.find(val);
+    if (pIter != constFloatMap.end()) {
+        // 查找到
+        temp = pIter->second;
+    }
+
+    return temp;
+}
+
 
 /// @brief 在当前的作用域中查找，若没有查找到则创建局部变量或者全局变量。请注意不能创建临时变量
 /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用

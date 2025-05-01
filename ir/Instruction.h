@@ -40,6 +40,18 @@ enum class IRInstOperator : std::int8_t {
     /// @brief 整数的减法指令，二元运算
     IRINST_OP_SUB_I,
 
+    /// @brief 浮点数的乘法指令，二元运算·
+    IRINST_OP_ADD_F,
+
+    /// @brief 浮点数的减法指令，二元运算
+    IRINST_OP_SUB_F,
+
+    /// @brief 浮点数的乘法指令，二元运算
+    IRINST_OP_MUL_F,
+
+    /// @brief 浮点数的除法指令，二元运算
+    IRINST_OP_DIV_F,
+
     /// @brief 赋值指令，一元运算
     IRINST_OP_ASSIGN,
 

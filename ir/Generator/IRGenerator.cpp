@@ -44,6 +44,7 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_LITERAL_UINT] = &IRGenerator::ir_leaf_node_uint;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_VAR_ID] = &IRGenerator::ir_leaf_node_var_id;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_TYPE] = &IRGenerator::ir_leaf_node_type;
+    ast2ir_handlers[ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT] = &IRGenerator::ir_leaf_node_float;
 
     /* 表达式运算， 加减 */
     //TODO:[表达式] 乘除取余、与或比较、单目、非法算符
@@ -580,6 +581,21 @@ bool IRGenerator::ir_leaf_node_uint(ast_node * node)
 
     // 新建一个整数常量Value
     val = module->newConstInt((int32_t) node->integer_val);
+
+    node->val = val;
+
+    return true;
+}
+
+/// @brief float数字面量叶子节点翻译成线性中间IR
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_leaf_node_float(ast_node * node)
+{
+    ConstFloat * val;
+
+    // 新建一个浮点数常量Value
+    val = module->newConstFloat(node->float_val);
 
     node->val = val;
 
