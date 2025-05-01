@@ -36,7 +36,9 @@ BinaryInstruction * BinaryInstruction::createAutoTyped(Function * func,
     IRInstOperator floatOp) {
 bool isFloat = lhs->getType()->isFloatType() || rhs->getType()->isFloatType();
 IRInstOperator op = isFloat ? floatOp : intOp;
-Type * type = isFloat ? FloatType::getInstance() : IntegerType::getInstance();
+Type * floatTy = FloatType::getType();
+Type * intTy = IntegerType::getTypeInt();
+Type * type = isFloat ? floatTy : intTy;
 return new BinaryInstruction(func, op, lhs, rhs, type);
 }
 

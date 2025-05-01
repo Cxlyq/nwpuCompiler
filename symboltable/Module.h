@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "ConstInt.h"
+#include "ConstFloat.h"
 #include "Type.h"
 #include "GlobalVariable.h"
 #include "Function.h"

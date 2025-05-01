@@ -54,16 +54,16 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     ast2ir_handlers[ast_operator_type::AST_OP_DIV] = &IRGenerator::ir_div;
     ast2ir_handlers[ast_operator_type::AST_OP_MOD] = &IRGenerator::ir_mod;
     ast2ir_handlers[ast_operator_type::AST_OP_AND] = &IRGenerator::ir_and;
-    ast2ir_handlers[ast_operator_type::AST_OP_OR] = &IRGenerator::ir_or;
-    ast2ir_handlers[ast_operator_type::AST_OP_EQ] = &IRGenerator::ir_eq;
-    ast2ir_handlers[ast_operator_type::AST_OP_NEQ] = &IRGenerator::ir_neq;
-    ast2ir_handlers[ast_operator_type::AST_OP_GE] = &IRGenerator::ir_ge;
-    ast2ir_handlers[ast_operator_type::AST_OP_LE] = &IRGenerator::ir_le;
-    ast2ir_handlers[ast_operator_type::AST_OP_GNE] = &IRGenerator::ir_gne;
-    ast2ir_handlers[ast_operator_type::AST_OP_LNE] = &IRGenerator::ir_lne;
-    ast2ir_handlers[ast_operator_type::AST_OP_POS] = &IRGenerator::ir_pos;
-    ast2ir_handlers[ast_operator_type::AST_OP_NEG] = &IRGenerator::ir_neg;
-    ast2ir_handlers[ast_operator_type::AST_OP_NOT] = &IRGenerator::ir_not;
+    // ast2ir_handlers[ast_operator_type::AST_OP_OR] = &IRGenerator::ir_or;
+    // ast2ir_handlers[ast_operator_type::AST_OP_EQ] = &IRGenerator::ir_eq;
+    // ast2ir_handlers[ast_operator_type::AST_OP_NEQ] = &IRGenerator::ir_neq;
+    // ast2ir_handlers[ast_operator_type::AST_OP_GE] = &IRGenerator::ir_ge;
+    // ast2ir_handlers[ast_operator_type::AST_OP_LE] = &IRGenerator::ir_le;
+    // ast2ir_handlers[ast_operator_type::AST_OP_GNE] = &IRGenerator::ir_gne;
+    // ast2ir_handlers[ast_operator_type::AST_OP_LNE] = &IRGenerator::ir_lne;
+    // ast2ir_handlers[ast_operator_type::AST_OP_POS] = &IRGenerator::ir_pos;
+    // ast2ir_handlers[ast_operator_type::AST_OP_NEG] = &IRGenerator::ir_neg;
+    //ast2ir_handlers[ast_operator_type::AST_OP_NOT] = &IRGenerator::ir_not;
 
     /* 语句 */
     //TODO:[语句] ifelse, while, break, continue
@@ -414,13 +414,18 @@ bool IRGenerator::ir_add(ast_node * node)
         return false;
     }
 
-    // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
+    // // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    BinaryInstruction * addInst = new BinaryInstruction(module->getCurrentFunction(),
-                                                        IRInstOperator::IRINST_OP_ADD_I,
-                                                        left->val,
-                                                        right->val,
-                                                        IntegerType::getTypeInt());
+    // BinaryInstruction * addInst = new BinaryInstruction(module->getCurrentFunction(),
+    //                                                     IRInstOperator::IRINST_OP_ADD_I,
+    //                                                     left->val,
+    //                                                     right->val,
+    //                                                     IntegerType::getTypeInt());
+
+    auto addInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(), left->val, right->val,
+        IRInstOperator::IRINST_OP_ADD_I, IRInstOperator::IRINST_OP_ADD_F);
+    
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
