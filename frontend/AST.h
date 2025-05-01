@@ -78,11 +78,11 @@ enum class ast_operator_type : int {
     /// @brief 赋值语句运算符
     AST_OP_ASSIGN,
 
-	/// @brief 选择语句运算符
-	AST_OP_IFELSE,
+    /// @brief 选择语句运算符
+    AST_OP_IFELSE,
 
-	/// @brief 循环语句运算符
-	AST_OP_WHILE,
+    /// @brief 循环语句运算符
+    AST_OP_WHILE,
 
     /// @brief 变量声明语句
     AST_OP_VAR_DECL_STMT,
@@ -129,23 +129,23 @@ enum class ast_operator_type : int {
     /// @brief 二元运算符||
     AST_OP_OR,
 
-	/// @brief 二元运算符==
-	AST_OP_EQ,
+    /// @brief 二元运算符==
+    AST_OP_EQ,
 
-	/// @brief 二元运算符!=
-	AST_OP_NEQ,
+    /// @brief 二元运算符!=
+    AST_OP_NEQ,
 
-	/// @brief 二元运算符>=
-	AST_OP_GE,
+    /// @brief 二元运算符>=
+    AST_OP_GE,
 
-	/// @brief 二元运算符<=
-	AST_OP_LE,
+    /// @brief 二元运算符<=
+    AST_OP_LE,
 
-	/// @brief 二元运算符>
-	AST_OP_GNE,
+    /// @brief 二元运算符>
+    AST_OP_GNE,
 
-	/// @brief 二元运算符<
-	AST_OP_LNE,
+    /// @brief 二元运算符<
+    AST_OP_LNE,
 
     /// @brief 一元运算符+
     AST_OP_POS,
@@ -165,10 +165,11 @@ enum class ast_operator_type : int {
     /// @brief 数组访问
     AST_OP_ARRAY_ACCESS,
 
-    // TODO: 抽象语法树其它内部节点运算符追加，现在缺比较和判等运算符
+    // TODO: 抽象语法树其它内部节点运算符追加
 
     /// @brief 最大标识符，表示非法运算符
     AST_OP_MAX,
+    // TODO:[语义检查] 非法运算符处理
 };
 
 ///
