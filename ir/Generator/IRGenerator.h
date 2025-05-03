@@ -16,9 +16,11 @@
 ///
 #pragma once
 
+#include <stack>
 #include <unordered_map>
 
 #include "AST.h"
+#include "LabelInstruction.h"
 #include "Module.h"
 
 /// @brief AST遍历产生线性IR类
@@ -226,6 +228,10 @@ private:
 
     /// @brief 符号表:模块
     Module * module;
+
+    std::stack<LabelInstruction*>  exitLabels;
+
+    std::stack<LabelInstruction*>  enterLabels;
 };
 
 int evaluateConstExpr(ast_node* node);
