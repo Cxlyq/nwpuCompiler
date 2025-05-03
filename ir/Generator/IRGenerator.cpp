@@ -1248,6 +1248,8 @@ bool IRGenerator::ir_while(ast_node * node)
     // 循环出口标签 (条件为假时跳转到的目标，循环结束后的代码入口)
     LabelInstruction * loop_exit_label = new LabelInstruction(currentFunc);
 
+    enterLabels.push(loop_header_label);// 记录循环头部标签
+    exitLabels.push(loop_exit_label);// 记录循环出口标签
     // 2. 添加一个无条件跳转到循环头部标签的指令
     // 这是为了确保在执行 while 循环逻辑之前，先进入循环头部块。
     // 如果 while 语句是基本块的第一个语句，这个跳转可能是多余的（优化时会移除），
@@ -1265,6 +1267,9 @@ bool IRGenerator::ir_while(ast_node * node)
     ast_node * cond = ir_visit_ast_node(cond_node);
     if (!cond) {
         // 条件表达式生成失败
+        enterLabels.pop();
+        exitLabels.pop();
+        printf("Condition expression error\n");
         return false;
     }
     // 将条件表达式生成的指令添加到当前节点的指令列表中 (属于循环头部块)
@@ -1274,6 +1279,9 @@ bool IRGenerator::ir_while(ast_node * node)
     Value * cond_val = cond->val;
     if (!cond_val) {
          // 条件表达式必须产生一个值
+         enterLabels.pop();
+         exitLabels.pop();
+         printf("no value for condition expression\n");
          return false; // 或者更详细的错误处理
     }
     // TODO: 可选：检查 cond_val 的类型是否是布尔类型（例如 IR 中的 i1）
@@ -1294,6 +1302,9 @@ bool IRGenerator::ir_while(ast_node * node)
     if (!body) {
         // 循环体生成失败
         // 注意：即使循环体为空（例如 `{}`），ir_visit_ast_node 也应该成功，返回一个 blockInsts 为空的节点。
+        enterLabels.pop();
+        exitLabels.pop();
+        printf("Body expression error\n");
         return false;
     }
     // 将循环体生成的指令添加到当前节点的指令列表中
@@ -1309,6 +1320,9 @@ bool IRGenerator::ir_while(ast_node * node)
     // 添加循环出口标签。这标志着循环结束后的基本块的开始。
     node->blockInsts.addInst(loop_exit_label);
 
+    // === 从栈中弹出循环头部and出口标签，表示离开当前循环的作用域 ===
+    enterLabels.pop();
+    exitLabels.pop();
     // while 语句本身不产生值，所以 node->val 保持 nullptr。
 
     return true;
@@ -1316,56 +1330,59 @@ bool IRGenerator::ir_while(ast_node * node)
 
 bool IRGenerator::ir_break(ast_node * node)
 {
-    ast_node * init_node = node->sons[0];  // 初始化语句
-    ast_node * cond_node = node->sons[1];  // 循环条件
-    ast_node * step_node = node->sons[2];  // 循环步进
-    ast_node * body_node = node->sons[3];  // 循环体
+    Function * currentFunc = module->getCurrentFunction(); // 获取当前函数
 
-    // 访问初始化语句
-    ir_visit_ast_node(init_node);
-
-    // 访问循环条件
-    ast_node * cond = ir_visit_ast_node(cond_node);
-    if (!cond) {
-        return false;
+    // 1. 检查是否在循环内部
+    if (exitLabels.empty()) {
+        // break 语句在循环外部，这是一个编译错误
+        // TODO: 更好的错误报告机制，包括位置信息
+        printf("Error: break statement outside of loop.");
+        return false; // 返回 false 表示生成失败
     }
 
-    // 访问循环步进
-    ir_visit_ast_node(step_node);
+    // 2. 获取当前最内层循环的出口标签 (栈顶元素)
+    LabelInstruction * exit_label = exitLabels.top(); // vector 的 back() 获取栈顶
 
-    // 访问循环体
-    ast_node * bodyBlock = ir_visit_ast_node(body_node);
-    if (!bodyBlock) {
-        return false;
-    }
+    // 3. 创建无条件跳转指令，跳转到循环出口标签
+    Instruction * break_inst = new GotoInstruction(currentFunc, exit_label);
+
+    // 4. 将跳转指令添加到当前节点的指令列表中
+    node->blockInsts.addInst(break_inst);
+
+    // break 语句本身不产生值
+    node->val = nullptr; // 确保 val 为 nullptr
+
+    // break 指令终止了当前的基本块，后续指令理论上不可达。
+    // 即使后续有指令，优化器会清理。在线性 IR 生成时，只添加 break 跳转指令即可。
 
     return true;
 }
 
 bool IRGenerator::ir_continue(ast_node * node)
 {
-    ast_node * init_node = node->sons[0];  // 初始化语句
-    ast_node * cond_node = node->sons[1];  // 循环条件
-    ast_node * step_node = node->sons[2];  // 循环步进
-    ast_node * body_node = node->sons[3];  // 循环体
+    Function * currentFunc = module->getCurrentFunction(); // 获取当前函数
 
-    // 访问初始化语句
-    ir_visit_ast_node(init_node);
-
-    // 访问循环条件
-    ast_node * cond = ir_visit_ast_node(cond_node);
-    if (!cond) {
-        return false;
+    // 1. 检查是否在循环内部
+    // continue 语句只在循环内部有效，检查 loop_continue_labels_ 栈
+    if (enterLabels.empty()) {
+        // continue 语句在循环外部，这是一个编译错误
+        printf("Error: continue statement outside of loop.");
+        return false; // 返回 false 表示生成失败
     }
 
-    // 访问循环步进
-    ir_visit_ast_node(step_node);
+    // 2. 获取当前最内层循环的头部标签 (loop_continue_labels_ 栈顶元素)
+    LabelInstruction * header_label = enterLabels.top(); // vector 的 back() 获取栈顶
 
-    // 访问循环体
-    ast_node * bodyBlock = ir_visit_ast_node(body_node);
-    if (!bodyBlock) {
-        return false;
-    }
+    // 3. 创建无条件跳转指令，跳转到循环头部标签
+    Instruction * continue_inst = new GotoInstruction(currentFunc, header_label);
+
+    // 4. 将跳转指令添加到当前节点的指令列表中
+    node->blockInsts.addInst(continue_inst);
+
+    // continue 语句本身不产生值
+    node->val = nullptr; // 确保 val 为 nullptr
+
+    // continue 指令也终止了当前的基本块
 
     return true;
 }
