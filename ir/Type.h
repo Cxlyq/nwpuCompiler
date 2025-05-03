@@ -173,6 +173,9 @@ public:
     /// @return 字符串
     [[nodiscard]] virtual std::string toString() const = 0;
 
+    virtual int getSizeInBytes() const;
+
+
 protected:
     ///
     /// @brief 标识类型的ID

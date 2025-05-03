@@ -41,4 +41,8 @@ protected:
     ///
     Constant(Type * _type) : User(_type)
     {}
+
+public:
+    /// @brief 判断该常量是否全为0（用于判断是否属于BSS段）
+    virtual bool isZeroValue() const = 0;
 };

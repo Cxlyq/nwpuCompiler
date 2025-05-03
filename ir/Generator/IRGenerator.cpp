@@ -1202,8 +1202,15 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
     if (id_node->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // 是数组变量，提取数组名和维度表达式
         std::string array_name;
-        std::vector<ast_node*> dims;
-        extract_array_info(id_node, array_name, dims);
+        std::vector<ast_node*> array_dims;
+        extract_array_info(id_node, array_name, array_dims);
+
+        // 解析维度表达式为实际的常数
+        std::vector<int> dims;
+        for (auto* expr_node : array_dims) {
+            int dim_size = evaluateConstExpr(expr_node);  // 假设此函数返回维度大小
+            dims.push_back(dim_size);
+        }
 
         // 调用 module->newArrayVarValue 分配数组变量
         //TODO node->val = module->newArrayVarValue(var_type, array_name, dims);
@@ -1219,4 +1226,33 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
     }
 
     return true;
+}
+
+int evaluateConstExpr(ast_node* node) {
+    switch (node->node_type) {
+        case ast_operator_type::AST_OP_LEAF_LITERAL_UINT:
+            return node->integer_val;
+
+        case ast_operator_type::AST_OP_ADD:
+            return evaluateConstExpr(node->sons[0]) + evaluateConstExpr(node->sons[1]);
+
+        case ast_operator_type::AST_OP_SUB:
+            return evaluateConstExpr(node->sons[0]) - evaluateConstExpr(node->sons[1]);
+
+        case ast_operator_type::AST_OP_MUL:
+            return evaluateConstExpr(node->sons[0]) * evaluateConstExpr(node->sons[1]);
+
+        case ast_operator_type::AST_OP_DIV: {
+            int divisor = evaluateConstExpr(node->sons[1]);
+            if (divisor == 0) {
+                std::cerr << "除以零错误 in evaluateConstExpr" << std::endl;
+                std::abort();
+            }
+            return evaluateConstExpr(node->sons[0]) / divisor;
+        }
+
+        default:
+            std::cerr << "evaluateConstExpr: 非法节点类型（不是常量表达式）" << std::endl;
+            std::abort();
+    }
 }

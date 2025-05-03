@@ -146,6 +146,10 @@ public:
     /// \return 临时变量Value
     MemVariable * newMemVariable(Type * type);
 
+    LocalVariable* newArrayLocalVarValue(Type* type, std::string array_name, std::vector<int> dims, int32_t scope_level);
+
+
+
     /// @brief 清理函数内申请的资源
     void Delete();
 
@@ -170,6 +174,10 @@ public:
     ///
     void realArgCountReset();
 
+    bool isZeroValue() const override{
+        //TODO: [函数] 目前形参还不支持，直接返回true
+        return false;
+    }
 private:
     ///
     /// @brief 函数的返回值类型，有点冗余，可删除，直接从type中取得即可

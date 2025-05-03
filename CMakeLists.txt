@@ -174,6 +174,8 @@ set(IR_SRCS
 	ir/Instructions/UnaryInstruction.cpp
 	ir/Instructions/UnaryInstruction.h
 
+	ir/Types/ArrayType.h
+	ir/Types/ArrayType.cpp
 	ir/Types/VoidType.h
 	ir/Types/VoidType.cpp
 	ir/Types/LabelType.h
@@ -182,12 +184,18 @@ set(IR_SRCS
 	ir/Types/IntegerType.cpp
 	ir/Types/FloatType.h
 	ir/Types/FloatType.cpp
+	ir/Types/FunctionType.h
+	ir/Types/PointerType.h
+
+	ir/Values/ConstFloat.h
+	ir/Values/ConstArray.h
 	ir/Values/ConstInt.h
 	ir/Values/FormalParam.h
 	ir/Values/GlobalVariable.h
 	ir/Values/LocalVariable.h
 	ir/Values/MemVariable.h
 	ir/Values/RegVariable.h
+
 	ir/IRCode.h
 	ir/IRCode.cpp
 	ir/Constant.h
@@ -197,6 +205,7 @@ set(IR_SRCS
 	ir/Instruction.cpp
 	ir/Instruction.h
 	ir/IRConstant.h
+	ir/Type.cpp
 	ir/Type.h
 	ir/Use.cpp
 	ir/Use.h

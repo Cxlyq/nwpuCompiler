@@ -206,4 +206,5 @@ private:
     Module * module;
 };
 
+int evaluateConstExpr(ast_node* node);
 
