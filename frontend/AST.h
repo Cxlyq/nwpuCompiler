@@ -84,6 +84,12 @@ enum class ast_operator_type : int {
     /// @brief 循环语句运算符
     AST_OP_WHILE,
 
+    /// @brief break是叶子节点
+    AST_OP_BREAK,
+
+    /// @brief continue是叶子节点
+    AST_OP_CONTINUE,
+
     /// @brief 变量声明语句
     AST_OP_VAR_DECL_STMT,
 
@@ -155,12 +161,6 @@ enum class ast_operator_type : int {
 
     /// @brief 一元运算符!
     AST_OP_NOT,
-
-    /// @brief break是叶子节点
-    AST_OP_BREAK,
-
-    /// @brief continue是叶子节点
-    AST_OP_CONTINUE,
 
     /// @brief 数组访问
     AST_OP_ARRAY_ACCESS,
