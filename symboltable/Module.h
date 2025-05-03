@@ -94,8 +94,9 @@ public:
     /// @return 函数信息
     Function * findFunction(std::string name);
 
-    //TODO: 判断变量是否为0
-    bool isZeroValue() const{
+    // TODO: 判断变量是否为0
+    bool isZeroValue() const
+    {
         return false;
     }
 
@@ -148,6 +149,9 @@ public:
     ///
     void renameIR();
 
+    /// @brief 在当前的作用域中查找，若没有查找到则创建数组变量
+    Value * newArrayVarValue(Type * type, std::string array_name, std::vector<int> dims);
+
 protected:
     /// @brief 根据整数值获取当前符号
     /// \param name 变量名
@@ -188,12 +192,7 @@ protected:
     /// @param val Value信息
     void insertConstFloatDirectly(ConstFloat * val);
 
-
-
-    Value* newArrayVarValue(Type* type, std::string array_name, std::vector<int> dims);
-
-    GlobalVariable* newGlobalArrayVariable(Type* type, std::string array_name, std::vector<int> dims);
-
+    GlobalVariable * newGlobalArrayVariable(Type * type, std::string array_name, std::vector<int> dims);
 
 private:
     ///

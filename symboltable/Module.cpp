@@ -20,7 +20,6 @@
 #include "VoidType.h"
 #include "Register.h"
 
-
 Module::Module(std::string _name) : name(_name)
 {
     // 创建作用域栈
@@ -272,6 +271,8 @@ GlobalVariable * Module::newGlobalArrayVariable(Type * type, std::string array_n
     // 创建全局数组变量
     GlobalVariable * newArrayVar = new GlobalVariable(arrayType, array_name);
 
+    insertGlobalValueDirectly(newArrayVar);
+
     // 在全局作用域中将该数组添加进去
     return newArrayVar;
 }
@@ -282,23 +283,23 @@ GlobalVariable * Module::newGlobalArrayVariable(Type * type, std::string array_n
 /// @param dims 数组的维度大小
 /// @param scope_level 数组所在作用域层级
 /// @return 新创建的局部数组变量
-LocalVariable * Function::newArrayLocalVarValue(Type * type, std::string array_name, std::vector<int> dims, int32_t scope_level)
+LocalVariable *
+Function::newArrayLocalVarValue(Type * type, std::string array_name, std::vector<int> dims, int32_t scope_level)
 {
     ArrayType * arrayType = ArrayType::getArrayType(type, dims);
     LocalVariable * newArrayVar = new LocalVariable(arrayType, array_name, scope_level);
 
     // 分配栈空间（单位可能是字节，也可能是字长对齐）
-    int totalSize = arrayType->getSizeInBytes();  
-    int offset = frameAllocator.allocate(totalSize);  // 栈帧分配器维护当前偏移
+    int totalSize = arrayType->getSizeInBytes();
+    int offset = frameAllocator.allocate(totalSize); // 栈帧分配器维护当前偏移
 
-    newArrayVar->setMemoryAddr(FP_REG, offset);  // 通常 FP_REG 是一个常量如 -1 表示 RBP
+    newArrayVar->setMemoryAddr(FP_REG, offset); // 通常 FP_REG 是一个常量如 -1 表示 RBP
 
     // 加入局部变量表
     varsVector.push_back(newArrayVar);
 
     return newArrayVar;
 }
-
 
 /// @brief 在当前的作用域中查找，若没有查找到则创建局部变量或者全局变量。请注意不能创建临时变量
 /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
@@ -457,4 +458,3 @@ void Module::outputIR(const std::string & filePath)
 
     fclose(fp);
 }
-
