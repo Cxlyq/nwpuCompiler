@@ -61,9 +61,7 @@ asm.s
 
 # VSCodeCounters
 .VSCodeCounter/
-# settings & extensions
-.vscode/settings.json
-.vscode/extensions.json
+
 # clangd
 .cache/
 
