@@ -1,17 +1,17 @@
 ///
-/// @file BinaryInstruction.cpp
-/// @brief 二元操作指令
+/// @file UnaryInstruction.cpp
+/// @brief 一元操作指令
 ///
-/// @author zenglj (zenglj@live.com)
+/// @author   Kevin-wjq13777(w137776w@gmail.com)
 /// @version 1.0
-/// @date 2024-09-29
+/// @date 2025/5/1
 ///
-/// @copyright Copyright (c) 2024
+/// @copyright Copyright (c) 2025
 ///
 /// @par 修改日志:
 /// <table>
 /// <tr><th>Date       <th>Version <th>Author  <th>Description
-/// <tr><td>2024-09-29 <td>1.0     <td>zenglj  <td>新建
+/// <tr><td>2025/5/1 <td>1.0     <td>Kevin-wjq13777  <td>新建
 /// </table>
 ///
 #include "UnaryInstruction.h"
@@ -62,11 +62,37 @@ void UnaryInstruction::toString(std::string & str)
     Value *src = getOperand(0);
 
     switch (op) {
-
+        //TODO (交流)整数和浮点数的字符串是否可以一样？
         case IRInstOperator::IRINST_OP_POS_I:
-        // 加法指令，二元运算
+        // 整数单目正指令，一元运算
         str = getIRName() + " = + " + src->getIRName() ;
         break;
+
+        case IRInstOperator::IRINST_OP_POS_F:
+        // 浮点数数单目正指令，一元运算
+        str = getIRName() + " = + " + src->getIRName() ;
+        break;
+
+        case IRInstOperator::IRINST_OP_NEG_I:
+        // 整数单目负指令，一元运算
+        str = getIRName() + " = - " + src->getIRName() ;
+        break;
+
+        case IRInstOperator::IRINST_OP_NEG_F:
+        // 浮点数单目负指令，一元运算
+        str = getIRName() + " = - " + src->getIRName() ;
+        break;
+
+        case IRInstOperator::IRINST_OP_NOT_I:
+        // 整数逻辑非指令，一元运算
+        str = getIRName() + " = ! " + src->getIRName() ;
+        break;
+
+        case IRInstOperator::IRINST_OP_NOT_F:
+        // 浮点逻辑非指令，一元运算
+        str = getIRName() + " = ! " + src->getIRName() ;
+        break;
+
         default:
             // 未知指令
             Instruction::toString(str);

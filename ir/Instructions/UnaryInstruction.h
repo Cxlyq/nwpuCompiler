@@ -1,10 +1,18 @@
 ///
 /// @file UnaryInstruction.h
-/// @brief 一元操作指令（如 +x, -x, !x）
+/// @brief 一元操作指令
 ///
-/// @author ...
+/// @author   Kevin-wjq13777(w137776w@gmail.com)
 /// @version 1.0
-/// @date 2024-09-30
+/// @date 2025/5/1
+///
+/// @copyright Copyright (c) 2025
+///
+/// @par 修改日志:
+/// <table>
+/// <tr><th>Date       <th>Version <th>Author  <th>Description
+/// <tr><td>2025/5/1 <td>1.0     <td>Kevin-wjq13777  <td>新建
+/// </table>
 ///
 #pragma once
 
