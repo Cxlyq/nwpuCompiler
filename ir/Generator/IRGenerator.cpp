@@ -1231,31 +1231,85 @@ bool IRGenerator::ir_ifelse(ast_node * node)
 
 bool IRGenerator::ir_while(ast_node * node)
 {
-    ast_node * cond_node = node->sons[0];  // 条件表达式
-    ast_node * body_node = node->sons[1];  // 循环体
+    // AST 节点结构 (SysY while 通常是两个子节点):
+    // node->sons[0] 是条件表达式AST节点
+    // node->sons[1] 是循环体AST节点
 
-    // 访问条件表达式
+    ast_node * cond_node = node->sons[0]; // 条件表达式AST节点
+    ast_node * body_node = node->sons[1]; // 循环体AST节点
+
+    Function * currentFunc = module->getCurrentFunction(); // 获取当前函数
+
+    // 1. 创建表示循环不同部分的标签
+    // 循环头部标签 (用于条件求值和分支，也是从循环体跳回的目标)
+    LabelInstruction * loop_header_label = new LabelInstruction(currentFunc);
+    // 循环体标签 (条件为真时跳转到的目标)
+    LabelInstruction * loop_body_label = new LabelInstruction(currentFunc);
+    // 循环出口标签 (条件为假时跳转到的目标，循环结束后的代码入口)
+    LabelInstruction * loop_exit_label = new LabelInstruction(currentFunc);
+
+    // 2. 添加一个无条件跳转到循环头部标签的指令
+    // 这是为了确保在执行 while 循环逻辑之前，先进入循环头部块。
+    // 如果 while 语句是基本块的第一个语句，这个跳转可能是多余的（优化时会移除），
+    // 但为了生成正确的控制流，通常会添加。
+    // 或者，另一种结构是直接把 loop_header_label 作为当前 blockInsts 的第一个指令，
+    // 表示当前的基本块就直接是循环头部块。这里采用先添加跳转，再添加标签的方式，
+    // 这样 while 语句之前的指令和 while 语句的IR生成是分离的。
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, loop_header_label));
+
+    // 3. 生成循环头部块 (条件求值和条件分支)
+    // 添加循环头部标签，标记这个基本块的开始
+    node->blockInsts.addInst(loop_header_label);
+
+    // 访问条件表达式AST节点，生成其IR
     ast_node * cond = ir_visit_ast_node(cond_node);
     if (!cond) {
+        // 条件表达式生成失败
         return false;
     }
+    // 将条件表达式生成的指令添加到当前节点的指令列表中 (属于循环头部块)
+    node->blockInsts.addInst(cond->blockInsts);
 
-    // 访问循环体
-    ast_node * bodyBlock = ir_visit_ast_node(body_node);
-    if (!bodyBlock) {
+    // 获取条件表达式的值 (应为一个布尔值，i1 类型)
+    Value * cond_val = cond->val;
+    if (!cond_val) {
+         // 条件表达式必须产生一个值
+         return false; // 或者更详细的错误处理
+    }
+    // TODO: 可选：检查 cond_val 的类型是否是布尔类型（例如 IR 中的 i1）
+
+    // 添加条件分支指令 (br i1)
+    // 如果条件为真 (cond_val)，跳转到 loop_body_label
+    // 如果条件为假 (!cond_val)，跳转到 loop_exit_label
+    ConditionalInstruction* cond_branch_inst = new ConditionalInstruction(currentFunc, cond_val, loop_body_label, loop_exit_label);
+    node->blockInsts.addInst(cond_branch_inst);
+
+
+    // 4. 生成循环体块
+    // 添加循环体标签，标记这个基本块的开始
+    node->blockInsts.addInst(loop_body_label);
+
+    // 访问循环体AST节点，生成其IR
+    ast_node * body = ir_visit_ast_node(body_node);
+    if (!body) {
+        // 循环体生成失败
+        // 注意：即使循环体为空（例如 `{}`），ir_visit_ast_node 也应该成功，返回一个 blockInsts 为空的节点。
         return false;
     }
+    // 将循环体生成的指令添加到当前节点的指令列表中
+    node->blockInsts.addInst(body->blockInsts);
 
-    // // 创建条件跳转指令
-    // GotoInstruction * condGotoInst = new GotoInstruction(
-    //     module->getCurrentFunction(), cond->val, bodyBlock->blockInsts.getLabel());
+    // 在循环体块的末尾添加一个无条件跳转回循环头部标签的指令
+    // 这是循环的关键，完成一次迭代后回到头部检查条件。
+    // 使用你提供的 GotoInstruction 类。
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, loop_header_label));
 
-    // // 创建临时变量保存IR的值，以及线性IR指令
-    // node->blockInsts.addInst(cond->blockInsts);
-    // node->blockInsts.addInst(bodyBlock->blockInsts);
-    // node->blockInsts.addInst(condGotoInst);
 
-    // node->val = condGotoInst;
+    // 5. 生成循环出口块
+    // 添加循环出口标签。这标志着循环结束后的基本块的开始。
+    node->blockInsts.addInst(loop_exit_label);
+
+    // while 语句本身不产生值，所以 node->val 保持 nullptr。
 
     return true;
 }
