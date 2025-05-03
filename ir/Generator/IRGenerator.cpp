@@ -69,7 +69,6 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     //ast2ir_handlers[ast_operator_type::AST_OP_NOT] = &IRGenerator::ir_not;
 
     /* 语句 */
-    //TODO:[语句] ifelse, while, break, continue
     ast2ir_handlers[ast_operator_type::AST_OP_ASSIGN] = &IRGenerator::ir_assign;
     ast2ir_handlers[ast_operator_type::AST_OP_RETURN] = &IRGenerator::ir_return;
     ast2ir_handlers[ast_operator_type::AST_OP_IFELSE] = &IRGenerator::ir_ifelse;
@@ -1053,10 +1052,11 @@ bool IRGenerator::ir_assign(ast_node * node)
     ast_node * right = ir_visit_ast_node(son2_node);
     if (!right) {
         // 某个变量没有定值
+        printf("Assign: some variables have no values.\n");
         return false;
     }
 
-    // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
+    // TODO:这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
     MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
 
@@ -1088,11 +1088,12 @@ bool IRGenerator::ir_return(ast_node * node)
         if (!right) {
 
             // 某个变量没有定值
+            printf("Return: some variables have no values.\n");
             return false;
         }
     }
 
-    // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
+    // TODO: 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
     Function * currentFunc = module->getCurrentFunction();
 
     // 返回值存在时则移动指令到node中
@@ -1123,17 +1124,18 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     // node->sons[1] 是 if 语句块
     // node->sons[2] 是 else 语句块 (可选)
 
-    ast_node * cond_node = node->sons[0]; // 条件表达式AST节点
-    ast_node * if_node = node->sons[1];   // if 语句块AST节点 (then block)
-    ast_node * else_node = (node->sons.size() > 2) ? node->sons[2] : nullptr; // else 语句块AST节点 (else block)
+    ast_node * cond_node = node->sons[0];
+    ast_node * if_node = node->sons[1];
+    ast_node * else_node = (node->sons.size() > 2) ? node->sons[2] : nullptr;
 
-    Function * currentFunc = module->getCurrentFunction(); // 获取当前函数
+    Function * currentFunc = module->getCurrentFunction();
 
     // 1. 生成条件表达式的IR
     // ir_visit_ast_node 会递归访问子节点并生成其IR。
     // 生成的指令存储在 cond->blockInsts，结果值存储在 cond->val 中。
     ast_node * cond = ir_visit_ast_node(cond_node);
     if (!cond) {
+        printf("Ifelse: no condition block\n");
         return false;
     }
 
@@ -1144,7 +1146,8 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     // 获取条件表达式的值 (应为一个布尔值，如 IR 中的 i1 类型)
     Value * cond_val = cond->val;
     if (!cond_val) {
-         return false;
+        printf("Ifelse: condition has no value.\n");
+        return false;
     }
 
     // 2. 创建表示 if-else 结构不同基本块入口的标签
@@ -1171,23 +1174,23 @@ bool IRGenerator::ir_ifelse(ast_node * node)
 
     // 3. 添加条件分支指令 (br i1)
     // 这个指令紧跟在条件表达式指令之后，根据 cond_val 的布尔值决定跳转。
-    // 假设 ConditionalBranchInstruction 类存在并用于此目的。
     ConditionalInstruction* cond_branch_inst = new ConditionalInstruction(currentFunc, cond_val, true_branch_label, false_branch_target);
     node->blockInsts.addInst(cond_branch_inst);
 
 
-    // 至此，前导基本块（包含条件求值和条件分支）的指令已生成并添加到 node->blockInsts。
+    // 前导基本块（包含条件求值和条件分支）的指令已生成并添加到 node->blockInsts。
     // 接下来生成 then 块、else 块和 merge 块的指令，并按顺序添加到 node->blockInsts。
 
-    // 4. 生成 then 块 (if 块) 的IR
-    // 添加 then 块的标签。这标志着 then 基本块的开始。
+    // 4. 生成 if块 的IR
+    // 添加 if 块的标签
     node->blockInsts.addInst(true_branch_label);
 
-    // 访问 if 语句块 AST 节点。生成其内部指令。
+    // 访问 if 语句块 AST 节点。生成其内部指令
     ast_node * ifBlock = ir_visit_ast_node(if_node);
     if (!ifBlock) {
         // if 块生成失败
         // 注意：即使 if 块为空（例如 `{}`），ir_visit_ast_node 也应该成功，返回一个 blockInsts 为空的节点。
+        printf("if block generate failed.\n");
         return false;
     }
     // 将 if 块生成的指令添加到当前节点的指令列表中。
@@ -1210,6 +1213,7 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         ast_node * elseBlock = ir_visit_ast_node(else_node);
         if (!elseBlock) {
              // else 块生成失败
+             printf("else block generate failed.\n");
              return false;
         }
         // 将 else 块生成的指令添加到当前节点的指令列表中。
@@ -1269,7 +1273,7 @@ bool IRGenerator::ir_while(ast_node * node)
         // 条件表达式生成失败
         enterLabels.pop();
         exitLabels.pop();
-        printf("Condition expression error\n");
+        printf("While: Condition express generate failed.\n");
         return false;
     }
     // 将条件表达式生成的指令添加到当前节点的指令列表中 (属于循环头部块)
@@ -1281,7 +1285,7 @@ bool IRGenerator::ir_while(ast_node * node)
          // 条件表达式必须产生一个值
          enterLabels.pop();
          exitLabels.pop();
-         printf("no value for condition expression\n");
+         printf("While: no value for condition expression\n");
          return false; // 或者更详细的错误处理
     }
     // TODO: 可选：检查 cond_val 的类型是否是布尔类型（例如 IR 中的 i1）
@@ -1304,7 +1308,7 @@ bool IRGenerator::ir_while(ast_node * node)
         // 注意：即使循环体为空（例如 `{}`），ir_visit_ast_node 也应该成功，返回一个 blockInsts 为空的节点。
         enterLabels.pop();
         exitLabels.pop();
-        printf("Body expression error\n");
+        printf("While: Body expression error\n");
         return false;
     }
     // 将循环体生成的指令添加到当前节点的指令列表中
@@ -1336,7 +1340,7 @@ bool IRGenerator::ir_break(ast_node * node)
     if (exitLabels.empty()) {
         // break 语句在循环外部，这是一个编译错误
         // TODO: 更好的错误报告机制，包括位置信息
-        printf("Error: break statement outside of loop.");
+        printf("Break: break statement outside of loop.");
         return false; // 返回 false 表示生成失败
     }
 
@@ -1366,7 +1370,7 @@ bool IRGenerator::ir_continue(ast_node * node)
     // continue 语句只在循环内部有效，检查 loop_continue_labels_ 栈
     if (enterLabels.empty()) {
         // continue 语句在循环外部，这是一个编译错误
-        printf("Error: continue statement outside of loop.");
+        printf("Continue: continue statement outside of loop.");
         return false; // 返回 false 表示生成失败
     }
 
