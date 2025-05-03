@@ -69,8 +69,8 @@ void BinaryInstruction::toString(std::string & str)
     Value *src1 = getOperand(0), *src2 = getOperand(1);
 
     switch (op) {
+        //TODO 还有剩余二元运算需要添加，区别浮点和整数
         case IRInstOperator::IRINST_OP_ADD_I:
-
             // 加法指令，二元运算
             str = getIRName() + " = add " + src1->getIRName() + "," + src2->getIRName();
             break;
