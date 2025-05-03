@@ -21,6 +21,11 @@ const std::vector<int>& ArrayType::getDimensions() const {
 }
 
 // 获取数组的大小（字节数）
+int ArrayType::getSize() const {
+    return sizeInBytes;
+}
+
+// 获取数组元素的大小（字节数）
 int ArrayType::getSizeInBytes() const {
     return sizeInBytes;
 }

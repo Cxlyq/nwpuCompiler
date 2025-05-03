@@ -94,7 +94,7 @@ public:
     /// @return 函数信息
     Function * findFunction(std::string name);
 
-    //TODO: [函数] 目前形参还不支持，直接返回true
+    //TODO: 判断变量是否为0
     bool isZeroValue() const{
         return false;
     }

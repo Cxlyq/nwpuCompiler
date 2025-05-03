@@ -24,6 +24,7 @@
 #include "LocalVariable.h"
 #include "MemVariable.h"
 #include "IRCode.h"
+#include "FrameAllocator.h" 
 
 ///
 /// @brief 描述函数信息的类，是全局静态存储，其Value的类型为FunctionType
@@ -175,7 +176,7 @@ public:
     void realArgCountReset();
 
     bool isZeroValue() const override{
-        //TODO: [函数] 目前形参还不支持，直接返回true
+        //TODO: 判断变量是否为0
         return false;
     }
 private:
@@ -258,4 +259,6 @@ private:
     /// @brief 累计的实参个数，用于ARG指令的统计
     ///
     int32_t realArgCount = 0;
+
+    FrameAllocator frameAllocator;  // 每个函数一个栈帧分配器
 };

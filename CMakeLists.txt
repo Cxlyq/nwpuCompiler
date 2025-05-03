@@ -215,6 +215,8 @@ set(IR_SRCS
 	ir/User.cpp
 	ir/Value.cpp
 	ir/Value.h
+	ir/FrameAllocator.h
+	ir/Register.h
 )
 
 # 符号表等共通化代码集合
