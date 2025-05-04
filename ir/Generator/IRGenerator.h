@@ -162,8 +162,8 @@ protected:
     /// @brief while节点翻译成线性中间IR
     /// @param node AST节点
     /// @return 翻译是否成功，true：成功，false：失败
-    bool ir_while(ast_node * node);    
-    
+    bool ir_while(ast_node * node);
+
     /// @brief break节点翻译成线性中间IR
     /// @param node AST节点
     /// @return 翻译是否成功，true：成功，false：失败
@@ -173,8 +173,6 @@ protected:
     /// @param node AST节点
     /// @return 翻译是否成功，true：成功，false：失败
     bool ir_continue(ast_node * node);
-
-
 
     /// @brief 类型叶子节点翻译成线性中间IR
     /// @param node AST节点
@@ -206,6 +204,16 @@ protected:
     /// @return 翻译是否成功，true：成功，false：失败
     bool ir_variable_declare(ast_node * node);
 
+    /// @brief 常量声明语句节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_const_declare_statment(ast_node * node);
+
+    /// @brief 变量定声明节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_const_declare(ast_node * node);
+
     /// @brief 未知节点类型的节点处理
     /// @param node AST节点
     /// @return 翻译是否成功，true：成功，false：失败
@@ -229,10 +237,9 @@ private:
     /// @brief 符号表:模块
     Module * module;
 
-    std::stack<LabelInstruction*>  exitLabels;
+    std::stack<LabelInstruction *> exitLabels;
 
-    std::stack<LabelInstruction*>  enterLabels;
+    std::stack<LabelInstruction *> enterLabels;
 };
 
-int evaluateConstExpr(ast_node* node);
-
+int evaluateConstExpr(ast_node * node);

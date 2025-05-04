@@ -96,23 +96,14 @@ enum class ast_operator_type : int {
     /// @brief 变量声明
     AST_OP_VAR_DECL,
 
-    /// @brief 变量定义
-    AST_OP_VAR_DEF,
-
     /// @brief 常量声明语句
     AST_OP_CONST_DECL_STMT,
 
     /// @brief 常量声明
     AST_OP_CONST_DECL,
 
-    /// @brief 常量定义
-    AST_OP_CONST_DEF,
-
     /// @brief 变量初始化
     AST_OP_INIT_VAL,
-
-    /// @brief 常量标识符
-    AST_OP_CONST,
 
     /// @brief 二元运算符+
     AST_OP_ADD,
@@ -177,9 +168,8 @@ enum class ast_operator_type : int {
 ///
 class ast_node {
 public:
-
     /// @brief 深拷贝当前节点
-    ast_node *deep_copy() const;
+    ast_node * deep_copy() const;
 
     /// @brief 节点类型
     ast_operator_type node_type;
@@ -289,8 +279,6 @@ public:
     ///
     static void Delete(ast_node * node);
 
-
-
     /// @brief 创建数组访问节点
     static ast_node * creatr_array_access(ast_operator_type type, ...);
 };
@@ -377,16 +365,15 @@ ast_node * create_var_decl_stmt_node(type_attr & type, var_id_attr & id);
 ast_node * add_var_decl_node(ast_node * stmt_node, var_id_attr & id);
 
 /// @brief 创建变量形参节点
-ast_node* create_var_param(type_attr dataType, var_id_attr idAttr);
+ast_node * create_var_param(type_attr dataType, var_id_attr idAttr);
 
 /// @brief 创建数组形参节点
-ast_node* create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node*>& dimensions);
+ast_node * create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node *> & dimensions);
 
 /// @brief 创建参数列表节点
-ast_node* create_param_list(const std::vector<ast_node*>& params);
+ast_node * create_param_list(const std::vector<ast_node *> & params);
 
 /// @brief 将基本类型转换为 Type
 /// @param bt 基本类型
 /// @return 对应的 Type 指针
-Type* convert_basic_type(BasicType bt);
-
+Type * convert_basic_type(BasicType bt);
