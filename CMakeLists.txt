@@ -159,6 +159,8 @@ set(IR_SRCS
 	ir/Instructions/ArgInstruction.h
 	ir/Instructions/BinaryInstruction.cpp
 	ir/Instructions/BinaryInstruction.h
+	ir/Instructions/ConditionalBranchInstruction.cpp
+	ir/Instructions/ConditionalBranchInstruction.h
 	ir/Instructions/EntryInstruction.cpp
 	ir/Instructions/EntryInstruction.h
 	ir/Instructions/ExitInstruction.cpp
@@ -174,6 +176,8 @@ set(IR_SRCS
 	ir/Instructions/UnaryInstruction.cpp
 	ir/Instructions/UnaryInstruction.h
 
+	ir/Types/ArrayType.h
+	ir/Types/ArrayType.cpp
 	ir/Types/VoidType.h
 	ir/Types/VoidType.cpp
 	ir/Types/LabelType.h
@@ -182,12 +186,18 @@ set(IR_SRCS
 	ir/Types/IntegerType.cpp
 	ir/Types/FloatType.h
 	ir/Types/FloatType.cpp
+	ir/Types/FunctionType.h
+	ir/Types/PointerType.h
+
+	ir/Values/ConstFloat.h
+	ir/Values/ConstArray.h
 	ir/Values/ConstInt.h
 	ir/Values/FormalParam.h
 	ir/Values/GlobalVariable.h
 	ir/Values/LocalVariable.h
 	ir/Values/MemVariable.h
 	ir/Values/RegVariable.h
+
 	ir/IRCode.h
 	ir/IRCode.cpp
 	ir/Constant.h
@@ -197,6 +207,7 @@ set(IR_SRCS
 	ir/Instruction.cpp
 	ir/Instruction.h
 	ir/IRConstant.h
+	ir/Type.cpp
 	ir/Type.h
 	ir/Use.cpp
 	ir/Use.h
@@ -204,6 +215,8 @@ set(IR_SRCS
 	ir/User.cpp
 	ir/Value.cpp
 	ir/Value.h
+	ir/FrameAllocator.h
+	ir/Register.h
 )
 
 # 符号表等共通化代码集合

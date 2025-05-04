@@ -24,6 +24,7 @@
 #include "LocalVariable.h"
 #include "MemVariable.h"
 #include "IRCode.h"
+#include "FrameAllocator.h" 
 
 ///
 /// @brief 描述函数信息的类，是全局静态存储，其Value的类型为FunctionType
@@ -146,6 +147,10 @@ public:
     /// \return 临时变量Value
     MemVariable * newMemVariable(Type * type);
 
+    LocalVariable* newArrayLocalVarValue(Type* type, std::string array_name, std::vector<int> dims, int32_t scope_level);
+
+
+
     /// @brief 清理函数内申请的资源
     void Delete();
 
@@ -170,6 +175,10 @@ public:
     ///
     void realArgCountReset();
 
+    bool isZeroValue() const override{
+        //TODO: 判断变量是否为0
+        return false;
+    }
 private:
     ///
     /// @brief 函数的返回值类型，有点冗余，可删除，直接从type中取得即可
@@ -250,4 +259,6 @@ private:
     /// @brief 累计的实参个数，用于ARG指令的统计
     ///
     int32_t realArgCount = 0;
+
+    FrameAllocator frameAllocator;  // 每个函数一个栈帧分配器
 };

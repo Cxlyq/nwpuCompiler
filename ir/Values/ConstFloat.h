@@ -53,6 +53,13 @@ public:
         this->loadRegNo = regId;
     }
 
+    ///
+    /// @brief 判断是否为零值（用于判断是否属于.bss段）
+    /// @return true 零值
+    [[nodiscard]] bool isZeroValue() const override {
+        return floatVal == 0.0f;
+    }
+
 private:
     /// @brief 浮点数值
     float floatVal;

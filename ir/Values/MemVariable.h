@@ -18,6 +18,7 @@
 
 #include "Value.h"
 #include "IRConstant.h"
+#include "Register.h"
 
 /// @brief 内存值，必须在内存中
 class MemVariable : public Value {

@@ -70,6 +70,14 @@ public:
         this->loadRegNo = regId;
     }
 
+    ///
+    /// @brief 判断是否为零值（用于判断是否属于.bss段）
+    ///
+    [[nodiscard]] bool isZeroValue() const override
+    {
+        return intVal == 0;
+    }
+
 private:
     ///
     /// @brief 整数值

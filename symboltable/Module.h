@@ -18,11 +18,14 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-
+#include "Constant.h"
+#include "GlobalVariable.h"
 #include "ConstInt.h"
 #include "ConstFloat.h"
+#include "ConstArray.h"
+#include "ArrayType.h"
 #include "Type.h"
-#include "GlobalVariable.h"
+
 #include "Function.h"
 
 class ScopeStack;
@@ -91,6 +94,12 @@ public:
     /// @return 函数信息
     Function * findFunction(std::string name);
 
+    // TODO: 判断变量是否为0
+    bool isZeroValue() const
+    {
+        return false;
+    }
+
     ///
     /// @brief 获取全局变量列表，用于外部遍历全局变量
     /// @return std::vector<GlobalVariable *>&
@@ -140,6 +149,9 @@ public:
     ///
     void renameIR();
 
+    /// @brief 在当前的作用域中查找，若没有查找到则创建数组变量
+    Value * newArrayVarValue(Type * type, std::string array_name, std::vector<int> dims);
+
 protected:
     /// @brief 根据整数值获取当前符号
     /// \param name 变量名
@@ -179,6 +191,8 @@ protected:
     /// @brief ConstFloat插入到符号表中
     /// @param val Value信息
     void insertConstFloatDirectly(ConstFloat * val);
+
+    GlobalVariable * newGlobalArrayVariable(Type * type, std::string array_name, std::vector<int> dims);
 
 private:
     ///

@@ -14,10 +14,11 @@
 /// </table>
 ///
 #include "Module.h"
-
+#include "FrameAllocator.h"
 #include "ScopeStack.h"
 #include "Common.h"
 #include "VoidType.h"
+#include "Register.h"
 
 Module::Module(std::string _name) : name(_name)
 {
@@ -214,6 +215,91 @@ ConstFloat * Module::findConstFloat(float val)
     return temp;
 }
 
+/// @brief 在当前的作用域中查找，若没有查找到则创建数组变量
+/// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
+/// @param type 变量类型
+/// @param array_name 数组名称
+/// @param dims 数组的各维大小
+/// @return nullptr则说明变量已存在，否则为新建的变量
+Value * Module::newArrayVarValue(Type * type, std::string array_name, std::vector<int> dims)
+{
+    Value * retVal;
+
+    // 若数组名有效，检查当前作用域中是否存在该数组，如存在则语义错误
+    if (!array_name.empty()) {
+        Value * tempValue = scopeStack->findCurrentScope(array_name);
+        if (tempValue) {
+            // 数组已存在，语义错误
+            minic_log(LOG_ERROR, "数组(%s)已经存在", array_name.c_str());
+            return nullptr;
+        }
+    } else if (!currentFunc) {
+        // 全局变量要求name不能为空串，必须有效
+        minic_log(LOG_ERROR, "数组名为空");
+        return nullptr;
+    }
+
+    // 判断是否是局部数组还是全局数组
+    if (currentFunc) {
+        // 获取数组的作用域层级
+        int32_t scope_level = scopeStack->getCurrentScopeLevel();
+
+        // 创建局部数组变量
+        retVal = currentFunc->newArrayLocalVarValue(type, array_name, dims, scope_level);
+
+    } else {
+        // 创建全局数组变量
+        retVal = newGlobalArrayVariable(type, array_name, dims);
+    }
+
+    // 将数组添加到作用域中
+    scopeStack->insertValue(retVal);
+
+    return retVal;
+}
+
+/// @brief 创建全局数组变量的辅助函数
+/// @param type 变量类型
+/// @param array_name 数组名称
+/// @param dims 数组的维度大小
+/// @return 新创建的数组变量
+GlobalVariable * Module::newGlobalArrayVariable(Type * type, std::string array_name, std::vector<int> dims)
+{
+    // 根据类型和维度大小来构建多维数组类型
+    ArrayType * arrayType = ArrayType::getArrayType(type, dims);
+
+    // 创建全局数组变量
+    GlobalVariable * newArrayVar = new GlobalVariable(arrayType, array_name);
+
+    insertGlobalValueDirectly(newArrayVar);
+
+    // 在全局作用域中将该数组添加进去
+    return newArrayVar;
+}
+
+/// @brief 创建局部数组变量的辅助函数
+/// @param type 变量类型
+/// @param array_name 数组名称
+/// @param dims 数组的维度大小
+/// @param scope_level 数组所在作用域层级
+/// @return 新创建的局部数组变量
+LocalVariable *
+Function::newArrayLocalVarValue(Type * type, std::string array_name, std::vector<int> dims, int32_t scope_level)
+{
+    ArrayType * arrayType = ArrayType::getArrayType(type, dims);
+    LocalVariable * newArrayVar = new LocalVariable(arrayType, array_name, scope_level);
+
+    // 分配栈空间（单位可能是字节，也可能是字长对齐）
+    int totalSize = arrayType->getSizeInBytes();
+    int offset = frameAllocator.allocate(totalSize); // 栈帧分配器维护当前偏移
+
+    newArrayVar->setMemoryAddr(FP_REG, offset); // 通常 FP_REG 是一个常量如 -1 表示 RBP
+
+    // 加入局部变量表
+    varsVector.push_back(newArrayVar);
+
+    return newArrayVar;
+}
 
 /// @brief 在当前的作用域中查找，若没有查找到则创建局部变量或者全局变量。请注意不能创建临时变量
 /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用

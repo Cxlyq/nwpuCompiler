@@ -83,6 +83,12 @@ public:
         this->loadRegNo = regId;
     }
 
+    //TODO
+   bool isZeroValue() const override {
+        // 简单返回 false，或根据需要自定义
+        return false;
+    }
+    
     ///
     /// @brief Declare指令IR显示
     /// @param str
@@ -90,6 +96,29 @@ public:
     void toDeclareString(std::string & str)
     {
         str = "declare " + getType()->toString() + " " + getIRName();
+    }
+
+     /// 设置初始值（支持 ConstantInt、ConstantFP、ConstantArray 等）
+     void setInitializer(Constant* init) {
+        this->initializer = init;
+        if (init != nullptr && !init->isZeroValue()) {
+            inBSSSection = false;
+        }
+     }
+
+     /// 获取初始值
+    [[nodiscard]] Constant* getInitializer() const {
+        return initializer;
+    }
+
+    /// 判断是否是数组
+    [[nodiscard]] bool isArray() const {
+        return getType()->isArrayType();
+    }
+
+    /// 判断是否是浮点型
+    [[nodiscard]] bool isFloat() const {
+        return getType()->isFloatType();
     }
 
 private:
@@ -102,4 +131,10 @@ private:
     /// @brief 默认全局变量在BSS段，没有初始化，或者即使初始化过，但都值都为0
     ///
     bool inBSSSection = true;
+
+    ///
+    /// @brief 变量的初始值
+    /// @note 该值在BSS段中是无效的
+    /// @note 该值在数据段中是有效的
+    Constant* initializer = nullptr; // 新增：记录初始值
 };

@@ -67,7 +67,7 @@ void Value::setIRName(std::string _name)
 
 /// @brief 获取类型
 /// @return 变量名
-Type * Value::getType()
+Type * Value::getType() const
 {
     return type;
 }

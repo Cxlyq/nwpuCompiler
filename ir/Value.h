@@ -78,7 +78,7 @@ public:
 
     /// @brief 获取类型
     /// @return 变量名
-    virtual Type * getType();
+    virtual Type * getType() const ;
 
     ///
     /// @brief 增加一条边，增加Value被使用次数
