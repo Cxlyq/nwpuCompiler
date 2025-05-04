@@ -7,20 +7,20 @@ BasedOnStyle: LLVM
 # 访问说明符(public、private等)的偏移
 AccessModifierOffset: -4
 # 开括号(开圆括号、开尖括号、开方括号)后的对齐: Align, DontAlign, AlwaysBreak(总是在开括号后换行)
-AlignAfterOpenBracket: Align
+AlignAfterOpenBracket: AlwaysBreak
 # 对齐注释
 AlignTrailingComments: true
 # 赋值=对齐
 AlignConsecutiveAssignments: false
 # 声明参数对齐
-AlignConsecutiveDeclarations: false
+AlignConsecutiveDeclarations: true
 # 换行的时候对齐操作符
 AlignOperands: true
 # 允许下一行的所有参数
 AllowAllArgumentsOnNextLine: false
 AllowAllConstructorInitializersOnNextLine: false
 # 允许函数声明的所有参数在放在下一行
-AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: true
 # 允许将简单的语句块放到同一行
 AllowShortBlocksOnASingleLine: false
 # 允许case在同一行
@@ -139,6 +139,6 @@ UseTab: false
 # include文件名排序
 SortIncludes: false
 # 形参 如果为false要么都在同一行，要么各有一行
-BinPackParameters: false
+BinPackParameters: true
 # 实参 如果为false要么都在同一行，要么各有一行
 BinPackArguments: false
