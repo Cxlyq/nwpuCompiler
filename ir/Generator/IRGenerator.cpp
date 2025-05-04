@@ -49,7 +49,6 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT] = &IRGenerator::ir_leaf_node_float;
 
     /* 表达式运算， 加减 */
-    // TODO:[表达式] 乘除取余、与或比较、单目、非法算符
     ast2ir_handlers[ast_operator_type::AST_OP_SUB] = &IRGenerator::ir_sub;
     ast2ir_handlers[ast_operator_type::AST_OP_ADD] = &IRGenerator::ir_add;
     ast2ir_handlers[ast_operator_type::AST_OP_MUL] = &IRGenerator::ir_mul;
@@ -148,10 +147,11 @@ void extract_array_info(ast_node * array_node, std::string & name, std::vector<a
     while (array_node->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // 使用 if/else 替代 assert
         if (array_node->sons.size() != 2) {
-            std::fprintf(stderr,
-                         "Assertion failed: array_node->sons.size() == 2, file %s, line %d\n",
-                         __FILE__,
-                         __LINE__);
+            std::fprintf(
+                stderr,
+                "Assertion failed: array_node->sons.size() == 2, file %s, line %d\n",
+                __FILE__,
+                __LINE__);
             std::abort();
         }
 
@@ -327,7 +327,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
     // 第二个节点：实参列表节点
 
     std::string funcName = node->sons[0]->name;
-    int64_t lineno = node->sons[0]->line_no;
+    int64_t     lineno = node->sons[0]->line_no;
 
     ast_node * paramsNode = node->sons[1];
 
@@ -451,11 +451,12 @@ bool IRGenerator::ir_add(ast_node * node)
     //                                                     right->val,
     //                                                     IntegerType::getTypeInt());
 
-    auto addInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_ADD_I,
-                                                      IRInstOperator::IRINST_OP_ADD_F);
+    auto addInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_ADD_I,
+        IRInstOperator::IRINST_OP_ADD_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -493,11 +494,12 @@ bool IRGenerator::ir_sub(ast_node * node)
 
     // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    auto subInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_SUB_I,
-                                                      IRInstOperator::IRINST_OP_SUB_F);
+    auto subInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_SUB_I,
+        IRInstOperator::IRINST_OP_SUB_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -535,11 +537,12 @@ bool IRGenerator::ir_mul(ast_node * node)
 
     // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    auto mulInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_MUL_I,
-                                                      IRInstOperator::IRINST_OP_MUL_F);
+    auto mulInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_MUL_I,
+        IRInstOperator::IRINST_OP_MUL_F);
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
     node->blockInsts.addInst(right->blockInsts);
@@ -573,14 +576,19 @@ bool IRGenerator::ir_div(ast_node * node)
         // 某个变量没有定值
         return false;
     }
-
+    std::cout << module->findVarValue(right->name)->getName() << std::endl;
+    // if (right) {
+    //     // TODO 除数为0时报语义错误
+    //     return false;
+    // }
     // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    auto divInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_DIV_I,
-                                                      IRInstOperator::IRINST_OP_DIV_F);
+    auto divInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_DIV_I,
+        IRInstOperator::IRINST_OP_DIV_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -622,11 +630,12 @@ bool IRGenerator::ir_mod(ast_node * node)
         return false;
     }
 
-    BinaryInstruction * modInst = new BinaryInstruction(module->getCurrentFunction(),
-                                                        IRInstOperator::IRINST_OP_MOD_I,
-                                                        left->val,
-                                                        right->val,
-                                                        IntegerType::getTypeInt());
+    BinaryInstruction * modInst = new BinaryInstruction(
+        module->getCurrentFunction(),
+        IRInstOperator::IRINST_OP_MOD_I,
+        left->val,
+        right->val,
+        IntegerType::getTypeInt());
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -662,11 +671,12 @@ bool IRGenerator::ir_and(ast_node * node)
         return false;
     }
     // TODO 逻辑运算是否需要区别int和float型
-    BinaryInstruction * andInst = new BinaryInstruction(module->getCurrentFunction(),
-                                                        IRInstOperator::IRINST_OP_AND,
-                                                        left->val,
-                                                        right->val,
-                                                        IntegerType::getTypeInt());
+    BinaryInstruction * andInst = new BinaryInstruction(
+        module->getCurrentFunction(),
+        IRInstOperator::IRINST_OP_AND,
+        left->val,
+        right->val,
+        IntegerType::getTypeInt());
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -702,11 +712,12 @@ bool IRGenerator::ir_or(ast_node * node)
         return false;
     }
 
-    BinaryInstruction * orInst = new BinaryInstruction(module->getCurrentFunction(),
-                                                       IRInstOperator::IRINST_OP_OR,
-                                                       left->val,
-                                                       right->val,
-                                                       IntegerType::getTypeInt());
+    BinaryInstruction * orInst = new BinaryInstruction(
+        module->getCurrentFunction(),
+        IRInstOperator::IRINST_OP_OR,
+        left->val,
+        right->val,
+        IntegerType::getTypeInt());
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -742,11 +753,12 @@ bool IRGenerator::ir_eq(ast_node * node)
         return false;
     }
 
-    auto eqInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     left->val,
-                                                     right->val,
-                                                     IRInstOperator::IRINST_OP_EQ_I,
-                                                     IRInstOperator::IRINST_OP_EQ_F);
+    auto eqInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_EQ_I,
+        IRInstOperator::IRINST_OP_EQ_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -782,11 +794,12 @@ bool IRGenerator::ir_neq(ast_node * node)
         return false;
     }
 
-    auto neqInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_NEQ_I,
-                                                      IRInstOperator::IRINST_OP_NEQ_F);
+    auto neqInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_NEQ_I,
+        IRInstOperator::IRINST_OP_NEQ_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -822,11 +835,12 @@ bool IRGenerator::ir_ge(ast_node * node)
         return false;
     }
 
-    auto geInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     left->val,
-                                                     right->val,
-                                                     IRInstOperator::IRINST_OP_GE_I,
-                                                     IRInstOperator::IRINST_OP_GE_F);
+    auto geInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_GE_I,
+        IRInstOperator::IRINST_OP_GE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -862,11 +876,12 @@ bool IRGenerator::ir_le(ast_node * node)
         return false;
     }
 
-    auto leInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     left->val,
-                                                     right->val,
-                                                     IRInstOperator::IRINST_OP_LE_I,
-                                                     IRInstOperator::IRINST_OP_LE_F);
+    auto leInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_LE_I,
+        IRInstOperator::IRINST_OP_LE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -902,11 +917,12 @@ bool IRGenerator::ir_gne(ast_node * node)
         return false;
     }
 
-    auto gneInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_GNE_I,
-                                                      IRInstOperator::IRINST_OP_GNE_F);
+    auto gneInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_GNE_I,
+        IRInstOperator::IRINST_OP_GNE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -942,11 +958,12 @@ bool IRGenerator::ir_lne(ast_node * node)
         return false;
     }
 
-    auto lneInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_LNE_I,
-                                                      IRInstOperator::IRINST_OP_LNE_F);
+    auto lneInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_LNE_I,
+        IRInstOperator::IRINST_OP_LNE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -972,10 +989,11 @@ bool IRGenerator::ir_pos(ast_node * node)
     }
 
     // 生成IR指令：result = +expr->val
-    auto posInst = UnaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     expr->val,
-                                                     IRInstOperator::IRINST_OP_POS_I,
-                                                     IRInstOperator::IRINST_OP_POS_F);
+    auto posInst = UnaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        expr->val,
+        IRInstOperator::IRINST_OP_POS_I,
+        IRInstOperator::IRINST_OP_POS_F);
 
     // 合并子表达式的IR并加入当前指令
     node->blockInsts.addInst(expr->blockInsts);
@@ -1001,10 +1019,11 @@ bool IRGenerator::ir_neg(ast_node * node)
     }
 
     // 生成IR指令：result = -expr->val
-    auto negInst = UnaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     expr->val,
-                                                     IRInstOperator::IRINST_OP_NEG_I,
-                                                     IRInstOperator::IRINST_OP_NEG_F);
+    auto negInst = UnaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        expr->val,
+        IRInstOperator::IRINST_OP_NEG_I,
+        IRInstOperator::IRINST_OP_NEG_F);
 
     // 合并子表达式的IR并加入当前指令
     node->blockInsts.addInst(expr->blockInsts);
@@ -1030,10 +1049,11 @@ bool IRGenerator::ir_not(ast_node * node)
     }
 
     // 生成IR指令：result = -expr->val
-    auto notInst = UnaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     expr->val,
-                                                     IRInstOperator::IRINST_OP_NOT_I,
-                                                     IRInstOperator::IRINST_OP_NOT_F);
+    auto notInst = UnaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        expr->val,
+        IRInstOperator::IRINST_OP_NOT_I,
+        IRInstOperator::IRINST_OP_NOT_F);
 
     // 合并子表达式的IR并加入当前指令
     node->blockInsts.addInst(expr->blockInsts);
@@ -1494,7 +1514,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
 
     if (id_node->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // 是数组变量，提取数组名和维度表达式
-        std::string array_name;
+        std::string             array_name;
         std::vector<ast_node *> array_dims;
         extract_array_info(id_node, array_name, array_dims);
 
