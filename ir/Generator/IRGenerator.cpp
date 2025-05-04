@@ -56,16 +56,16 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     ast2ir_handlers[ast_operator_type::AST_OP_DIV] = &IRGenerator::ir_div;
     ast2ir_handlers[ast_operator_type::AST_OP_MOD] = &IRGenerator::ir_mod;
     ast2ir_handlers[ast_operator_type::AST_OP_AND] = &IRGenerator::ir_and;
-    // ast2ir_handlers[ast_operator_type::AST_OP_OR] = &IRGenerator::ir_or;
-    // ast2ir_handlers[ast_operator_type::AST_OP_EQ] = &IRGenerator::ir_eq;
-    // ast2ir_handlers[ast_operator_type::AST_OP_NEQ] = &IRGenerator::ir_neq;
-    // ast2ir_handlers[ast_operator_type::AST_OP_GE] = &IRGenerator::ir_ge;
-    // ast2ir_handlers[ast_operator_type::AST_OP_LE] = &IRGenerator::ir_le;
-    // ast2ir_handlers[ast_operator_type::AST_OP_GNE] = &IRGenerator::ir_gne;
-    // ast2ir_handlers[ast_operator_type::AST_OP_LNE] = &IRGenerator::ir_lne;
-    // ast2ir_handlers[ast_operator_type::AST_OP_POS] = &IRGenerator::ir_pos;
-    // ast2ir_handlers[ast_operator_type::AST_OP_NEG] = &IRGenerator::ir_neg;
-    // ast2ir_handlers[ast_operator_type::AST_OP_NOT] = &IRGenerator::ir_not;
+    ast2ir_handlers[ast_operator_type::AST_OP_OR] = &IRGenerator::ir_or;
+    ast2ir_handlers[ast_operator_type::AST_OP_EQ] = &IRGenerator::ir_eq;
+    ast2ir_handlers[ast_operator_type::AST_OP_NEQ] = &IRGenerator::ir_neq;
+    ast2ir_handlers[ast_operator_type::AST_OP_GE] = &IRGenerator::ir_ge;
+    ast2ir_handlers[ast_operator_type::AST_OP_LE] = &IRGenerator::ir_le;
+    ast2ir_handlers[ast_operator_type::AST_OP_GNE] = &IRGenerator::ir_gne;
+    ast2ir_handlers[ast_operator_type::AST_OP_LNE] = &IRGenerator::ir_lne;
+    ast2ir_handlers[ast_operator_type::AST_OP_POS] = &IRGenerator::ir_pos;
+    ast2ir_handlers[ast_operator_type::AST_OP_NEG] = &IRGenerator::ir_neg;
+    ast2ir_handlers[ast_operator_type::AST_OP_NOT] = &IRGenerator::ir_not;
 
     /* 语句 */
     ast2ir_handlers[ast_operator_type::AST_OP_ASSIGN] = &IRGenerator::ir_assign;
@@ -126,6 +126,7 @@ ast_node * IRGenerator::ir_visit_ast_node(ast_node * node)
     pIter = ast2ir_handlers.find(node->node_type);
     if (pIter == ast2ir_handlers.end()) {
         // 没有找到，则说明当前不支持
+
         result = (this->ir_default)(node);
     } else {
         result = (this->*(pIter->second))(node);
