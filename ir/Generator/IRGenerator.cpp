@@ -1506,15 +1506,55 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
 
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims);
+        // TODO处理初值
+        // if (init_val_node) {
+        //     std::vector<int> indices;
+        //     if (!init_array_recursive(var_value, dims, init_val_node, 0, indices)) {
+        //         reportError("数组初始化失败");
+        //         return false;
+        //     }
+        // }
+
     } else {
         // 普通变量
         std::string var_name = id_node->name;
         node->val = module->newVarValue(var_type, var_name);
-    }
+       // printf("%zu",node->sons.size());
 
-    // 处理初值
-    if (init_val_node) {
-        // TODO ir_assign_value(node, init_val_node);  // 你应实现这个函数处理赋值IR
+        if (init_val_node) {
+            // 赋值运算符的左侧操作数
+            ast_node * left = ir_visit_ast_node(id_node);
+            if (!left) {
+                // 某个变量没有定值
+                // 这里缺省设置变量不存在则创建，因此这里不会错误
+                printf(" no values.\n");
+                return false;
+            }
+            // 赋值运算符的右侧操作数
+            ast_node * right = ir_visit_ast_node(init_val_node);
+            if (!right) {
+                // 某个变量没有定值
+                printf("Assign: some variables have no values.\n");
+                return false;
+            }
+            // if (left->val) {
+            //     std::cout << node->val->getIRName() << std::endl;
+            // }else{
+            //     printf("error\n");
+            // }
+            // if (right->val) {
+            //     std::cout << right->val->getIRName() << std::endl;
+            // }
+            MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
+            // 创建临时变量保存IR的值，以及线性IR指令
+            node->blockInsts.addInst(right->blockInsts);
+            node->blockInsts.addInst(left->blockInsts);
+            node->blockInsts.addInst(movInst);
+
+            // 这里假定赋值的类型是一致的
+            //node->val = movInst;
+        }
+        
     }
 
     return true;
@@ -1549,3 +1589,84 @@ int evaluateConstExpr(ast_node * node)
             std::abort();
     }
 }
+
+// bool IRGenerator::init_array_recursive(Value * array,
+//                                        const std::vector<int> & dims, // 维度信息，如 [2, 3]
+//                                        ast_node * init_node,          // 当前 InitVal 节点
+//                                        int depth,                     // 当前深度（从 0 开始）
+//                                        std::vector<int> & indices     // 当前维度下标路径
+// )
+// {
+//     if (depth == dims.size()) {
+//         // 到达叶子节点，应该是 Exp（初始值）
+//         Value * gep = builder->createGEP(array, indices);
+//         Value * val = ir_expression(init_node);
+//         builder->createStore(gep, val);
+//         return true;
+//     }
+
+//     int dim_size = dims[depth];
+
+//     if (init_node->node_type != ast_operator_type::AST_OP_MULTI_VAL) {
+//         // 非花括号包裹，视为一维“自动扁平化”
+//         // 不推荐，标准要求每层明确花括号，但兼容 flat 格式
+//         ast_node * flat_node = init_node;
+//         for (int i = 0; i < dim_size; ++i) {
+//             indices.push_back(i);
+//             if (i == 0) {
+//                 if (!init_array_recursive(array, dims, flat_node, depth + 1, indices))
+//                     return false;
+//             } else {
+//                 // 超过一个就补 0
+//                 Value * gep = builder->createGEP(array, indices);
+//                 builder->createStore(gep, builder->getConstInt(0));
+//             }
+//             indices.pop_back();
+//         }
+//         return true;
+//     }
+
+//     // 是 multiVal: initVal (',' initVal)* 结构
+//     const auto & sons = init_node->sons;
+//     int i = 0;
+//     for (; i < (int) sons.size() && i < dim_size; ++i) {
+//         indices.push_back(i);
+//         if (!init_array_recursive(array, dims, sons[i], depth + 1, indices))
+//             return false;
+//         indices.pop_back();
+//     }
+//     // 不足部分补 0
+//     for (; i < dim_size; ++i) {
+//         indices.push_back(i);
+//         if (depth + 1 == (int) dims.size()) {
+//             Value * gep = builder->createGEP(array, indices);
+//             builder->createStore(gep, builder->getConstInt(0));
+//         } else {
+//             // 递归补零
+//             if (!zero_fill_recursive(array, dims, depth + 1, indices))
+//                 return false;
+//         }
+//         indices.pop_back();
+//     }
+//     return true;
+// }
+
+// bool IRGenerator::zero_fill_recursive(Value * array,
+//                                       const std::vector<int> & dims,
+//                                       int depth,
+//                                       std::vector<int> & indices)
+// {
+//     int dim_size = dims[depth];
+//     for (int i = 0; i < dim_size; ++i) {
+//         indices.push_back(i);
+//         if (depth + 1 == (int) dims.size()) {
+//             Value * gep = builder->createGEP(array, indices);
+//             builder->createStore(gep, builder->getConstInt(0));
+//         } else {
+//             if (!zero_fill_recursive(array, dims, depth + 1, indices))
+//                 return false;
+//         }
+//         indices.pop_back();
+//     }
+//     return true;
+// }
