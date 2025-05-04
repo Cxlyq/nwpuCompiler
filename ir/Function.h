@@ -179,6 +179,9 @@ public:
         //TODO: 判断变量是否为0
         return false;
     }
+
+    std::vector<Value *> realParams;
+
 private:
     ///
     /// @brief 函数的返回值类型，有点冗余，可删除，直接从type中取得即可

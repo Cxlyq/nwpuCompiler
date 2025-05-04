@@ -85,6 +85,8 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     ast2ir_handlers[ast_operator_type::AST_OP_VAR_DECL_STMT] = &IRGenerator::ir_declare_statment;
     ast2ir_handlers[ast_operator_type::AST_OP_VAR_DECL] = &IRGenerator::ir_variable_declare;
     // TODO:[常量]常量定义
+    ast2ir_handlers[ast_operator_type::AST_OP_CONST_DECL_STMT] = &IRGenerator::ir_const_declare_statment;
+    ast2ir_handlers[ast_operator_type::AST_OP_CONST_DECL] = &IRGenerator::ir_const_declare;
 
     /* 语句块 */
     ast2ir_handlers[ast_operator_type::AST_OP_BLOCK] = &IRGenerator::ir_block;
@@ -219,7 +221,7 @@ bool IRGenerator::ir_function_define(ast_node * node)
     Function * newFunc = module->newFunction(name_node->name, type_node->type);
     if (!newFunc) {
         // 新定义的函数已经存在，则失败返回。
-        // TODO 自行追加语义错误处理
+        printf("Function define: multiple define function %s\n", name_node->name.c_str());
         return false;
     }
 
@@ -247,7 +249,7 @@ bool IRGenerator::ir_function_define(ast_node * node)
     result = ir_function_formal_params(param_node);
     if (!result) {
         // 形参解析失败
-        // TODO 自行追加语义错误处理
+        printf("Function define: function(%s) formals error\n", name_node->name.c_str());
         return false;
     }
     node->blockInsts.addInst(param_node->blockInsts);
@@ -261,7 +263,7 @@ bool IRGenerator::ir_function_define(ast_node * node)
     }
     newFunc->setReturnValue(retValue);
 
-    // 这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
+    // TODO: 这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
 
     // 函数内已经进入作用域，内部不再需要做变量的作用域管理
     block_node->needScope = false;
@@ -270,7 +272,7 @@ bool IRGenerator::ir_function_define(ast_node * node)
     result = ir_block(block_node);
     if (!result) {
         // block解析失败
-        // TODO 自行追加语义错误处理
+        printf("Function define: function(%s) block error\n", name_node->name.c_str());
         return false;
     }
 
@@ -302,13 +304,74 @@ bool IRGenerator::ir_function_define(ast_node * node)
 /// @return 翻译是否成功，true：成功，false：失败
 bool IRGenerator::ir_function_formal_params(ast_node * node)
 {
-    // TODO: [函数] 目前形参还不支持，直接返回true
 
     // 每个形参变量都创建对应的临时变量，用于表达实参转递的值
     // 而真实的形参则创建函数内的局部变量。
     // 然后产生赋值指令，用于把表达实参值的临时变量拷贝到形参局部变量上。
     // 请注意这些指令要放在Entry指令后面，因此处理的先后上要注意。
+    // node 节点的 sons 列表包含每个形参的AST节点 (例如: int a, int arr[], int arr[][10])
 
+    Function * currentFunc = module->getCurrentFunction();
+    if (!currentFunc) {
+        // Should not happen if called from ir_function_define correctly
+        std::cerr << "Function formal params: called outside function context." << std::endl;
+        return false;
+    }
+
+    unsigned int arg_index = 0; // 用于追踪当前处理的是第几个形参，以便获取对应的传入实参值
+
+    // 遍历形参列表的每一个形参节点 (AST_TYPE_PARAM_DECL)
+    // 假设每个 param_decl_node 的结构是 [TypeNode, Identifier/ArrayNameNode]
+    for (ast_node * param_decl_node: node->sons) {
+        if (param_decl_node->sons.size() < 2) {
+            std::cerr << "Function formal params: Invalid AST structure for parameter declaration." << std::endl;
+            return false;
+        } else if (param_decl_node->sons.size() > 2) { //数组型参
+            // TODO: 处理数组形参
+        } else {
+            ast_node * type_node = param_decl_node->sons[0];
+            ast_node * param_node = param_decl_node->sons[1];
+
+            std::string param_name;
+            param_name = param_node->name;
+            Type * param_type_ir = type_node->type;
+            ;
+            if (!param_type_ir) {
+                std::cerr << "Function formal params: Failed to determine IR type for parameter '"
+                          << "' in function '" << currentFunc->getName() << "'" << param_name << "' in function '"
+                          << currentFunc->getName() << "'"
+                          << "'" << std::endl;
+                return false;
+            }
+            Value * param_value = module->newVarValue(param_type_ir);
+            if (!param_value) {
+                std::cerr << "Function formal params: Failed to create IR Value for parameter '"
+                          << "' in function '" << currentFunc->getName() << "'" << param_name << "'"
+                          << "' in function '" << currentFunc->getName() << "'" << std::endl;
+                return false;
+            }
+            param_value->setName(param_name);
+            Value * incoming_arg_value = currentFunc->realParams[arg_index];
+            if (!incoming_arg_value) {
+                std::cerr << "Function formal params: Internal Error, Cannot get incoming argument value for index "
+                          << arg_index << " for function '" << currentFunc->getName() << "'" << std::endl;
+                // TODO: Add location info, cleanup param_value
+                return false;
+            }
+            // TODO: 检测当前传入实参值和形参值的类型是否匹配
+
+            // 生成 MoveInstruction 将传入实参值复制到局部形参变量
+            // 这条指令确保了传入的值被存储在作用域中的 LocalVariable 中，供函数体使用。
+            // MoveInstruction(Function* func, Value* dest, Value* src)
+            Instruction * move_inst = new MoveInstruction(currentFunc, param_value, incoming_arg_value);
+            // 将生成的 MoveInstruction 添加到 node (形参列表节点) 的 blockInsts 中
+            // ir_function_define 会负责将这里的指令添加到函数IR代码中，放在 EntryInstruction 之后。
+            node->blockInsts.addInst(move_inst);
+        }
+        arg_index++;
+    }
+
+    // 所有形参处理成功
     return true;
 }
 
@@ -374,7 +437,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
         minic_log(LOG_ERROR, "第%lld行的被调用函数(%s)未定义或声明", (long long) lineno, funcName.c_str());
         return false;
     }
-
+    currentFunc->realParams = realParams;
     // 返回调用有返回值，则需要分配临时变量，用于保存函数调用的返回值
     Type * type = calledFunction->getReturnType();
 
@@ -1527,17 +1590,68 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
 
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims);
+        // TODO处理初值
+        // if (init_val_node) {
+        //     std::vector<int> indices;
+        //     if (!init_array_recursive(var_value, dims, init_val_node, 0, indices)) {
+        //         reportError("数组初始化失败");
+        //         return false;
+        //     }
+        // }
+
     } else {
         // 普通变量
         std::string var_name = id_node->name;
         node->val = module->newVarValue(var_type, var_name);
-    }
+       // printf("%zu",node->sons.size());
 
-    // 处理初值
-    if (init_val_node) {
-        // TODO ir_assign_value(node, init_val_node);  // 你应实现这个函数处理赋值IR
-    }
+        if (init_val_node) {
+            // 赋值运算符的左侧操作数
+            ast_node * left = ir_visit_ast_node(id_node);
+            if (!left) {
+                // 某个变量没有定值
+                // 这里缺省设置变量不存在则创建，因此这里不会错误
+                printf(" no values.\n");
+                return false;
+            }
+            // 赋值运算符的右侧操作数
+            ast_node * right = ir_visit_ast_node(init_val_node);
+            if (!right) {
+                // 某个变量没有定值
+                printf("Assign: some variables have no values.\n");
+                return false;
+            }
+            // if (left->val) {
+            //     std::cout << node->val->getIRName() << std::endl;
+            // }else{
+            //     printf("error\n");
+            // }
+            // if (right->val) {
+            //     std::cout << right->val->getIRName() << std::endl;
+            // }
+            MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
+            // 创建临时变量保存IR的值，以及线性IR指令
+            node->blockInsts.addInst(right->blockInsts);
+            node->blockInsts.addInst(left->blockInsts);
+            node->blockInsts.addInst(movInst);
 
+            // 这里假定赋值的类型是一致的
+            //node->val = movInst;
+        }
+        
+    }
+    return true;
+}
+
+bool IRGenerator::ir_const_declare_statment(ast_node * node)
+{
+    // TODO: 追加常量声明语句实现
+    return true;
+}
+
+bool IRGenerator::ir_const_declare(ast_node * node)
+{
+    // TODO: 追加常量声明实现
     return true;
 }
 
@@ -1570,3 +1684,84 @@ int evaluateConstExpr(ast_node * node)
             std::abort();
     }
 }
+
+// bool IRGenerator::init_array_recursive(Value * array,
+//                                        const std::vector<int> & dims, // 维度信息，如 [2, 3]
+//                                        ast_node * init_node,          // 当前 InitVal 节点
+//                                        int depth,                     // 当前深度（从 0 开始）
+//                                        std::vector<int> & indices     // 当前维度下标路径
+// )
+// {
+//     if (depth == dims.size()) {
+//         // 到达叶子节点，应该是 Exp（初始值）
+//         Value * gep = builder->createGEP(array, indices);
+//         Value * val = ir_expression(init_node);
+//         builder->createStore(gep, val);
+//         return true;
+//     }
+
+//     int dim_size = dims[depth];
+
+//     if (init_node->node_type != ast_operator_type::AST_OP_MULTI_VAL) {
+//         // 非花括号包裹，视为一维“自动扁平化”
+//         // 不推荐，标准要求每层明确花括号，但兼容 flat 格式
+//         ast_node * flat_node = init_node;
+//         for (int i = 0; i < dim_size; ++i) {
+//             indices.push_back(i);
+//             if (i == 0) {
+//                 if (!init_array_recursive(array, dims, flat_node, depth + 1, indices))
+//                     return false;
+//             } else {
+//                 // 超过一个就补 0
+//                 Value * gep = builder->createGEP(array, indices);
+//                 builder->createStore(gep, builder->getConstInt(0));
+//             }
+//             indices.pop_back();
+//         }
+//         return true;
+//     }
+
+//     // 是 multiVal: initVal (',' initVal)* 结构
+//     const auto & sons = init_node->sons;
+//     int i = 0;
+//     for (; i < (int) sons.size() && i < dim_size; ++i) {
+//         indices.push_back(i);
+//         if (!init_array_recursive(array, dims, sons[i], depth + 1, indices))
+//             return false;
+//         indices.pop_back();
+//     }
+//     // 不足部分补 0
+//     for (; i < dim_size; ++i) {
+//         indices.push_back(i);
+//         if (depth + 1 == (int) dims.size()) {
+//             Value * gep = builder->createGEP(array, indices);
+//             builder->createStore(gep, builder->getConstInt(0));
+//         } else {
+//             // 递归补零
+//             if (!zero_fill_recursive(array, dims, depth + 1, indices))
+//                 return false;
+//         }
+//         indices.pop_back();
+//     }
+//     return true;
+// }
+
+// bool IRGenerator::zero_fill_recursive(Value * array,
+//                                       const std::vector<int> & dims,
+//                                       int depth,
+//                                       std::vector<int> & indices)
+// {
+//     int dim_size = dims[depth];
+//     for (int i = 0; i < dim_size; ++i) {
+//         indices.push_back(i);
+//         if (depth + 1 == (int) dims.size()) {
+//             Value * gep = builder->createGEP(array, indices);
+//             builder->createStore(gep, builder->getConstInt(0));
+//         } else {
+//             if (!zero_fill_recursive(array, dims, depth + 1, indices))
+//                 return false;
+//         }
+//         indices.pop_back();
+//     }
+//     return true;
+// }
