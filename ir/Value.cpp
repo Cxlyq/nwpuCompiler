@@ -16,6 +16,7 @@
 ///
 
 #include <algorithm>
+#include <cstdint>
 
 #include "Value.h"
 #include "Use.h"
@@ -25,6 +26,8 @@
 Value::Value(Type * _type) : type(_type)
 {
     // 不需要增加代码
+    valueType = NONE;
+    isInited = false;
 }
 
 /// @brief 析构函数
@@ -142,3 +145,34 @@ void Value::setLoadRegId(int32_t regId)
 {
     (void) regId;
 }
+
+    // 为value赋初值
+
+    float Value::getFloatInitVal(){
+        return initVal.floatVal;
+    }
+    int Value::getIntInitVal(){
+        return initVal.intVal;
+    }
+    Value::ValueType Value::getValueType(){
+        return valueType;
+    }
+
+    void Value::setInitVal(float val){
+        initVal.floatVal = val;
+        this->valueType = ValueType::FLOAT;
+        isInited = true;
+    }
+    void Value::setInitVal(uint32_t val){
+        initVal.intVal = val;
+        this->valueType = ValueType::INT;
+        isInited = true;
+    }
+
+    std::string Value::getInitValStr(){
+        if (valueType == ValueType::FLOAT){
+            return std::to_string(initVal.floatVal);
+        }else{
+            return std::to_string(initVal.intVal);
+        }
+    }

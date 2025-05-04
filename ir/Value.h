@@ -48,7 +48,23 @@ protected:
     ///
     std::vector<Use *> uses;
 
+    enum ValueType {
+        NONE,
+        INT,
+        FLOAT
+    };
+
+    union InitVal{
+        int32_t intVal;
+        float floatVal;
+    };
+
+    InitVal initVal;
+    ValueType valueType = NONE;
+
 public:
+    bool isInited;
+
     /// @brief 构造函数
     /// @param _type
     explicit Value(Type * _type);
@@ -124,4 +140,13 @@ public:
     /// @return int32_t 寄存器编号
     ///
     virtual void setLoadRegId(int32_t regId);
+
+    // 为value赋初值
+
+    float getFloatInitVal();
+    int getIntInitVal();
+    ValueType getValueType();
+    void setInitVal(float val);
+    void setInitVal(uint32_t val);
+    std::string getInitValStr();
 };

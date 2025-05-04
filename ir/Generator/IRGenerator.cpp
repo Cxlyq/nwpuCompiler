@@ -25,6 +25,7 @@
 #include "Function.h"
 #include "IRCode.h"
 #include "IRGenerator.h"
+#include "IntegerType.h"
 #include "Module.h"
 #include "EntryInstruction.h"
 #include "LabelInstruction.h"
@@ -1136,6 +1137,17 @@ bool IRGenerator::ir_assign(ast_node * node)
 
     // TODO:这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
+    Value* temp = module->findVarValue(left->name);
+    if (nullptr == temp) {
+        // 变量不存在，语义错误
+        minic_log(LOG_ERROR, "第%lld行的变量(%s)未定义或声明", (long long) node->line_no, left->name.c_str());
+        return false;
+    }
+    if(right->type->isFloatType()){
+        temp->setInitVal(right->float_val);
+    }else{
+        temp->setInitVal(right->integer_val);
+    }
     MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
 
     // 创建临时变量保存IR的值，以及线性IR指令
@@ -1538,6 +1550,7 @@ bool IRGenerator::ir_declare_statment(ast_node * node)
         if (!result) {
             break;
         }
+        node -> blockInsts.addInst(child->blockInsts);
     }
 
     return result;
@@ -1582,43 +1595,52 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
     } else {
         // 普通变量
         std::string var_name = id_node->name;
-        node->val = module->newVarValue(var_type, var_name);
        // printf("%zu",node->sons.size());
 
         if (init_val_node) {
-            // 赋值运算符的左侧操作数
-            ast_node * left = ir_visit_ast_node(id_node);
-            if (!left) {
-                // 某个变量没有定值
-                // 这里缺省设置变量不存在则创建，因此这里不会错误
-                printf(" no values.\n");
-                return false;
+            if(type_node->type->isFloatType()){
+                // 浮点数类型
+                node->val = module->newVarValueWithFloat(var_type, var_name, init_val_node->float_val);
+            }else {
+                // 整数类型
+                node->val = module->newVarValueWithInt(var_type, var_name, init_val_node->integer_val);
             }
-            // 赋值运算符的右侧操作数
-            ast_node * right = ir_visit_ast_node(init_val_node);
-            if (!right) {
-                // 某个变量没有定值
-                printf("Assign: some variables have no values.\n");
-                return false;
-            }
-            // if (left->val) {
-            //     std::cout << node->val->getIRName() << std::endl;
-            // }else{
-            //     printf("error\n");
-            // }
-            // if (right->val) {
-            //     std::cout << right->val->getIRName() << std::endl;
-            // }
-            MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
-            // 创建临时变量保存IR的值，以及线性IR指令
-            node->blockInsts.addInst(right->blockInsts);
-            node->blockInsts.addInst(left->blockInsts);
-            node->blockInsts.addInst(movInst);
-
-            // 这里假定赋值的类型是一致的
-            //node->val = movInst;
+        }else{
+            node->val = module->newVarValue(var_type, var_name);
         }
-        
+
+            // 赋值运算符的左侧操作数
+        ast_node * left = ir_visit_ast_node(id_node);
+        if (!left) {
+            // 某个变量没有定值
+            // 这里缺省设置变量不存在则创建，因此这里不会错误
+            printf(" no values.\n");
+            return false;
+        }
+        // 赋值运算符的右侧操作数
+        ast_node * right = ir_visit_ast_node(init_val_node);
+        if (!right) {
+            // 某个变量没有定值
+            printf("Assign: some variables have no values.\n");
+            return false;
+        }
+
+        // if (left->val) {
+        //     std::cout << node->val->getIRName() << std::endl;
+        // }else{
+        //     printf("error\n");
+        // }
+        // if (right->val) {
+        //     std::cout << right->val->getIRName() << std::endl;
+        // }
+        MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
+        // 创建临时变量保存IR的值，以及线性IR指令
+        node->blockInsts.addInst(right->blockInsts);
+        node->blockInsts.addInst(left->blockInsts);
+        node->blockInsts.addInst(movInst);
+
+        // 这里假定赋值的类型是一致的
+        //node->val = movInst;
     }
     return true;
 }
