@@ -1144,9 +1144,9 @@ bool IRGenerator::ir_assign(ast_node * node)
         return false;
     }
     if(right->type->isFloatType()){
-        temp->setInitVal(right->float_val);
+        temp->setVal(right->float_val);
     }else{
-        temp->setInitVal(right->integer_val);
+        temp->setVal(right->integer_val);
     }
     MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
 
@@ -1605,42 +1605,31 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 // 整数类型
                 node->val = module->newVarValueWithInt(var_type, var_name, init_val_node->integer_val);
             }
+            // 赋值运算符的左侧操作数
+            ast_node * left = ir_visit_ast_node(id_node);
+            if (!left) {
+                // 某个变量没有定值
+                // 这里缺省设置变量不存在则创建，因此这里不会错误
+                printf(" no values.\n");
+                return false;
+            }
+            // 赋值运算符的右侧操作数
+            ast_node * right = ir_visit_ast_node(init_val_node);
+            if (!right) {
+                // 某个变量没有定值
+                printf("Assign: some variables have no values.\n");
+                return false;
+            }
+
+            MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
+            // 创建临时变量保存IR的值，以及线性IR指令
+            node->blockInsts.addInst(right->blockInsts);
+            node->blockInsts.addInst(left->blockInsts);
+            node->blockInsts.addInst(movInst);
+
         }else{
             node->val = module->newVarValue(var_type, var_name);
         }
-
-            // 赋值运算符的左侧操作数
-        ast_node * left = ir_visit_ast_node(id_node);
-        if (!left) {
-            // 某个变量没有定值
-            // 这里缺省设置变量不存在则创建，因此这里不会错误
-            printf(" no values.\n");
-            return false;
-        }
-        // 赋值运算符的右侧操作数
-        ast_node * right = ir_visit_ast_node(init_val_node);
-        if (!right) {
-            // 某个变量没有定值
-            printf("Assign: some variables have no values.\n");
-            return false;
-        }
-
-        // if (left->val) {
-        //     std::cout << node->val->getIRName() << std::endl;
-        // }else{
-        //     printf("error\n");
-        // }
-        // if (right->val) {
-        //     std::cout << right->val->getIRName() << std::endl;
-        // }
-        MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
-        // 创建临时变量保存IR的值，以及线性IR指令
-        node->blockInsts.addInst(right->blockInsts);
-        node->blockInsts.addInst(left->blockInsts);
-        node->blockInsts.addInst(movInst);
-
-        // 这里假定赋值的类型是一致的
-        //node->val = movInst;
     }
     return true;
 }

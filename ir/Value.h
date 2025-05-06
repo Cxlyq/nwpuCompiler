@@ -18,7 +18,6 @@
 
 #include <cstdint>
 #include <string>
-
 #include "Use.h"
 #include "Type.h"
 
@@ -55,13 +54,17 @@ protected:
     };
 
     union InitVal{
-        int32_t intVal;
+        uint32_t intVal;
         float floatVal;
     };
 
+    union Val{
+        uint32_t intVal;
+        float floatVal;
+    };
+    Val val;
     InitVal initVal;
     ValueType valueType = NONE;
-
 public:
     bool isInited;
 
@@ -144,9 +147,13 @@ public:
     // 为value赋初值
 
     float getFloatInitVal();
-    int getIntInitVal();
+    uint32_t getIntInitVal();
     ValueType getValueType();
     void setInitVal(float val);
     void setInitVal(uint32_t val);
     std::string getInitValStr();
+    uint32_t getIntVal();
+    float getFloatVal();
+    void setVal(uint32_t val);
+    void setVal(float val);
 };
