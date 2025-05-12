@@ -50,7 +50,6 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT] = &IRGenerator::ir_leaf_node_float;
 
     /* 表达式运算， 加减 */
-    // TODO:[表达式] 乘除取余、与或比较、单目、非法算符
     ast2ir_handlers[ast_operator_type::AST_OP_SUB] = &IRGenerator::ir_sub;
     ast2ir_handlers[ast_operator_type::AST_OP_ADD] = &IRGenerator::ir_add;
     ast2ir_handlers[ast_operator_type::AST_OP_MUL] = &IRGenerator::ir_mul;
@@ -641,7 +640,11 @@ bool IRGenerator::ir_div(ast_node * node)
         // 某个变量没有定值
         return false;
     }
-
+    std::cout << module->findVarValue(right->name)->getName() << std::endl;
+    // if (right) {
+    //     // TODO 除数为0时报语义错误
+    //     return false;
+    // }
     // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
     auto divInst = BinaryInstruction::createAutoTyped(
