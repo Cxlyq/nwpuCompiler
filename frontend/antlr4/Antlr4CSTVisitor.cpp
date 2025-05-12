@@ -144,7 +144,7 @@ std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
     type_attr paramType = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
 
     // 获取参数名称
-    char * id = strdup(ctx->T_ID()->getText().c_str());
+    char *      id = strdup(ctx->T_ID()->getText().c_str());
     var_id_attr paramId{id, (int64_t) ctx->T_ID()->getSymbol()->getLine()};
 
     // 判断是否是数组参数
@@ -284,7 +284,7 @@ std::any MiniCCSTVisitor::visitConstDecl(MiniCParser::ConstDeclContext * ctx)
 
     ast_node * const_stmt_node = create_contain_node(ast_operator_type::AST_OP_CONST_DECL_STMT);
 
-    type_attr typeAttr = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
+    type_attr  typeAttr = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
     ast_node * type_node = create_type_node(typeAttr);
 
     for (auto & constCtx: ctx->constDef()) {
@@ -302,9 +302,6 @@ std::any MiniCCSTVisitor::visitConstDecl(MiniCParser::ConstDeclContext * ctx)
 
     return const_stmt_node;
 }
-
-
-
 
 /// @brief 非终结运算符constDef的遍历
 /// @param ctx CST上下文
@@ -340,17 +337,17 @@ std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
 {
     // T_ID (T_L_SQBRA expr T_R_SQBRA)* T_ASSIGN initVal;
 
-    auto constId = ctx->T_ID()->getText();
-    int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
-    ast_node *id_node = new ast_node(constId, lineNo);
+    auto       constId = ctx->T_ID()->getText();
+    int64_t    lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
+    ast_node * id_node = new ast_node(constId, lineNo);
 
     // 支持数组形式（多维数组定义）
-    for (auto exprCtx : ctx->expr()) {
-        ast_node *indexNode = std::any_cast<ast_node *>(visit(exprCtx));
+    for (auto exprCtx: ctx->expr()) {
+        ast_node * indexNode = std::any_cast<ast_node *>(visit(exprCtx));
         id_node = ast_node::New(ast_operator_type::AST_OP_ARRAY_ACCESS, id_node, indexNode, nullptr);
     }
 
-    ast_node *initValNode = nullptr;
+    ast_node * initValNode = nullptr;
     if (ctx->initVal()) {
         initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
     } else {
@@ -359,10 +356,6 @@ std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
 
     return std::make_pair(id_node, initValNode);
 }
-
-
-
-
 
 /// @brief 非终结运算符varDecl的遍历
 /// @param ctx CST上下文
@@ -398,7 +391,7 @@ std::any MiniCCSTVisitor::visitVarDecl(MiniCParser::VarDeclContext * ctx)
     // varDecl: basicType varDef (T_COMMA varDef)* T_SEMICOLON;
     ast_node * stmt_node = create_contain_node(ast_operator_type::AST_OP_VAR_DECL_STMT);
 
-    type_attr typeAttr = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
+    type_attr  typeAttr = std::any_cast<type_attr>(visitBasicType(ctx->basicType()));
     ast_node * type_node = create_type_node(typeAttr);
 
     for (auto & varCtx: ctx->varDef()) {
@@ -419,8 +412,6 @@ std::any MiniCCSTVisitor::visitVarDecl(MiniCParser::VarDeclContext * ctx)
     return stmt_node;
 }
 
-
-
 /// @brief 非终结运算符varDef的遍历
 /// @param ctx CST上下文
 ///	@return 变量定义结点
@@ -439,7 +430,6 @@ std::any MiniCCSTVisitor::visitVarDecl(MiniCParser::VarDeclContext * ctx)
 //     //     ast_node * temp = std::any_cast<ast_node *>(visitExpr(exprCtx));
 //     //     (void) var_def_node->insert_son_node(temp);
 //     // }
-
 
 //     // auto varId = ctx->T_ID()->getText();
 
@@ -466,17 +456,17 @@ std::any MiniCCSTVisitor::visitVarDecl(MiniCParser::VarDeclContext * ctx)
 std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
 {
     // varDef: T_ID (T_L_SQBRA expr T_R_SQBRA)* (T_ASSIGN initVal)?;
-    
-    auto varId = ctx->T_ID()->getText();
-    int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
-    ast_node *node = new ast_node(varId, lineNo);
 
-    for (auto exprCtx : ctx->expr()) {
-        ast_node *indexNode = std::any_cast<ast_node *>(visit(exprCtx));
+    auto       varId = ctx->T_ID()->getText();
+    int64_t    lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
+    ast_node * node = new ast_node(varId, lineNo);
+
+    for (auto exprCtx: ctx->expr()) {
+        ast_node * indexNode = std::any_cast<ast_node *>(visit(exprCtx));
         node = ast_node::New(ast_operator_type::AST_OP_ARRAY_ACCESS, node, indexNode, nullptr);
     }
 
-    ast_node *initValNode = nullptr;
+    ast_node * initValNode = nullptr;
     if (ctx->initVal()) {
         initValNode = std::any_cast<ast_node *>(visitInitVal(ctx->initVal()));
     }
@@ -484,7 +474,6 @@ std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
     // 打包两个节点作为 pair 返回（或自定义结构）
     return std::make_pair(node, initValNode);
 }
-
 
 /// @brief 非终结运算符InitVal的遍历
 /// @param ctx CST上下文
@@ -618,8 +607,8 @@ std::any MiniCCSTVisitor::visitExpressionStatement(MiniCParser::ExpressionStatem
 std::any MiniCCSTVisitor::visitIfelseStatement(MiniCParser::IfelseStatementContext * ctx)
 {
     // TODO: [选择：非线性] 是否需要加一层结点表明各块功能？
-    auto condNode = std::any_cast<ast_node *>(visitCond(ctx->cond()));
-    auto ifstmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()[0]));
+    auto       condNode = std::any_cast<ast_node *>(visitCond(ctx->cond()));
+    auto       ifstmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()[0]));
     ast_node * elsestmtNode = nullptr;
     if (ctx->T_ELSE()) {
         elsestmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()[1]));
@@ -629,7 +618,7 @@ std::any MiniCCSTVisitor::visitIfelseStatement(MiniCParser::IfelseStatementConte
 std::any MiniCCSTVisitor::visitWhileStatement(MiniCParser::WhileStatementContext * ctx)
 {
     auto condNode = std::any_cast<ast_node *>(visitCond(ctx->cond()));
-	auto stmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()));
+    auto stmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()));
     return ast_node::New(ast_operator_type::AST_OP_WHILE, condNode, stmtNode, nullptr);
 }
 
@@ -1017,7 +1006,8 @@ std::any MiniCCSTVisitor::visitLeftValue(MiniCParser::LeftValueContext * ctx)
 /// @brief 非终结运算符lVal的遍历
 /// @param ctx CST上下文
 /// @return LValnode
-std::any MiniCCSTVisitor::visitLVal(MiniCParser::LValContext * ctx) {
+std::any MiniCCSTVisitor::visitLVal(MiniCParser::LValContext * ctx)
+{
     // 识别的文法产生式：lVal: T_ID (T_L_SQBRA expr T_R_SQBRA)*;
     // 获取ID的名字
     auto varId = ctx->T_ID()->getText();
@@ -1026,12 +1016,12 @@ std::any MiniCCSTVisitor::visitLVal(MiniCParser::LValContext * ctx) {
     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
 
     // 初始化变量节点，表示变量的标识符
-    ast_node *node = new ast_node(varId, lineNo);
+    ast_node * node = new ast_node(varId, lineNo);
 
     // 如果存在下标表达式，则处理数组访问
-    for (auto exprCtx : ctx->expr()) {
+    for (auto exprCtx: ctx->expr()) {
         // 访问每个下标表达式并生成对应的 AST 节点
-        ast_node *indexNode = std::any_cast<ast_node *>(visit(exprCtx));
+        ast_node * indexNode = std::any_cast<ast_node *>(visit(exprCtx));
 
         // 创建一个新的节点表示数组访问（将标识符和下标组合）
         node = ast_node::New(ast_operator_type::AST_OP_ARRAY_ACCESS, node, indexNode, nullptr);
@@ -1039,7 +1029,6 @@ std::any MiniCCSTVisitor::visitLVal(MiniCParser::LValContext * ctx) {
 
     return node;
 }
-
 
 /// @brief 非终结运算符BasicNum的遍历
 /// @param ctx CST上下文
@@ -1056,11 +1045,10 @@ std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
 {
     ast_node * numberNode = nullptr;
     if (ctx->T_INT_DIGIT()) {
-        uint32_t val = (uint32_t) stoull(ctx->T_INT_DIGIT()->getText(),nullptr, 0);
-        int64_t lineNo = (int64_t) ctx->T_INT_DIGIT()->getSymbol()->getLine();
+        uint32_t val = (uint32_t) stoull(ctx->T_INT_DIGIT()->getText(), nullptr, 0);
+        int64_t  lineNo = (int64_t) ctx->T_INT_DIGIT()->getSymbol()->getLine();
         numberNode = ast_node::New(digit_int_attr{val, lineNo});
-    }
-    else if (ctx->T_FLOAT_DIGIT()) {
+    } else if (ctx->T_FLOAT_DIGIT()) {
         float_t val = (float_t) stof(ctx->T_FLOAT_DIGIT()->getText());
         int64_t lineNo = (int64_t) ctx->T_FLOAT_DIGIT()->getSymbol()->getLine();
         numberNode = ast_node::New(digit_float_attr{val, lineNo});
@@ -1070,13 +1058,13 @@ std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
 std::any MiniCCSTVisitor::visitFuncCall(MiniCParser::FuncCallContext * ctx)
 {
     // 识别的文法产生式：T_ID T_L_PAREN funcRParams? T_R_PAREN
-    char * id = strdup(ctx->T_ID()->getText().c_str());
+    char *     id = strdup(ctx->T_ID()->getText().c_str());
     ast_node * funcname_node = ast_node::New(id, (int64_t) ctx->T_ID()->getSymbol()->getLine());
     ast_node * formalParamsNode = nullptr;
     if (ctx->funcRParams()) {
         formalParamsNode = std::any_cast<ast_node *>(visitFuncRParams(ctx->funcRParams()));
     }
-    return create_func_call(funcname_node,formalParamsNode);
+    return create_func_call(funcname_node, formalParamsNode);
 }
 std::any MiniCCSTVisitor::visitFuncRParams(MiniCParser::FuncRParamsContext * ctx)
 {

@@ -640,11 +640,15 @@ bool IRGenerator::ir_div(ast_node * node)
         // 某个变量没有定值
         return false;
     }
-    std::cout << module->findVarValue(right->name)->getName() << std::endl;
-    // if (right) {
-    //     // TODO 除数为0时报语义错误
-    //     return false;
-    // }
+    if (((int) right->node_type) == 0 && !right->integer_val) {
+        //为整数0时报除数为0错误
+        return false;
+    }
+    if (((int) right->node_type) == 1 && !right->integer_val) {
+
+        //为浮点数0时报除数为0.0错误
+        return false;
+    }
     // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
     auto divInst = BinaryInstruction::createAutoTyped(
@@ -690,7 +694,10 @@ bool IRGenerator::ir_mod(ast_node * node)
 
     //取模运算不支持float类型
     if (left->val->getType()->isFloatType() || right->val->getType()->isFloatType()) {
-        // TODO语义错误处理
+        return false;
+    }
+    if (((int) right->node_type) == 0 && !right->integer_val) {
+        //为整数0时报mod 0错误
         return false;
     }
 
@@ -1157,15 +1164,15 @@ bool IRGenerator::ir_assign(ast_node * node)
 
     // TODO:这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    Value* temp = module->findVarValue(left->name);
+    Value * temp = module->findVarValue(left->name);
     if (nullptr == temp) {
         // 变量不存在，语义错误
         minic_log(LOG_ERROR, "第%lld行的变量(%s)未定义或声明", (long long) node->line_no, left->name.c_str());
         return false;
     }
-    if(right->type->isFloatType()){
+    if (right->type->isFloatType()) {
         temp->setVal(right->float_val);
-    }else{
+    } else {
         temp->setVal(right->integer_val);
     }
     MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
@@ -1570,7 +1577,7 @@ bool IRGenerator::ir_declare_statment(ast_node * node)
         if (!result) {
             break;
         }
-        node -> blockInsts.addInst(child->blockInsts);
+        node->blockInsts.addInst(child->blockInsts);
     }
 
     return result;
@@ -1615,13 +1622,13 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
     } else {
         // 普通变量
         std::string var_name = id_node->name;
-       // printf("%zu",node->sons.size());
+        // printf("%zu",node->sons.size());
 
         if (init_val_node) {
-            if(type_node->type->isFloatType()){
+            if (type_node->type->isFloatType()) {
                 // 浮点数类型
                 node->val = module->newVarValueWithFloat(var_type, var_name, init_val_node->float_val);
-            }else {
+            } else {
                 // 整数类型
                 node->val = module->newVarValueWithInt(var_type, var_name, init_val_node->integer_val);
             }
@@ -1647,7 +1654,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
             node->blockInsts.addInst(left->blockInsts);
             node->blockInsts.addInst(movInst);
 
-        }else{
+        } else {
             node->val = module->newVarValue(var_type, var_name);
         }
     }
@@ -1656,13 +1663,95 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
 
 bool IRGenerator::ir_const_declare_statment(ast_node * node)
 {
-    // TODO: 追加常量声明语句实现
-    return true;
+    bool result = false;
+
+    for (auto & child: node->sons) {
+
+        // 遍历每个常量声明
+        result = ir_const_declare(child);
+        if (!result) {
+            break;
+        }
+        node->blockInsts.addInst(child->blockInsts);
+    }
+
+    return result;
 }
 
 bool IRGenerator::ir_const_declare(ast_node * node)
 {
-    // TODO: 追加常量声明实现
+    // 第一个孩子：类型，第二个孩子：常量名，第三个孩子：初值
+    ast_node * type_node = node->sons[0];                                         // 类型节点
+    ast_node * id_node = node->sons[1];                                           // 常量名
+    ast_node * init_val_node = (node->sons.size() > 2) ? node->sons[2] : nullptr; //初始值节点(常量必须有初始值)
+
+    Type * var_type = type_node->type;
+    // TODO 数组变量还未改
+    if (id_node->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // 是数组变量，提取数组名和维度表达式
+        std::string             array_name;
+        std::vector<ast_node *> array_dims;
+        extract_array_info(id_node, array_name, array_dims);
+
+        // 解析维度表达式为实际的常数
+        std::vector<int> dims;
+        for (auto * expr_node: array_dims) {
+            int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
+            dims.push_back(dim_size);
+        }
+        // TODO 数组尚未修改
+        //  调用 module->newArrayVarValue 分配数组变量
+        node->val = module->newArrayVarValue(var_type, array_name, dims);
+        // TODO处理初值
+        // if (init_val_node) {
+        //     std::vector<int> indices;
+        //     if (!init_array_recursive(var_value, dims, init_val_node, 0, indices)) {
+        //         reportError("数组初始化失败");
+        //         return false;
+        //     }
+        // }
+
+    } else {
+        // 普通变量
+        std::string var_name = id_node->name;
+        // printf("%zu",node->sons.size());
+
+        if (init_val_node) {
+            if (type_node->type->isFloatType()) {
+                // 浮点数类型
+                // TODO 还需查明常量表的存储
+                node->val = module->newConstFloat(init_val_node->float_val);
+            } else {
+                // 整数类型
+                node->val = module->newConstInt(init_val_node->integer_val);
+            }
+            // 赋值运算符的左侧操作数
+            ast_node * left = ir_visit_ast_node(id_node);
+            if (!left) {
+                // 某个变量没有定值
+                // 这里缺省设置变量不存在则创建，因此这里不会错误
+                printf(" no values.\n");
+                return false;
+            }
+            // 赋值运算符的右侧操作数
+            ast_node * right = ir_visit_ast_node(init_val_node);
+            if (!right) {
+                // 某个变量没有定值
+                printf("Assign: some variables have no values.\n");
+                return false;
+            }
+
+            MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
+            // 创建临时变量保存IR的值，以及线性IR指令
+            node->blockInsts.addInst(right->blockInsts);
+            node->blockInsts.addInst(left->blockInsts);
+            node->blockInsts.addInst(movInst);
+
+        } else {
+            // TODO 语义报错，常数必须初始化
+            return false;
+        }
+    }
     return true;
 }
 
