@@ -27,7 +27,8 @@
 #include "Type.h"
 
 #include "Function.h"
-
+#include "AddInstruction.h"
+#include "StoreInstruction.h"
 class ScopeStack;
 
 ///
@@ -131,14 +132,16 @@ public:
     /// @param type 变量类型
     Value * newVarValue(Type * type, std::string name = "");
 
+    ///@brief 加法指令
+    Value * createAdd(Value * lhs, Value * rhs);
 
-        /// @brief 新建变量型Value，会根据currentFunc的值进行判断创建全局或者局部变量
+    /// @brief 新建变量型Value，会根据currentFunc的值进行判断创建全局或者局部变量
     /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
     /// @param name 变量ID
     /// @param type 变量类型
     Value * newVarValueWithFloat(Type * type, std::string name = "", float initVal = 0.0f);
 
-        /// @brief 新建变量型Value，会根据currentFunc的值进行判断创建全局或者局部变量
+    /// @brief 新建变量型Value，会根据currentFunc的值进行判断创建全局或者局部变量
     /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
     /// @param name 变量ID
     /// @param type 变量类型

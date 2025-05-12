@@ -229,22 +229,23 @@ protected:
 
     /// @brief AST节点运算符与动作函数关联的映射表
     std::unordered_map<ast_operator_type, ast2ir_handler_t> ast2ir_handlers;
-///TODO
-    // /// @brief 递归初始化数组
-    // bool IRGenerator::init_array_recursive(Value * array,
-    //                                        const std::vector<int> & dims, // 维度信息，如 [2, 3]
-    //                                        ast_node * init_node,          // 当前 InitVal 节点
-    //                                        int depth,                     // 当前深度（从 0 开始）
-    //                                        std::vector<int> & indices     // 当前维度下标路径
-    //                                        )
-    
+    ////TODO
+    /// @brief 递归初始化数组
+    bool init_array_recursive(
+        Value *                  array,
+        const std::vector<int> & dims,      // 维度信息，如 [2, 3]
+        ast_node *               init_node, // 当前 InitVal 节点
+        int                      depth,     // 当前深度（从 0 开始）
+        std::vector<int> &       indices    // 当前维度下标路径
+    );
+
     // /// @brief 递归填充数组
     // bool IRGenerator::zero_fill_recursive(Value * array,
     //                                         const std::vector<int> & dims,
     //                                         int depth,
     //                                         std::vector<int> & indices)
 
-    private :
+private:
     /// @brief 抽象语法树的根
     ast_node * root;
 

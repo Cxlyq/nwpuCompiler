@@ -1,0 +1,22 @@
+#include "StoreInstruction.h"
+
+/// @brief 构造函数，初始化目标地址和存储的值
+/// @param _func 所属的函数
+/// @param addr 存储目标地址
+/// @param val 存储的值
+StoreInstruction::StoreInstruction(Function * _func, Value * addr, Value * val)
+    : Instruction(_func, IRInstOperator::IRINST_OP_STORE, VoidType::getType()) // 假设STORE操作
+{
+    addOperand(addr); // 地址操作数
+    addOperand(val);  // 值操作数
+}
+
+/// @brief 转换成字符串显示
+/// @param str 转换后的字符串
+void StoreInstruction::toString(std::string & str)
+{
+    Value * addr = getOperand(0); // 获取地址
+    Value * val = getOperand(1);  // 获取存储的值
+
+    str = "store " + val->getIRName() + " to " + addr->getIRName(); // 格式化成字符串
+}

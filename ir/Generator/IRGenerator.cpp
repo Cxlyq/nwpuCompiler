@@ -151,10 +151,11 @@ void extract_array_info(ast_node * array_node, std::string & name, std::vector<a
     while (array_node->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // 使用 if/else 替代 assert
         if (array_node->sons.size() != 2) {
-            std::fprintf(stderr,
-                         "Assertion failed: array_node->sons.size() == 2, file %s, line %d\n",
-                         __FILE__,
-                         __LINE__);
+            std::fprintf(
+                stderr,
+                "Assertion failed: array_node->sons.size() == 2, file %s, line %d\n",
+                __FILE__,
+                __LINE__);
             std::abort();
         }
 
@@ -391,7 +392,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
     // 第二个节点：实参列表节点
 
     std::string funcName = node->sons[0]->name;
-    int64_t lineno = node->sons[0]->line_no;
+    int64_t     lineno = node->sons[0]->line_no;
 
     ast_node * paramsNode = node->sons[1];
 
@@ -515,11 +516,12 @@ bool IRGenerator::ir_add(ast_node * node)
     //                                                     right->val,
     //                                                     IntegerType::getTypeInt());
 
-    auto addInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_ADD_I,
-                                                      IRInstOperator::IRINST_OP_ADD_F);
+    auto addInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_ADD_I,
+        IRInstOperator::IRINST_OP_ADD_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -557,11 +559,12 @@ bool IRGenerator::ir_sub(ast_node * node)
 
     // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    auto subInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_SUB_I,
-                                                      IRInstOperator::IRINST_OP_SUB_F);
+    auto subInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_SUB_I,
+        IRInstOperator::IRINST_OP_SUB_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -599,11 +602,12 @@ bool IRGenerator::ir_mul(ast_node * node)
 
     // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    auto mulInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_MUL_I,
-                                                      IRInstOperator::IRINST_OP_MUL_F);
+    auto mulInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_MUL_I,
+        IRInstOperator::IRINST_OP_MUL_F);
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
     node->blockInsts.addInst(right->blockInsts);
@@ -640,11 +644,12 @@ bool IRGenerator::ir_div(ast_node * node)
 
     // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    auto divInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_DIV_I,
-                                                      IRInstOperator::IRINST_OP_DIV_F);
+    auto divInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_DIV_I,
+        IRInstOperator::IRINST_OP_DIV_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -686,11 +691,12 @@ bool IRGenerator::ir_mod(ast_node * node)
         return false;
     }
 
-    BinaryInstruction * modInst = new BinaryInstruction(module->getCurrentFunction(),
-                                                        IRInstOperator::IRINST_OP_MOD_I,
-                                                        left->val,
-                                                        right->val,
-                                                        IntegerType::getTypeInt());
+    BinaryInstruction * modInst = new BinaryInstruction(
+        module->getCurrentFunction(),
+        IRInstOperator::IRINST_OP_MOD_I,
+        left->val,
+        right->val,
+        IntegerType::getTypeInt());
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -726,11 +732,12 @@ bool IRGenerator::ir_and(ast_node * node)
         return false;
     }
     // TODO 逻辑运算是否需要区别int和float型
-    BinaryInstruction * andInst = new BinaryInstruction(module->getCurrentFunction(),
-                                                        IRInstOperator::IRINST_OP_AND,
-                                                        left->val,
-                                                        right->val,
-                                                        IntegerType::getTypeInt());
+    BinaryInstruction * andInst = new BinaryInstruction(
+        module->getCurrentFunction(),
+        IRInstOperator::IRINST_OP_AND,
+        left->val,
+        right->val,
+        IntegerType::getTypeInt());
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -766,11 +773,12 @@ bool IRGenerator::ir_or(ast_node * node)
         return false;
     }
 
-    BinaryInstruction * orInst = new BinaryInstruction(module->getCurrentFunction(),
-                                                       IRInstOperator::IRINST_OP_OR,
-                                                       left->val,
-                                                       right->val,
-                                                       IntegerType::getTypeInt());
+    BinaryInstruction * orInst = new BinaryInstruction(
+        module->getCurrentFunction(),
+        IRInstOperator::IRINST_OP_OR,
+        left->val,
+        right->val,
+        IntegerType::getTypeInt());
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -806,11 +814,12 @@ bool IRGenerator::ir_eq(ast_node * node)
         return false;
     }
 
-    auto eqInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     left->val,
-                                                     right->val,
-                                                     IRInstOperator::IRINST_OP_EQ_I,
-                                                     IRInstOperator::IRINST_OP_EQ_F);
+    auto eqInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_EQ_I,
+        IRInstOperator::IRINST_OP_EQ_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -846,11 +855,12 @@ bool IRGenerator::ir_neq(ast_node * node)
         return false;
     }
 
-    auto neqInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_NEQ_I,
-                                                      IRInstOperator::IRINST_OP_NEQ_F);
+    auto neqInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_NEQ_I,
+        IRInstOperator::IRINST_OP_NEQ_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -886,11 +896,12 @@ bool IRGenerator::ir_ge(ast_node * node)
         return false;
     }
 
-    auto geInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     left->val,
-                                                     right->val,
-                                                     IRInstOperator::IRINST_OP_GE_I,
-                                                     IRInstOperator::IRINST_OP_GE_F);
+    auto geInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_GE_I,
+        IRInstOperator::IRINST_OP_GE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -926,11 +937,12 @@ bool IRGenerator::ir_le(ast_node * node)
         return false;
     }
 
-    auto leInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     left->val,
-                                                     right->val,
-                                                     IRInstOperator::IRINST_OP_LE_I,
-                                                     IRInstOperator::IRINST_OP_LE_F);
+    auto leInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_LE_I,
+        IRInstOperator::IRINST_OP_LE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -966,11 +978,12 @@ bool IRGenerator::ir_gne(ast_node * node)
         return false;
     }
 
-    auto gneInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_GNE_I,
-                                                      IRInstOperator::IRINST_OP_GNE_F);
+    auto gneInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_GNE_I,
+        IRInstOperator::IRINST_OP_GNE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -1006,11 +1019,12 @@ bool IRGenerator::ir_lne(ast_node * node)
         return false;
     }
 
-    auto lneInst = BinaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                      left->val,
-                                                      right->val,
-                                                      IRInstOperator::IRINST_OP_LNE_I,
-                                                      IRInstOperator::IRINST_OP_LNE_F);
+    auto lneInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        left->val,
+        right->val,
+        IRInstOperator::IRINST_OP_LNE_I,
+        IRInstOperator::IRINST_OP_LNE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     node->blockInsts.addInst(left->blockInsts);
@@ -1036,10 +1050,11 @@ bool IRGenerator::ir_pos(ast_node * node)
     }
 
     // 生成IR指令：result = +expr->val
-    auto posInst = UnaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     expr->val,
-                                                     IRInstOperator::IRINST_OP_POS_I,
-                                                     IRInstOperator::IRINST_OP_POS_F);
+    auto posInst = UnaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        expr->val,
+        IRInstOperator::IRINST_OP_POS_I,
+        IRInstOperator::IRINST_OP_POS_F);
 
     // 合并子表达式的IR并加入当前指令
     node->blockInsts.addInst(expr->blockInsts);
@@ -1065,10 +1080,11 @@ bool IRGenerator::ir_neg(ast_node * node)
     }
 
     // 生成IR指令：result = -expr->val
-    auto negInst = UnaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     expr->val,
-                                                     IRInstOperator::IRINST_OP_NEG_I,
-                                                     IRInstOperator::IRINST_OP_NEG_F);
+    auto negInst = UnaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        expr->val,
+        IRInstOperator::IRINST_OP_NEG_I,
+        IRInstOperator::IRINST_OP_NEG_F);
 
     // 合并子表达式的IR并加入当前指令
     node->blockInsts.addInst(expr->blockInsts);
@@ -1094,10 +1110,11 @@ bool IRGenerator::ir_not(ast_node * node)
     }
 
     // 生成IR指令：result = -expr->val
-    auto notInst = UnaryInstruction::createAutoTyped(module->getCurrentFunction(),
-                                                     expr->val,
-                                                     IRInstOperator::IRINST_OP_NOT_I,
-                                                     IRInstOperator::IRINST_OP_NOT_F);
+    auto notInst = UnaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        expr->val,
+        IRInstOperator::IRINST_OP_NOT_I,
+        IRInstOperator::IRINST_OP_NOT_F);
 
     // 合并子表达式的IR并加入当前指令
     node->blockInsts.addInst(expr->blockInsts);
@@ -1137,15 +1154,15 @@ bool IRGenerator::ir_assign(ast_node * node)
 
     // TODO:这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    Value* temp = module->findVarValue(left->name);
+    Value * temp = module->findVarValue(left->name);
     if (nullptr == temp) {
         // 变量不存在，语义错误
         minic_log(LOG_ERROR, "第%lld行的变量(%s)未定义或声明", (long long) node->line_no, left->name.c_str());
         return false;
     }
-    if(right->type->isFloatType()){
+    if (right->type->isFloatType()) {
         temp->setVal(right->float_val);
-    }else{
+    } else {
         temp->setVal(right->integer_val);
     }
     MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
@@ -1550,7 +1567,7 @@ bool IRGenerator::ir_declare_statment(ast_node * node)
         if (!result) {
             break;
         }
-        node -> blockInsts.addInst(child->blockInsts);
+        node->blockInsts.addInst(child->blockInsts);
     }
 
     return result;
@@ -1570,7 +1587,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
 
     if (id_node->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // 是数组变量，提取数组名和维度表达式
-        std::string array_name;
+        std::string             array_name;
         std::vector<ast_node *> array_dims;
         extract_array_info(id_node, array_name, array_dims);
 
@@ -1584,24 +1601,24 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims);
         // TODO处理初值
-        // if (init_val_node) {
-        //     std::vector<int> indices;
-        //     if (!init_array_recursive(var_value, dims, init_val_node, 0, indices)) {
-        //         reportError("数组初始化失败");
-        //         return false;
-        //     }
-        // }
+        if (init_val_node) {
+            std::vector<int> indices;
+            if (!init_array_recursive(node->val, dims, init_val_node, 0, indices)) {
+                printf("数组初始化失败\n");
+                return false;
+            }
+        }
 
     } else {
         // 普通变量
         std::string var_name = id_node->name;
-       // printf("%zu",node->sons.size());
+        // printf("%zu",node->sons.size());
 
         if (init_val_node) {
-            if(type_node->type->isFloatType()){
+            if (type_node->type->isFloatType()) {
                 // 浮点数类型
                 node->val = module->newVarValueWithFloat(var_type, var_name, init_val_node->float_val);
-            }else {
+            } else {
                 // 整数类型
                 node->val = module->newVarValueWithInt(var_type, var_name, init_val_node->integer_val);
             }
@@ -1627,7 +1644,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
             node->blockInsts.addInst(left->blockInsts);
             node->blockInsts.addInst(movInst);
 
-        }else{
+        } else {
             node->val = module->newVarValue(var_type, var_name);
         }
     }
@@ -1676,71 +1693,72 @@ int evaluateConstExpr(ast_node * node)
     }
 }
 
-// bool IRGenerator::init_array_recursive(Value * array,
-//                                        const std::vector<int> & dims, // 维度信息，如 [2, 3]
-//                                        ast_node * init_node,          // 当前 InitVal 节点
-//                                        int depth,                     // 当前深度（从 0 开始）
-//                                        std::vector<int> & indices     // 当前维度下标路径
-// )
-// {
-//     if (depth == dims.size()) {
-//         // 到达叶子节点，应该是 Exp（初始值）
-//         Value * gep = builder->createGEP(array, indices);
-//         Value * val = ir_expression(init_node);
-//         builder->createStore(gep, val);
-//         return true;
-//     }
+/// @brief 数组初始化递归函数
+/// @param arrayVar 数组变量
+/// @param dims 数组维度
+/// @param initNode 初始化节点
+/// @param depth 当前维度深度
+/// @param indices 当前维度索引
+/// @return 是否成功
+bool IRGenerator::init_array_recursive(
+    Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, int depth, std::vector<int> & indices)
+{
+    if (depth >= dims.size()) {
+        // 说明是叶子节点（具体数值），生成偏移 & store 指令
+        int linear_index = 0;
+        int stride = 1;
+        for (int i = dims.size() - 1; i >= 0; --i) {
+            linear_index += indices[i] * stride;
+            stride *= dims[i];
+        }
 
-//     int dim_size = dims[depth];
+        int     offset_in_bytes = linear_index * 4;
+        Value * addr = module->createAdd(arrayVar, module->newConstInt(offset_in_bytes));
+        Value * val = nullptr;
 
-//     if (init_node->node_type != ast_operator_type::AST_OP_MULTI_VAL) {
-//         // 非花括号包裹，视为一维“自动扁平化”
-//         // 不推荐，标准要求每层明确花括号，但兼容 flat 格式
-//         ast_node * flat_node = init_node;
-//         for (int i = 0; i < dim_size; ++i) {
-//             indices.push_back(i);
-//             if (i == 0) {
-//                 if (!init_array_recursive(array, dims, flat_node, depth + 1, indices))
-//                     return false;
-//             } else {
-//                 // 超过一个就补 0
-//                 Value * gep = builder->createGEP(array, indices);
-//                 builder->createStore(gep, builder->getConstInt(0));
-//             }
-//             indices.pop_back();
-//         }
-//         return true;
-//     }
+        if (initNode->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+            val = module->newConstInt(initNode->integer_val);
+        } else if (initNode->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+            val = module->newConstFloat(initNode->float_val);
+        } else {
+            val = ir_visit_ast_node(initNode)->val;
+        }
 
-//     // 是 multiVal: initVal (',' initVal)* 结构
-//     const auto & sons = init_node->sons;
-//     int i = 0;
-//     for (; i < (int) sons.size() && i < dim_size; ++i) {
-//         indices.push_back(i);
-//         if (!init_array_recursive(array, dims, sons[i], depth + 1, indices))
-//             return false;
-//         indices.pop_back();
-//     }
-//     // 不足部分补 0
-//     for (; i < dim_size; ++i) {
-//         indices.push_back(i);
-//         if (depth + 1 == (int) dims.size()) {
-//             Value * gep = builder->createGEP(array, indices);
-//             builder->createStore(gep, builder->getConstInt(0));
-//         } else {
-//             // 递归补零
-//             if (!zero_fill_recursive(array, dims, depth + 1, indices))
-//                 return false;
-//         }
-//         indices.pop_back();
-//     }
-//     return true;
-// }
+        // 创建一个新的存储指令
+        StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
+        std::cout << "Storing value " << val->getIntVal() << " at address " << addr->getIntVal() << std::endl;
 
-// bool IRGenerator::zero_fill_recursive(Value * array,
-//                                       const std::vector<int> & dims,
-//                                       int depth,
-//                                       std::vector<int> & indices)
+        // 假设我们有一个当前基本块（currentBasicBlock），将该指令加入到基本块
+        initNode->parent->blockInsts.addInst(storeInst);
+        // currentBasicBlock->addInstruction(storeInst);
+        return true;
+    }
+
+    if (initNode->node_type == ast_operator_type::AST_OP_INIT_VAL) {
+        int idx = 0;
+        for (auto * child: initNode->sons) {
+            if (idx >= dims[depth])
+                break;
+            indices.push_back(idx);
+            if (!init_array_recursive(arrayVar, dims, child, depth + 1, indices)) {
+                return false;
+            }
+            indices.pop_back();
+            idx++;
+        }
+        // 其他未初始化的元素可以自动补零（略）
+        return true;
+    }
+
+    // 直接是一个值，不带花括号的形式
+    indices.push_back(0);
+    bool ok = init_array_recursive(arrayVar, dims, initNode, depth + 1, indices);
+    indices.pop_back();
+    return ok;
+}
+
+// bool IRGenerator::zero_fill_recursive(
+//     Value * array, const std::vector<int> & dims, int depth, std::vector<int> & indices)
 // {
 //     int dim_size = dims[depth];
 //     for (int i = 0; i < dim_size; ++i) {
