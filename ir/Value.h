@@ -18,7 +18,6 @@
 
 #include <cstdint>
 #include <string>
-
 #include "Use.h"
 #include "Type.h"
 
@@ -48,7 +47,27 @@ protected:
     ///
     std::vector<Use *> uses;
 
+    enum ValueType {
+        NONE,
+        INT,
+        FLOAT
+    };
+
+    union InitVal{
+        uint32_t intVal;
+        float floatVal;
+    };
+
+    union Val{
+        uint32_t intVal;
+        float floatVal;
+    };
+    Val val;
+    InitVal initVal;
+    ValueType valueType = NONE;
 public:
+    bool isInited;
+
     /// @brief 构造函数
     /// @param _type
     explicit Value(Type * _type);
@@ -124,4 +143,17 @@ public:
     /// @return int32_t 寄存器编号
     ///
     virtual void setLoadRegId(int32_t regId);
+
+    // 为value赋初值
+
+    float getFloatInitVal();
+    uint32_t getIntInitVal();
+    ValueType getValueType();
+    void setInitVal(float val);
+    void setInitVal(uint32_t val);
+    std::string getInitValStr();
+    uint32_t getIntVal();
+    float getFloatVal();
+    void setVal(uint32_t val);
+    void setVal(float val);
 };

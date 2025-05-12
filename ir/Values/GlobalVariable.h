@@ -96,6 +96,9 @@ public:
     void toDeclareString(std::string & str)
     {
         str = "declare " + getType()->toString() + " " + getIRName();
+        if(isInited){
+            str +=  "\n" + getIRName() + " = " + getInitValStr();
+        }
     }
 
      /// 设置初始值（支持 ConstantInt、ConstantFP、ConstantArray 等）

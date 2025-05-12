@@ -19,6 +19,7 @@
 #include "Common.h"
 #include "VoidType.h"
 #include "Register.h"
+#include <sys/types.h>
 
 Module::Module(std::string _name) : name(_name)
 {
@@ -345,6 +346,91 @@ Value * Module::newVarValue(Type * type, std::string name)
     // 增加做作用域中
     scopeStack->insertValue(retVal);
 
+    return retVal;
+}
+
+Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVal)
+{
+    Value * retVal;
+    std::string varName;
+
+    // 若变量名有效，检查当前作用域中是否存在变量，如存在则语义错误
+    // 反之，因无效需创建新的变量名，肯定不现在的不同，不需要查找
+    if (!name.empty()) {
+        Value * tempValue = scopeStack->findCurrentScope(name);
+        if (tempValue) {
+            // 变量存在，语义错误
+            minic_log(LOG_ERROR, "变量(%s)已经存在", name.c_str());
+            return nullptr;
+        }
+    } else if (!currentFunc) {
+        // 全局变量要求name不能为空串，必须有效
+        minic_log(LOG_ERROR, "变量名为空");
+        return nullptr;
+    }
+
+    if (currentFunc) {
+
+        // 获取变量作用域的层级
+        int32_t scope_level;
+        if (name.empty()) {
+            scope_level = 1;
+        } else {
+            scope_level = scopeStack->getCurrentScopeLevel();
+        }
+
+        retVal = currentFunc->newLocalVarValue(type, name, scope_level);
+
+    } else {
+        retVal = newGlobalVariable(type, name);
+    }
+
+    // 增加做作用域中
+    scopeStack->insertValue(retVal);
+
+    retVal->setInitVal(initVal); // 设置初值
+    return retVal;
+}
+
+Value * Module::newVarValueWithInt(Type * type, std::string name, uint32_t initVal)
+{
+    Value * retVal;
+    std::string varName;
+
+    // 若变量名有效，检查当前作用域中是否存在变量，如存在则语义错误
+    // 反之，因无效需创建新的变量名，肯定不现在的不同，不需要查找
+    if (!name.empty()) {
+        Value * tempValue = scopeStack->findCurrentScope(name);
+        if (tempValue) {
+            // 变量存在，语义错误
+            minic_log(LOG_ERROR, "变量(%s)已经存在", name.c_str());
+            return nullptr;
+        }
+    } else if (!currentFunc) {
+        // 全局变量要求name不能为空串，必须有效
+        minic_log(LOG_ERROR, "变量名为空");
+        return nullptr;
+    }
+
+    if (currentFunc) {
+
+        // 获取变量作用域的层级
+        int32_t scope_level;
+        if (name.empty()) {
+            scope_level = 1;
+        } else {
+            scope_level = scopeStack->getCurrentScopeLevel();
+        }
+
+        retVal = currentFunc->newLocalVarValue(type, name, scope_level);
+
+    } else {
+        retVal = newGlobalVariable(type, name);
+    }
+
+    // 增加做作用域中
+    scopeStack->insertValue(retVal);
+    retVal->setInitVal(initVal); // 设置初值
     return retVal;
 }
 
