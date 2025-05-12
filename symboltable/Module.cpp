@@ -216,6 +216,16 @@ ConstFloat * Module::findConstFloat(float val)
     return temp;
 }
 
+///@brief 加法指令
+Value * Module::createAdd(Value * lhs, Value * rhs)
+{
+    auto *  type = IntegerType::getTypeInt(); // 假设是整数加法
+    Value * result = new Value(type);
+    // result->setName(newTempName());                  // 例如 %t0
+    // addIRInst(new AddInstruction(result, lhs, rhs)); // 你项目里可能有指令类
+    return result;
+}
+
 /// @brief 在当前的作用域中查找，若没有查找到则创建数组变量
 /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
 /// @param type 变量类型
@@ -287,7 +297,7 @@ GlobalVariable * Module::newGlobalArrayVariable(Type * type, std::string array_n
 LocalVariable *
 Function::newArrayLocalVarValue(Type * type, std::string array_name, std::vector<int> dims, int32_t scope_level)
 {
-    ArrayType * arrayType = ArrayType::getArrayType(type, dims);
+    ArrayType *     arrayType = ArrayType::getArrayType(type, dims);
     LocalVariable * newArrayVar = new LocalVariable(arrayType, array_name, scope_level);
 
     // 分配栈空间（单位可能是字节，也可能是字长对齐）
@@ -309,7 +319,7 @@ Function::newArrayLocalVarValue(Type * type, std::string array_name, std::vector
 /// @return nullptr则说明变量已存在，否则为新建的变量
 Value * Module::newVarValue(Type * type, std::string name)
 {
-    Value * retVal;
+    Value *     retVal;
     std::string varName;
 
     // 若变量名有效，检查当前作用域中是否存在变量，如存在则语义错误
@@ -351,7 +361,7 @@ Value * Module::newVarValue(Type * type, std::string name)
 
 Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVal)
 {
-    Value * retVal;
+    Value *     retVal;
     std::string varName;
 
     // 若变量名有效，检查当前作用域中是否存在变量，如存在则语义错误
@@ -394,7 +404,7 @@ Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVa
 
 Value * Module::newVarValueWithInt(Type * type, std::string name, uint32_t initVal)
 {
-    Value * retVal;
+    Value *     retVal;
     std::string varName;
 
     // 若变量名有效，检查当前作用域中是否存在变量，如存在则语义错误

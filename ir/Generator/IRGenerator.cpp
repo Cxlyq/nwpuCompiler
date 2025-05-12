@@ -1611,13 +1611,13 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims);
         // TODO处理初值
-        // if (init_val_node) {
-        //     std::vector<int> indices;
-        //     if (!init_array_recursive(var_value, dims, init_val_node, 0, indices)) {
-        //         reportError("数组初始化失败");
-        //         return false;
-        //     }
-        // }
+        if (init_val_node) {
+            std::vector<int> indices;
+            if (!init_array_recursive(node->val, dims, init_val_node, 0, indices)) {
+                printf("数组初始化失败\n");
+                return false;
+            }
+        }
 
     } else {
         // 普通变量
@@ -1785,71 +1785,72 @@ int evaluateConstExpr(ast_node * node)
     }
 }
 
-// bool IRGenerator::init_array_recursive(Value * array,
-//                                        const std::vector<int> & dims, // 维度信息，如 [2, 3]
-//                                        ast_node * init_node,          // 当前 InitVal 节点
-//                                        int depth,                     // 当前深度（从 0 开始）
-//                                        std::vector<int> & indices     // 当前维度下标路径
-// )
-// {
-//     if (depth == dims.size()) {
-//         // 到达叶子节点，应该是 Exp（初始值）
-//         Value * gep = builder->createGEP(array, indices);
-//         Value * val = ir_expression(init_node);
-//         builder->createStore(gep, val);
-//         return true;
-//     }
+/// @brief 数组初始化递归函数
+/// @param arrayVar 数组变量
+/// @param dims 数组维度
+/// @param initNode 初始化节点
+/// @param depth 当前维度深度
+/// @param indices 当前维度索引
+/// @return 是否成功
+bool IRGenerator::init_array_recursive(
+    Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, int depth, std::vector<int> & indices)
+{
+    if (depth >= dims.size()) {
+        // 说明是叶子节点（具体数值），生成偏移 & store 指令
+        int linear_index = 0;
+        int stride = 1;
+        for (int i = dims.size() - 1; i >= 0; --i) {
+            linear_index += indices[i] * stride;
+            stride *= dims[i];
+        }
 
-//     int dim_size = dims[depth];
+        int     offset_in_bytes = linear_index * 4;
+        Value * addr = module->createAdd(arrayVar, module->newConstInt(offset_in_bytes));
+        Value * val = nullptr;
 
-//     if (init_node->node_type != ast_operator_type::AST_OP_MULTI_VAL) {
-//         // 非花括号包裹，视为一维“自动扁平化”
-//         // 不推荐，标准要求每层明确花括号，但兼容 flat 格式
-//         ast_node * flat_node = init_node;
-//         for (int i = 0; i < dim_size; ++i) {
-//             indices.push_back(i);
-//             if (i == 0) {
-//                 if (!init_array_recursive(array, dims, flat_node, depth + 1, indices))
-//                     return false;
-//             } else {
-//                 // 超过一个就补 0
-//                 Value * gep = builder->createGEP(array, indices);
-//                 builder->createStore(gep, builder->getConstInt(0));
-//             }
-//             indices.pop_back();
-//         }
-//         return true;
-//     }
+        if (initNode->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+            val = module->newConstInt(initNode->integer_val);
+        } else if (initNode->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+            val = module->newConstFloat(initNode->float_val);
+        } else {
+            val = ir_visit_ast_node(initNode)->val;
+        }
 
-//     // 是 multiVal: initVal (',' initVal)* 结构
-//     const auto & sons = init_node->sons;
-//     int i = 0;
-//     for (; i < (int) sons.size() && i < dim_size; ++i) {
-//         indices.push_back(i);
-//         if (!init_array_recursive(array, dims, sons[i], depth + 1, indices))
-//             return false;
-//         indices.pop_back();
-//     }
-//     // 不足部分补 0
-//     for (; i < dim_size; ++i) {
-//         indices.push_back(i);
-//         if (depth + 1 == (int) dims.size()) {
-//             Value * gep = builder->createGEP(array, indices);
-//             builder->createStore(gep, builder->getConstInt(0));
-//         } else {
-//             // 递归补零
-//             if (!zero_fill_recursive(array, dims, depth + 1, indices))
-//                 return false;
-//         }
-//         indices.pop_back();
-//     }
-//     return true;
-// }
+        // 创建一个新的存储指令
+        StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
+        std::cout << "Storing value " << val->getIntVal() << " at address " << addr->getIntVal() << std::endl;
 
-// bool IRGenerator::zero_fill_recursive(Value * array,
-//                                       const std::vector<int> & dims,
-//                                       int depth,
-//                                       std::vector<int> & indices)
+        // 假设我们有一个当前基本块（currentBasicBlock），将该指令加入到基本块
+        initNode->parent->blockInsts.addInst(storeInst);
+        // currentBasicBlock->addInstruction(storeInst);
+        return true;
+    }
+
+    if (initNode->node_type == ast_operator_type::AST_OP_INIT_VAL) {
+        int idx = 0;
+        for (auto * child: initNode->sons) {
+            if (idx >= dims[depth])
+                break;
+            indices.push_back(idx);
+            if (!init_array_recursive(arrayVar, dims, child, depth + 1, indices)) {
+                return false;
+            }
+            indices.pop_back();
+            idx++;
+        }
+        // 其他未初始化的元素可以自动补零（略）
+        return true;
+    }
+
+    // 直接是一个值，不带花括号的形式
+    indices.push_back(0);
+    bool ok = init_array_recursive(arrayVar, dims, initNode, depth + 1, indices);
+    indices.pop_back();
+    return ok;
+}
+
+// bool IRGenerator::zero_fill_recursive(
+//     Value * array, const std::vector<int> & dims, int depth, std::vector<int> & indices)
 // {
 //     int dim_size = dims[depth];
 //     for (int i = 0; i < dim_size; ++i) {
