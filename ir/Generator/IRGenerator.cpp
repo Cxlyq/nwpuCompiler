@@ -1615,7 +1615,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         if (init_val_node) {
             std::vector<int>             indices;
             std::vector<Instruction *> * insts = new std::vector<Instruction *>;
-            if (!init_array_recursive(node->val, dims, init_val_node, 0, indices, *insts)) {
+            if (!init_array_flattened(node->val, dims, init_val_node, *insts)) {
                 printf("数组初始化失败\n");
                 return false;
             }
@@ -1783,90 +1783,8 @@ int evaluateConstExpr(ast_node * node)
     }
 }
 
-bool IRGenerator::init_array_recursive(
-    Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, int depth, std::vector<int> & indices,
-    std::vector<Instruction *> & Insts)
-{
-    // 递归基准：达到叶子（标量）层
-    if (depth == (int) dims.size()) {
-        int     linear_index = 0;
-        int     offset = linear_index * 4; // 假设4字节元素
-        Value * addr = module->createAdd(arrayVar, module->newConstInt(offset));
-        Value * val = nullptr;
-
-        if (!initNode->val) {
-            ir_visit_ast_node(initNode);
-        }
-
-        if (initNode->val) {
-            val = initNode->val;
-        } else {
-            std::cerr << "Error: leaf node val is null\n";
-            return false;
-        }
-
-        StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
-        // TODO： FIX：修复地址运算错误问题
-        std::cout << "Storing value " << val->getIRName() << " at address " << addr->getIntVal() << std::endl;
-        addr->setIRName(std::to_string(addr->getIntVal()));
-        // 将该指令加入到基本块
-        Insts.push_back(storeInst);
-        return true;
-    }
-
-    // 当前维度大小
-    int dim_size = dims[depth];
-    // initNode 是初始化值列表
-    if (initNode->node_type == ast_operator_type::AST_OP_INIT_VAL) {
-        int idx = 0;
-        // 依次递归子节点，遍历当前维度元素
-        for (; idx < dim_size && idx < (int) initNode->sons.size(); ++idx) {
-            indices.push_back(idx);
-            if (!init_array_recursive(arrayVar, dims, initNode->sons[idx], depth + 1, indices, Insts)) {
-                return false;
-            }
-            indices.pop_back();
-        }
-        // 不够的补0
-        for (; idx < dim_size; ++idx) {
-            indices.push_back(idx);
-            // 补0节点：构造一个临时的 ast_node 代表0
-            ast_node zero_node(ast_operator_type::AST_OP_LEAF_LITERAL_UINT);
-            zero_node.integer_val = 0;
-            zero_node.val = module->newConstInt(0);
-            zero_node.parent = initNode->parent;
-
-            if (!init_array_recursive(arrayVar, dims, &zero_node, depth + 1, indices, Insts)) {
-                return false;
-            }
-            indices.pop_back();
-        }
-        return true;
-    }
-
-    // 当前initNode不是初始化值列表，直接递归处理一个值，补全剩余
-    indices.push_back(0);
-    bool ok = init_array_recursive(arrayVar, dims, initNode, depth + 1, indices, Insts);
-    indices.pop_back();
-
-    // 补当前维度后续元素0
-    for (int i = 1; i < dim_size; ++i) {
-        indices.push_back(i);
-        ast_node zero_node(ast_operator_type::AST_OP_LEAF_LITERAL_UINT);
-        zero_node.integer_val = 0;
-        zero_node.val = module->newConstInt(0);
-        zero_node.parent = initNode->parent;
-
-        if (!init_array_recursive(arrayVar, dims, &zero_node, depth + 1, indices, Insts)) {
-            return false;
-        }
-        indices.pop_back();
-    }
-
-    return ok;
-}
-
-bool IRGenerator::init_array_flattened(Value * arrayVar, const std::vector<int> & dims, ast_node * initNode)
+bool IRGenerator::init_array_flattened(
+    Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts)
 {
     // 1. 计算总元素数
     int total_elems = 1;
@@ -1913,10 +1831,8 @@ bool IRGenerator::init_array_flattened(Value * arrayVar, const std::vector<int> 
         // 5. 生成 store 指令
         StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
         std::cout << "Store [" << i << "]: " << val->getIRName() << " → addr offset " << offset << std::endl;
-
-        if (val_node && val_node->parent) {
-            val_node->parent->blockInsts.addInst(storeInst);
-        }
+        // addr->setIRName(std::to_string(addr->getIntVal()));
+        Insts.push_back(storeInst);
     }
 
     return true;

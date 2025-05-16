@@ -245,7 +245,8 @@ protected:
         Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, int depth, std::vector<int> & indices,
         std::vector<Instruction *> & Inst);
 
-    bool init_array_flattened(Value * arrayVar, const std::vector<int> & dims, ast_node * initNode);
+    bool init_array_flattened(
+        Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts);
     void
     flatten_init_node(ast_node * node, const std::vector<int> & dims, int depth, std::vector<ast_node *> & flat_list);
 
