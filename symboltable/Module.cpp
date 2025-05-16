@@ -17,6 +17,7 @@
 #include "FrameAllocator.h"
 #include "ScopeStack.h"
 #include "Common.h"
+#include "Value.h"
 #include "VoidType.h"
 #include "Register.h"
 #include <sys/types.h>
@@ -355,11 +356,11 @@ Value * Module::newVarValue(Type * type, std::string name)
 
     // 增加做作用域中
     scopeStack->insertValue(retVal);
-
+    retVal->setCategory(ValueCategory::VARIABLE);
     return retVal;
 }
 
-Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVal)
+Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVal, ValueCategory valueCategory)
 {
     Value *     retVal;
     std::string varName;
@@ -399,10 +400,11 @@ Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVa
     scopeStack->insertValue(retVal);
 
     retVal->setInitVal(initVal); // 设置初值
+    retVal->setCategory(valueCategory);
     return retVal;
 }
 
-Value * Module::newVarValueWithInt(Type * type, std::string name, uint32_t initVal)
+Value * Module::newVarValueWithInt(Type * type, std::string name, uint32_t initVal, ValueCategory valueCategory)
 {
     Value *     retVal;
     std::string varName;
@@ -441,6 +443,7 @@ Value * Module::newVarValueWithInt(Type * type, std::string name, uint32_t initV
     // 增加做作用域中
     scopeStack->insertValue(retVal);
     retVal->setInitVal(initVal); // 设置初值
+    retVal->setCategory(valueCategory);
     return retVal;
 }
 

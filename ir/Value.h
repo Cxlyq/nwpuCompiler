@@ -28,6 +28,12 @@
 /// Value表示所有可计算的值的基类，例如常量、指令、参数等。
 /// 每个Value都有一个类型(Type)和一个名字(Name)。Value是IR中所有可计算实体的抽象。
 ///
+
+enum class ValueCategory {
+    UNKNOWN,
+    CONSTANT, //常量
+    VARIABLE  //变量
+};
 class Value {
 
 protected:
@@ -47,24 +53,22 @@ protected:
     ///
     std::vector<Use *> uses;
 
-    enum ValueType {
-        NONE,
-        INT,
-        FLOAT
+    enum ValueType { NONE, INT, FLOAT };
+
+    union InitVal {
+        uint32_t intVal;
+        float    floatVal;
     };
 
-    union InitVal{
+    union Val {
         uint32_t intVal;
-        float floatVal;
+        float    floatVal;
     };
+    Val           val;
+    InitVal       initVal;
+    ValueType     valueType = NONE;
+    ValueCategory valueCategory = ValueCategory::UNKNOWN;
 
-    union Val{
-        uint32_t intVal;
-        float floatVal;
-    };
-    Val val;
-    InitVal initVal;
-    ValueType valueType = NONE;
 public:
     bool isInited;
 
@@ -97,7 +101,7 @@ public:
 
     /// @brief 获取类型
     /// @return 变量名
-    virtual Type * getType() const ;
+    virtual Type * getType() const;
 
     ///
     /// @brief 增加一条边，增加Value被使用次数
@@ -146,14 +150,16 @@ public:
 
     // 为value赋初值
 
-    float getFloatInitVal();
-    uint32_t getIntInitVal();
-    ValueType getValueType();
-    void setInitVal(float val);
-    void setInitVal(uint32_t val);
-    std::string getInitValStr();
-    uint32_t getIntVal();
-    float getFloatVal();
-    void setVal(uint32_t val);
-    void setVal(float val);
+    float         getFloatInitVal();
+    uint32_t      getIntInitVal();
+    ValueType     getValueType();
+    ValueCategory getValueCategory();             //获取值的类别（常量或变量）
+    void          setCategory(ValueCategory cat); //设置值的类别（常量或变量）
+    void          setInitVal(float val);
+    void          setInitVal(uint32_t val);
+    std::string   getInitValStr();
+    uint32_t      getIntVal();
+    float         getFloatVal();
+    void          setVal(uint32_t val);
+    void          setVal(float val);
 };

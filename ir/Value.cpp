@@ -28,6 +28,7 @@ Value::Value(Type * _type) : type(_type)
 {
     // 不需要增加代码
     valueType = NONE;
+    valueCategory = ValueCategory::UNKNOWN;
     isInited = false;
 }
 
@@ -147,48 +148,68 @@ void Value::setLoadRegId(int32_t regId)
     (void) regId;
 }
 
-    // 为value赋初值
+// 为value赋初值
 
-float Value::getFloatInitVal(){
+float Value::getFloatInitVal()
+{
     return initVal.floatVal;
 }
-uint32_t Value::getIntInitVal(){
+uint32_t Value::getIntInitVal()
+{
     return initVal.intVal;
 }
-Value::ValueType Value::getValueType(){
+Value::ValueType Value::getValueType()
+{
     return valueType;
 }
 
-void Value::setInitVal(float val){
+ValueCategory Value::getValueCategory()
+{
+    return valueCategory;
+}
+
+void Value::setCategory(ValueCategory cat)
+{
+    valueCategory = cat;
+}
+
+void Value::setInitVal(float val)
+{
     initVal.floatVal = val;
     this->valueType = ValueType::FLOAT;
     isInited = true;
     this->val.floatVal = val;
 }
-void Value::setInitVal(uint32_t val){
+void Value::setInitVal(uint32_t val)
+{
     initVal.intVal = val;
     this->valueType = ValueType::INT;
     isInited = true;
     this->val.intVal = val;
 }
 
-std::string Value::getInitValStr(){
-    if (valueType == ValueType::FLOAT){
+std::string Value::getInitValStr()
+{
+    if (valueType == ValueType::FLOAT) {
         return std::to_string(initVal.floatVal);
-    }else{
+    } else {
         return std::to_string(initVal.intVal);
     }
 }
 
-uint32_t Value::getIntVal(){
+uint32_t Value::getIntVal()
+{
     return val.intVal;
 }
-float Value::getFloatVal(){
+float Value::getFloatVal()
+{
     return val.floatVal;
 }
-void Value::setVal(uint32_t val){
+void Value::setVal(uint32_t val)
+{
     this->val.intVal = val;
 }
-void Value::setVal(float val){
+void Value::setVal(float val)
+{
     this->val.floatVal = val;
 }
