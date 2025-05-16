@@ -18,8 +18,11 @@
 
 #include <stack>
 #include <unordered_map>
+#include <vector>
 
 #include "AST.h"
+#include "InstSelectorArm32.h"
+#include "Instruction.h"
 #include "LabelInstruction.h"
 #include "Module.h"
 
@@ -232,11 +235,12 @@ protected:
     ////TODO
     /// @brief 递归初始化数组
     bool init_array_recursive(
-        Value *                  array,
-        const std::vector<int> & dims,      // 维度信息，如 [2, 3]
-        ast_node *               init_node, // 当前 InitVal 节点
-        int                      depth,     // 当前深度（从 0 开始）
-        std::vector<int> &       indices    // 当前维度下标路径
+        Value *                      array,
+        const std::vector<int> &     dims,      // 维度信息，如 [2, 3]
+        ast_node *                   init_node, // 当前 InitVal 节点
+        int                          depth,     // 当前深度（从 0 开始）
+        std::vector<int> &           indices,   // 当前维度下标路径
+        std::vector<Instruction *> & Inst       // 存放初始化指令
     );
 
     // /// @brief 递归填充数组

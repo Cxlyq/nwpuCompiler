@@ -14,8 +14,10 @@
 /// <tr><td>2024-11-23 <td>1.1     <td>zenglj  <td>表达式版增强
 /// </table>
 ///
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <string>
 #include <unordered_map>
 #include <vector>
 #include <iostream>
@@ -25,6 +27,7 @@
 #include "Function.h"
 #include "IRCode.h"
 #include "IRGenerator.h"
+#include "Instruction.h"
 #include "IntegerType.h"
 #include "Module.h"
 #include "EntryInstruction.h"
@@ -1607,15 +1610,21 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
             int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
             dims.push_back(dim_size);
         }
-
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims);
         // TODO处理初值
         if (init_val_node) {
-            std::vector<int> indices;
-            if (!init_array_recursive(node->val, dims, init_val_node, 0, indices)) {
+            std::vector<int>             indices;
+            std::vector<Instruction *> * insts = new vector<Instruction *>;
+            if (!init_array_recursive(node->val, dims, init_val_node, 0, indices, *insts)) {
                 printf("数组初始化失败\n");
                 return false;
+            }
+            for (auto inst: *insts) {
+                node->blockInsts.addInst(inst);
+                std::string tempstr;
+                inst->toString(tempstr);
+                std::cout << tempstr << std::endl;
             }
         }
 
@@ -1793,7 +1802,8 @@ int evaluateConstExpr(ast_node * node)
 /// @param indices 当前维度索引
 /// @return 是否成功
 bool IRGenerator::init_array_recursive(
-    Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, int depth, std::vector<int> & indices)
+    Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, int depth, std::vector<int> & indices,
+    std::vector<Instruction *> & Insts)
 {
     if (depth >= dims.size()) {
         // 说明是叶子节点（具体数值），生成偏移 & store 指令
@@ -1818,11 +1828,10 @@ bool IRGenerator::init_array_recursive(
 
         // 创建一个新的存储指令
         StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
-        std::cout << "Storing value " << val->getIntVal() << " at address " << addr->getIntVal() << std::endl;
-
-        // 假设我们有一个当前基本块（currentBasicBlock），将该指令加入到基本块
-        initNode->parent->blockInsts.addInst(storeInst);
-        // currentBasicBlock->addInstruction(storeInst);
+        std::cout << "Storing value " << val->getIRName() << " at address " << addr->getIntVal() << std::endl;
+        addr->setIRName(std::to_string(addr->getIntVal()));
+        // 将该指令加入到基本块
+        Insts.push_back(storeInst);
         return true;
     }
 
@@ -1832,7 +1841,7 @@ bool IRGenerator::init_array_recursive(
             if (idx >= dims[depth])
                 break;
             indices.push_back(idx);
-            if (!init_array_recursive(arrayVar, dims, child, depth + 1, indices)) {
+            if (!init_array_recursive(arrayVar, dims, child, depth + 1, indices, Insts)) {
                 return false;
             }
             indices.pop_back();
@@ -1844,7 +1853,7 @@ bool IRGenerator::init_array_recursive(
 
     // 直接是一个值，不带花括号的形式
     indices.push_back(0);
-    bool ok = init_array_recursive(arrayVar, dims, initNode, depth + 1, indices);
+    bool ok = init_array_recursive(arrayVar, dims, initNode, depth + 1, indices, Insts);
     indices.pop_back();
     return ok;
 }

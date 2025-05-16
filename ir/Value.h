@@ -46,25 +46,23 @@ protected:
     /// @brief define-use链，这个定值被使用的所有边，即所有的User
     ///
     std::vector<Use *> uses;
+	
+    enum ValueType { NONE, INT, FLOAT, ARRAY };
 
-    enum ValueType {
-        NONE,
-        INT,
-        FLOAT
+    union InitVal {
+        uint32_t           intVal;
+        float              floatVal;
+        std::vector<int> * arrayVal;
     };
 
-    union InitVal{
+    union Val {
         uint32_t intVal;
-        float floatVal;
+        float    floatVal;
     };
-
-    union Val{
-        uint32_t intVal;
-        float floatVal;
-    };
-    Val val;
-    InitVal initVal;
+    Val       val;
+    InitVal   initVal;
     ValueType valueType = NONE;
+
 public:
     bool isInited;
 
@@ -97,7 +95,7 @@ public:
 
     /// @brief 获取类型
     /// @return 变量名
-    virtual Type * getType() const ;
+    virtual Type * getType() const;
 
     ///
     /// @brief 增加一条边，增加Value被使用次数
@@ -146,14 +144,14 @@ public:
 
     // 为value赋初值
 
-    float getFloatInitVal();
-    uint32_t getIntInitVal();
-    ValueType getValueType();
-    void setInitVal(float val);
-    void setInitVal(uint32_t val);
+    float       getFloatInitVal();
+    uint32_t    getIntInitVal();
+    ValueType   getValueType();
+    void        setInitVal(float val);
+    void        setInitVal(uint32_t val);
     std::string getInitValStr();
-    uint32_t getIntVal();
-    float getFloatVal();
-    void setVal(uint32_t val);
-    void setVal(float val);
+    uint32_t    getIntVal();
+    float       getFloatVal();
+    void        setVal(uint32_t val);
+    void        setVal(float val);
 };
