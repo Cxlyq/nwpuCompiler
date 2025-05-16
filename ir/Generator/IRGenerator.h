@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "AST.h"
-#include "InstSelectorArm32.h"
 #include "Instruction.h"
 #include "LabelInstruction.h"
 #include "Module.h"
@@ -234,14 +233,21 @@ protected:
     std::unordered_map<ast_operator_type, ast2ir_handler_t> ast2ir_handlers;
     ////TODO
     /// @brief 递归初始化数组
+    // bool init_array_recursive(
+    //     Value *                  array,
+    //     const std::vector<int> & dims,      // 维度信息，如 [2, 3]
+    //     ast_node *               init_node, // 当前 InitVal 节点
+    //     int                      depth,     // 当前深度（从 0 开始）
+    //     std::vector<int> &       indices    // 当前维度下标路径
+    // );
+
     bool init_array_recursive(
-        Value *                      array,
-        const std::vector<int> &     dims,      // 维度信息，如 [2, 3]
-        ast_node *                   init_node, // 当前 InitVal 节点
-        int                          depth,     // 当前深度（从 0 开始）
-        std::vector<int> &           indices,   // 当前维度下标路径
-        std::vector<Instruction *> & Inst       // 存放初始化指令
-    );
+        Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, int depth, std::vector<int> & indices,
+        std::vector<Instruction *> & Inst);
+
+    bool init_array_flattened(Value * arrayVar, const std::vector<int> & dims, ast_node * initNode);
+    void
+    flatten_init_node(ast_node * node, const std::vector<int> & dims, int depth, std::vector<ast_node *> & flat_list);
 
     // /// @brief 递归填充数组
     // bool IRGenerator::zero_fill_recursive(Value * array,
@@ -259,6 +265,8 @@ private:
     std::stack<LabelInstruction *> exitLabels;
 
     std::stack<LabelInstruction *> enterLabels;
+
+    void flatten_ast_initval(ast_node * node, std::vector<ast_node *> & out_flat);
 };
 
 int evaluateConstExpr(ast_node * node);
