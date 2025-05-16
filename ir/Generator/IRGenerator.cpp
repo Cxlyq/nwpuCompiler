@@ -39,6 +39,7 @@
 #include "GotoInstruction.h"
 #include "UnaryInstruction.h"
 #include "ConditionalBranchInstruction.h"
+#include "Value.h"
 
 /// @brief 构造函数
 /// @param _root AST的根
@@ -1168,6 +1169,11 @@ bool IRGenerator::ir_assign(ast_node * node)
     // TODO:这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
     Value * temp = module->findVarValue(left->name);
+    if (temp->getValueCategory() != ValueCategory::VARIABLE) {
+        minic_log(LOG_ERROR, "第%lld行的(%s)为常量，不允许赋值", (long long) node->line_no, left->name.c_str());
+        return false;
+    }
+
     if (nullptr == temp) {
         // 变量不存在，语义错误
         minic_log(LOG_ERROR, "第%lld行的变量(%s)未定义或声明", (long long) node->line_no, left->name.c_str());
