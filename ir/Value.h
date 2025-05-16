@@ -52,12 +52,13 @@ protected:
     /// @brief define-use链，这个定值被使用的所有边，即所有的User
     ///
     std::vector<Use *> uses;
-
-    enum ValueType { NONE, INT, FLOAT };
+	
+    enum ValueType { NONE, INT, FLOAT, ARRAY };
 
     union InitVal {
-        uint32_t intVal;
-        float    floatVal;
+        uint32_t           intVal;
+        float              floatVal;
+        std::vector<int> * arrayVal;
     };
 
     union Val {

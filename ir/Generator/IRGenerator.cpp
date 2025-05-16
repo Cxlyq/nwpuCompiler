@@ -14,8 +14,10 @@
 /// <tr><td>2024-11-23 <td>1.1     <td>zenglj  <td>表达式版增强
 /// </table>
 ///
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <string>
 #include <unordered_map>
 #include <vector>
 #include <iostream>
@@ -25,6 +27,7 @@
 #include "Function.h"
 #include "IRCode.h"
 #include "IRGenerator.h"
+#include "Instruction.h"
 #include "IntegerType.h"
 #include "Module.h"
 #include "EntryInstruction.h"
@@ -1607,22 +1610,23 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
             int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
             dims.push_back(dim_size);
         }
-
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims);
-        // TODO处理初值
         if (init_val_node) {
-            std::vector<int> indices;
-            if (!init_array_recursive(node->val, dims, init_val_node, 0, indices)) {
+            std::vector<int>             indices;
+            std::vector<Instruction *> * insts = new std::vector<Instruction *>;
+            if (!init_array_recursive(node->val, dims, init_val_node, 0, indices, *insts)) {
                 printf("数组初始化失败\n");
                 return false;
+            }
+            for (auto inst: *insts) {
+                node->blockInsts.addInst(inst);
             }
         }
 
     } else {
         // 普通变量
         std::string var_name = id_node->name;
-        // printf("%zu",node->sons.size());
 
         if (init_val_node) {
             if (type_node->type->isFloatType()) {
@@ -1666,9 +1670,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
 bool IRGenerator::ir_const_declare_statment(ast_node * node)
 {
     bool result = false;
-
     for (auto & child: node->sons) {
-
         // 遍历每个常量声明
         result = ir_const_declare(child);
         if (!result) {
@@ -1676,7 +1678,6 @@ bool IRGenerator::ir_const_declare_statment(ast_node * node)
         }
         node->blockInsts.addInst(child->blockInsts);
     }
-
     return result;
 }
 
@@ -1716,8 +1717,6 @@ bool IRGenerator::ir_const_declare(ast_node * node)
     } else {
         // 普通变量
         std::string var_name = id_node->name;
-        // printf("%zu",node->sons.size());
-
         if (init_val_node) {
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
@@ -1782,91 +1781,176 @@ int evaluateConstExpr(ast_node * node)
             }
             return evaluateConstExpr(node->sons[0]) / divisor;
         }
-
         default:
             std::cerr << "evaluateConstExpr: 非法节点类型（不是常量表达式）" << std::endl;
             std::abort();
     }
 }
 
-/// @brief 数组初始化递归函数
-/// @param arrayVar 数组变量
-/// @param dims 数组维度
-/// @param initNode 初始化节点
-/// @param depth 当前维度深度
-/// @param indices 当前维度索引
-/// @return 是否成功
 bool IRGenerator::init_array_recursive(
-    Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, int depth, std::vector<int> & indices)
+    Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, int depth, std::vector<int> & indices,
+    std::vector<Instruction *> & Insts)
 {
-    if (depth >= dims.size()) {
-        // 说明是叶子节点（具体数值），生成偏移 & store 指令
-        int linear_index = 0;
-        int stride = 1;
-        for (int i = dims.size() - 1; i >= 0; --i) {
-            linear_index += indices[i] * stride;
-            stride *= dims[i];
-        }
-
-        int     offset_in_bytes = linear_index * 4;
-        Value * addr = module->createAdd(arrayVar, module->newConstInt(offset_in_bytes));
+    // 递归基准：达到叶子（标量）层
+    if (depth == (int) dims.size()) {
+        int     linear_index = 0;
+        int     offset = linear_index * 4; // 假设4字节元素
+        Value * addr = module->createAdd(arrayVar, module->newConstInt(offset));
         Value * val = nullptr;
 
-        if (initNode->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
-            val = module->newConstInt(initNode->integer_val);
-        } else if (initNode->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
-            val = module->newConstFloat(initNode->float_val);
-        } else {
-            val = ir_visit_ast_node(initNode)->val;
+        if (!initNode->val) {
+            ir_visit_ast_node(initNode);
         }
 
-        // 创建一个新的存储指令
-        StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
-        std::cout << "Storing value " << val->getIntVal() << " at address " << addr->getIntVal() << std::endl;
+        if (initNode->val) {
+            val = initNode->val;
+        } else {
+            std::cerr << "Error: leaf node val is null\n";
+            return false;
+        }
 
-        // 假设我们有一个当前基本块（currentBasicBlock），将该指令加入到基本块
-        initNode->parent->blockInsts.addInst(storeInst);
-        // currentBasicBlock->addInstruction(storeInst);
+        StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
+        // TODO： FIX：修复地址运算错误问题
+        std::cout << "Storing value " << val->getIRName() << " at address " << addr->getIntVal() << std::endl;
+        addr->setIRName(std::to_string(addr->getIntVal()));
+        // 将该指令加入到基本块
+        Insts.push_back(storeInst);
         return true;
     }
 
+    // 当前维度大小
+    int dim_size = dims[depth];
+    // initNode 是初始化值列表
     if (initNode->node_type == ast_operator_type::AST_OP_INIT_VAL) {
         int idx = 0;
-        for (auto * child: initNode->sons) {
-            if (idx >= dims[depth])
-                break;
+        // 依次递归子节点，遍历当前维度元素
+        for (; idx < dim_size && idx < (int) initNode->sons.size(); ++idx) {
             indices.push_back(idx);
-            if (!init_array_recursive(arrayVar, dims, child, depth + 1, indices)) {
+            if (!init_array_recursive(arrayVar, dims, initNode->sons[idx], depth + 1, indices, Insts)) {
                 return false;
             }
             indices.pop_back();
-            idx++;
         }
-        // 其他未初始化的元素可以自动补零（略）
+        // 不够的补0
+        for (; idx < dim_size; ++idx) {
+            indices.push_back(idx);
+            // 补0节点：构造一个临时的 ast_node 代表0
+            ast_node zero_node(ast_operator_type::AST_OP_LEAF_LITERAL_UINT);
+            zero_node.integer_val = 0;
+            zero_node.val = module->newConstInt(0);
+            zero_node.parent = initNode->parent;
+
+            if (!init_array_recursive(arrayVar, dims, &zero_node, depth + 1, indices, Insts)) {
+                return false;
+            }
+            indices.pop_back();
+        }
         return true;
     }
 
-    // 直接是一个值，不带花括号的形式
+    // 当前initNode不是初始化值列表，直接递归处理一个值，补全剩余
     indices.push_back(0);
-    bool ok = init_array_recursive(arrayVar, dims, initNode, depth + 1, indices);
+    bool ok = init_array_recursive(arrayVar, dims, initNode, depth + 1, indices, Insts);
     indices.pop_back();
+
+    // 补当前维度后续元素0
+    for (int i = 1; i < dim_size; ++i) {
+        indices.push_back(i);
+        ast_node zero_node(ast_operator_type::AST_OP_LEAF_LITERAL_UINT);
+        zero_node.integer_val = 0;
+        zero_node.val = module->newConstInt(0);
+        zero_node.parent = initNode->parent;
+
+        if (!init_array_recursive(arrayVar, dims, &zero_node, depth + 1, indices, Insts)) {
+            return false;
+        }
+        indices.pop_back();
+    }
+
     return ok;
 }
 
-// bool IRGenerator::zero_fill_recursive(
-//     Value * array, const std::vector<int> & dims, int depth, std::vector<int> & indices)
-// {
-//     int dim_size = dims[depth];
-//     for (int i = 0; i < dim_size; ++i) {
-//         indices.push_back(i);
-//         if (depth + 1 == (int) dims.size()) {
-//             Value * gep = builder->createGEP(array, indices);
-//             builder->createStore(gep, builder->getConstInt(0));
-//         } else {
-//             if (!zero_fill_recursive(array, dims, depth + 1, indices))
-//                 return false;
-//         }
-//         indices.pop_back();
-//     }
-//     return true;
-// }
+bool IRGenerator::init_array_flattened(Value * arrayVar, const std::vector<int> & dims, ast_node * initNode)
+{
+    // 1. 计算总元素数
+    int total_elems = 1;
+    for (int d: dims)
+        total_elems *= d;
+
+    // 2. 拉平成一维值数组
+    std::vector<ast_node *> flat_list;
+    flatten_init_node(initNode, dims, 0, flat_list);
+
+    std::cout << "Flat init list: ";
+    for (size_t i = 0; i < flat_list.size(); ++i) {
+        ast_node * node = flat_list[i];
+        if (node) {
+            std::cout << node->integer_val << " ";
+        } else {
+            std::cout << "null ";
+        }
+    }
+    std::cout << std::endl;
+
+    // 3. 填充 IR
+    for (int i = 0; i < total_elems; ++i) {
+        ast_node * val_node = (i < flat_list.size()) ? flat_list[i] : nullptr;
+
+        Value * val = nullptr;
+        if (val_node) {
+            if (!val_node->val) {
+                ir_visit_ast_node(val_node); // 生成 IR 值
+            }
+            val = val_node->val;
+            if (!val) {
+                std::cerr << "Error: val_node->val is null at index " << i << std::endl;
+                return false;
+            }
+        } else {
+            val = module->newConstInt(0); // 默认补零
+        }
+
+        // 4. 计算地址偏移（假设 4 字节）
+        int     offset = i * 4;
+        Value * addr = module->createAdd(arrayVar, module->newConstInt(offset));
+
+        // 5. 生成 store 指令
+        StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
+        std::cout << "Store [" << i << "]: " << val->getIRName() << " → addr offset " << offset << std::endl;
+
+        if (val_node && val_node->parent) {
+            val_node->parent->blockInsts.addInst(storeInst);
+        }
+    }
+
+    return true;
+}
+
+void IRGenerator::flatten_init_node(
+    ast_node * node, const std::vector<int> & dims, int depth, std::vector<ast_node *> & flat_list)
+{
+    if (!node)
+        return;
+
+    if (node->node_type == ast_operator_type::AST_OP_INIT_VAL) {
+        int i = 0;
+        for (; i < (int) node->sons.size(); ++i) {
+            flatten_init_node(node->sons[i], dims, depth + 1, flat_list);
+        }
+        // 补零（如果不足当前维度）
+        for (; i < dims[depth]; ++i) {
+            if (depth + 1 == (int) dims.size()) {
+                // 到达标量层，补0
+                ast_node * zero = new ast_node(ast_operator_type::AST_OP_LEAF_LITERAL_UINT);
+                zero->integer_val = 0;
+                zero->val = module->newConstInt(0);
+                flat_list.push_back(zero);
+            } else {
+                flatten_init_node(nullptr, dims, depth + 1, flat_list);
+            }
+        }
+    } else {
+        // 是一个值节点，直接加入
+        flat_list.push_back(node);
+    }
+}
