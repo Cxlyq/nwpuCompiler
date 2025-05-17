@@ -40,6 +40,7 @@
 #include "UnaryInstruction.h"
 #include "ConditionalBranchInstruction.h"
 #include "Value.h"
+#include "LoadInstruction.h"
 
 /// @brief 构造函数
 /// @param _root AST的根
@@ -52,6 +53,7 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_VAR_ID] = &IRGenerator::ir_leaf_node_var_id;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_TYPE] = &IRGenerator::ir_leaf_node_type;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT] = &IRGenerator::ir_leaf_node_float;
+    ast2ir_handlers[ast_operator_type::AST_OP_ARRAY_ACCESS] = &IRGenerator::ir_array_access;
 
     /* 表达式运算， 加减 */
     ast2ir_handlers[ast_operator_type::AST_OP_SUB] = &IRGenerator::ir_sub;
@@ -166,6 +168,21 @@ void extract_array_info(ast_node * array_node, std::string & name, std::vector<a
         array_node = array_node->sons[0];               // 向左深入
     }
     name = array_node->name; // 最左侧是变量标识符
+}
+
+/// @brief 计算偏移量
+/// @param ori_dims 原始维度
+/// @param dims 当前维度
+/// @return 偏移量
+int calcOffset(const std::vector<int> & ori_dims, const std::vector<int> & dims)
+{
+    int offset = 0;
+    int stride = 1;
+    for (int i = ori_dims.size() - 1; i >= 0; --i) {
+        offset += dims[i] * stride;
+        stride *= ori_dims[i];
+    }
+    return offset;
 }
 
 /// @brief 未知节点类型的节点处理
@@ -1147,34 +1164,50 @@ bool IRGenerator::ir_assign(ast_node * node)
         printf("Assign: some variables have no values.\n");
         return false;
     }
+    // printf("yes.");
+    //  TODO:这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    // TODO:这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
+    //printf("yes222\n");
+    // Value * temp = module->findVarValue(left->name);
+    // // if (temp->getValueCategory() != ValueCategory::VARIABLE) {
+    // //     minic_log(LOG_ERROR, "第%lld行的(%s)为常量，不允许赋值", (long long) node->line_no, left->name.c_str());
+    // //     return false;
+    // // }
 
-    Value * temp = module->findVarValue(left->name);
-    if (temp->getValueCategory() != ValueCategory::VARIABLE) {
-        minic_log(LOG_ERROR, "第%lld行的(%s)为常量，不允许赋值", (long long) node->line_no, left->name.c_str());
-        return false;
-    }
-
-    if (nullptr == temp) {
-        // 变量不存在，语义错误
-        minic_log(LOG_ERROR, "第%lld行的变量(%s)未定义或声明", (long long) node->line_no, left->name.c_str());
-        return false;
-    }
-    if (right->type->isFloatType()) {
-        temp->setVal(right->float_val);
-    } else {
-        temp->setVal(right->integer_val);
-    }
-    MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
-
-    // 创建临时变量保存IR的值，以及线性IR指令
+    // // printf("yes333\n");
+    // // if (nullptr == temp) {
+    // //     // 变量不存在，语义错误
+    // //     minic_log(LOG_ERROR, "第%lld行的变量(%s)未定义或声明", (long long) node->line_no, left->name.c_str());
+    // //     return false;
+    // // }
+    // if (right->type->isFloatType()) {
+    //     temp->setVal(right->float_val);
+    // } else {
+    //     temp->setVal(right->integer_val);
+    // }
     node->blockInsts.addInst(right->blockInsts);
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(movInst);
 
-    // 这里假定赋值的类型是一致的
-    node->val = movInst;
+    ///检查右值是否是数组，若是需要load
+    Value * Roperand = right->val;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+       // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        Roperand = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    ///检查右值
+    node->blockInsts.addInst(left->blockInsts);
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+       // printf("yes,left\n");
+        StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, Roperand);
+        node->blockInsts.addInst(storeInst);
+        node->val = storeInst;
+    } else {
+        MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, Roperand);
+        node->blockInsts.addInst(movInst);
+        node->val = movInst;
+    }
 
     return true;
 }
@@ -1550,6 +1583,53 @@ bool IRGenerator::ir_leaf_node_float(ast_node * node)
     val = module->newConstFloat(node->float_val);
 
     node->val = val;
+
+    return true;
+}
+
+bool IRGenerator::ir_array_access(ast_node * node)
+{
+
+    // 是数组变量，提取数组名和维度表达式
+    std::string             array_name;
+    std::vector<ast_node *> array_dims;
+    extract_array_info(node, array_name, array_dims);
+
+    ///设置name，否则作为左值会报错
+    node->name = array_name;
+    // 解析维度表达式为实际的常数
+    std::vector<int> dims;
+    for (auto * expr_node: array_dims) {
+        int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
+        dims.push_back(dim_size);
+    }
+
+    ///使用tempVal获取之前生成的节点
+    Value * tempVal = module->findVarValue(array_name);
+    // std::cout << "IRNAME: " << tempVal->getIRName() << std::endl;
+    // std::cout << "NAME: " << tempVal->getName() << std::endl;
+    ///获取定义的时候，声明数组各维度
+    Type * type = tempVal->getType();
+    //std::cout << "array type: " << tempVal->getType()->toString() << std::endl;
+    if (type->isArrayType()) {
+        auto *           arrayType = static_cast<ArrayType *>(type);
+        std::vector<int> ori_dims = arrayType->getDimensions();
+        int              offset_size = calcOffset(ori_dims, dims);
+        int              offset = offset_size * 4;
+        auto             addr = new BinaryInstruction(
+            module->getCurrentFunction(),
+            IRInstOperator::IRINST_OP_ADD_I,
+            tempVal,
+            module->newConstInt(offset),
+            IntegerType::getTypeInt());
+        node->val = addr;
+        node->blockInsts.addInst(addr);
+
+    } else {
+        // 处理错误情况
+        std::cerr << "Error: Expected an array type." << std::endl;
+        return false;
+    }
 
     return true;
 }

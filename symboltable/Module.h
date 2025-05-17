@@ -133,6 +133,9 @@ public:
     /// @param type 变量类型
     Value * newVarValue(Type * type, std::string name);
 
+    /// @brief 通过类型和变量名查找数组
+    Value * ArrayAccess(Type * type, std::string array_name);
+
     ///@brief 加法指令
     Value * createAdd(Value * lhs, Value * rhs, std::vector<Instruction *> & Insts);
 
