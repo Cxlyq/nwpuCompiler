@@ -29,32 +29,24 @@
 /// @param floatOp 浮点操作符
 /// @return BinaryInstruction* 二元操作指令对象
 /// @note 该函数会自动判断操作数的类型，选择合适的操作符
-BinaryInstruction * BinaryInstruction::createAutoTyped(Function * func,
-    Value * lhs,
-    Value * rhs,
-    IRInstOperator intOp,
-    IRInstOperator floatOp) {
-bool isFloat = lhs->getType()->isFloatType() || rhs->getType()->isFloatType();
-IRInstOperator op = isFloat ? floatOp : intOp;
-Type * floatTy = FloatType::getType();
-Type * intTy = IntegerType::getTypeInt();
-Type * type = isFloat ? floatTy : intTy;
-return new BinaryInstruction(func, op, lhs, rhs, type);
+BinaryInstruction * BinaryInstruction::createAutoTyped(
+    Function * func, Value * lhs, Value * rhs, IRInstOperator intOp, IRInstOperator floatOp)
+{
+    bool           isFloat = lhs->getType()->isFloatType() || rhs->getType()->isFloatType();
+    IRInstOperator op = isFloat ? floatOp : intOp;
+    Type *         floatTy = FloatType::getType();
+    Type *         intTy = IntegerType::getTypeInt();
+    Type *         type = isFloat ? floatTy : intTy;
+    return new BinaryInstruction(func, op, lhs, rhs, type);
 }
-
-
-
 
 /// @brief 构造函数
 /// @param _op 操作符
 /// @param _result 结果操作数
 /// @param _srcVal1 源操作数1
 /// @param _srcVal2 源操作数2
-BinaryInstruction::BinaryInstruction(Function * _func,
-                                     IRInstOperator _op,
-                                     Value * _srcVal1,
-                                     Value * _srcVal2,
-                                     Type * _type)
+BinaryInstruction::BinaryInstruction(
+    Function * _func, IRInstOperator _op, Value * _srcVal1, Value * _srcVal2, Type * _type)
     : Instruction(_func, _op, _type)
 {
     addOperand(_srcVal1);
@@ -74,7 +66,7 @@ void BinaryInstruction::toString(std::string & str)
             str = getIRName() + " = addi " + src1->getIRName() + "," + src2->getIRName();
             break;
 
-            case IRInstOperator::IRINST_OP_ADD_F:
+        case IRInstOperator::IRINST_OP_ADD_F:
             //浮点数加法指令，二元运算
             str = getIRName() + " = addf " + src1->getIRName() + "," + src2->getIRName();
             break;
@@ -169,7 +161,7 @@ void BinaryInstruction::toString(std::string & str)
             str = getIRName() + " =  gne_i" + src1->getIRName() + "," + src2->getIRName();
             break;
 
-            case IRInstOperator::IRINST_OP_GNE_F:
+        case IRInstOperator::IRINST_OP_GNE_F:
             // 浮点数大于指令，二元运算
             str = getIRName() + " =  gne_f" + src1->getIRName() + "," + src2->getIRName();
             break;

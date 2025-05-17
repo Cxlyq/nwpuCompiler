@@ -21,6 +21,7 @@
 #include "VoidType.h"
 #include "Register.h"
 #include <sys/types.h>
+#include "AddInstruction.h"
 
 Module::Module(std::string _name) : name(_name)
 {
@@ -218,12 +219,12 @@ ConstFloat * Module::findConstFloat(float val)
 }
 
 ///@brief 加法指令
-Value * Module::createAdd(Value * lhs, Value * rhs)
+Value * Module::createAdd(Value * lhs, Value * rhs, std::vector<Instruction *> & Insts)
 {
     auto *  type = IntegerType::getTypeInt(); // 假设是整数加法
     Value * result = new Value(type);
-    // result->setName(newTempName());                  // 例如 %t0
-    // addIRInst(new AddInstruction(result, lhs, rhs)); // 你项目里可能有指令类
+    result->setName("addr");                                            // 例如 %t0
+    Insts.push_back(new AddInstruction(result, lhs, rhs, currentFunc)); // 你项目里可能有指令类
     return result;
 }
 
