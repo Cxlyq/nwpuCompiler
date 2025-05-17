@@ -1817,18 +1817,24 @@ bool IRGenerator::init_array_flattened(
         }
 
         // 4. 计算地址偏移（假设 4 字节）
-        int offset = i * 4;
+        auto offest = new BinaryInstruction(
+            module->getCurrentFunction(),
+            IRInstOperator::IRINST_OP_MUL_I,
+            module->newConstInt(i),
+            module->newConstInt(4),
+            IntegerType::getTypeInt());
+        Insts.push_back(offest);
+
         // Value * addr = module->createAdd(arrayVar, module->newConstInt(offset), Insts);
         auto addr = new BinaryInstruction(
             module->getCurrentFunction(),
             IRInstOperator::IRINST_OP_ADD_I,
             arrayVar,
-            module->newConstInt(offset),
+            offest,
             IntegerType::getTypeInt());
         Insts.push_back(addr);
         // 5. 生成 store 指令
         StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
-        std::cout << "Store [" << i << "]: " << val->getIRName() << " → addr offset " << offset << std::endl;
         // addr->setIRName(std::to_string(addr->getIntVal()));
         Insts.push_back(storeInst);
     }
