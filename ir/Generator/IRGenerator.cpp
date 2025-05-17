@@ -1830,9 +1830,15 @@ bool IRGenerator::init_array_flattened(
         }
 
         // 4. 计算地址偏移（假设 4 字节）
-        int     offset = i * 4;
-        Value * addr = module->createAdd(arrayVar, module->newConstInt(offset));
-
+        int offset = i * 4;
+        // Value * addr = module->createAdd(arrayVar, module->newConstInt(offset), Insts);
+        auto addr = new BinaryInstruction(
+            module->getCurrentFunction(),
+            IRInstOperator::IRINST_OP_ADD_I,
+            arrayVar,
+            module->newConstInt(offset),
+            IntegerType::getTypeInt());
+        Insts.push_back(addr);
         // 5. 生成 store 指令
         StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
         std::cout << "Store [" << i << "]: " << val->getIRName() << " → addr offset " << offset << std::endl;
