@@ -544,23 +544,21 @@ bool IRGenerator::ir_sub(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 加法节点，左结合，先计算左节点，后计算右节点
+    // 减法节点，左结合，先计算左节点，后计算右节点
 
-    // 加法的左边操作数
+    // 减法的左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 加法的右边操作数
+    // 减法的右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
         return false;
     }
-
-    // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
     auto subInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -603,8 +601,6 @@ bool IRGenerator::ir_mul(ast_node * node)
         return false;
     }
 
-    // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
-
     auto mulInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         left->val,
@@ -629,16 +625,16 @@ bool IRGenerator::ir_div(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 乘法节点，左结合，先计算左节点，后计算右节点
+    // 除法节点，左结合，先计算左节点，后计算右节点
 
-    // 乘法的左边操作数
+    // 除法的左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 乘法的右边操作数
+    // 除法的右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
@@ -653,7 +649,6 @@ bool IRGenerator::ir_div(ast_node * node)
         //为浮点数0时报除数为0.0错误
         return false;
     }
-    // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
     auto divInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -680,23 +675,23 @@ bool IRGenerator::ir_mod(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 乘法节点，左结合，先计算左节点，后计算右节点
+    // 取余节点，左结合，先计算左节点，后计算右节点
 
-    // 乘法的左边操作数
+    // 取余的左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 乘法的右边操作数
+    // 取余的右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
         return false;
     }
 
-    //取模运算不支持float类型
+    //取余运算不支持float类型
     if (left->val->getType()->isFloatType() || right->val->getType()->isFloatType()) {
         return false;
     }
@@ -730,16 +725,16 @@ bool IRGenerator::ir_and(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 乘法节点，左结合，先计算左节点，后计算右节点
+    // 逻辑与节点，左结合，先计算左节点，后计算右节点
 
-    // 乘法的左边操作数
+    // 逻辑与的左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 乘法的右边操作数
+    // 逻辑与的右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
@@ -771,16 +766,16 @@ bool IRGenerator::ir_or(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 乘法节点，左结合，先计算左节点，后计算右节点
+    // 逻辑或节点，左结合，先计算左节点，后计算右节点
 
-    // 乘法的左边操作数
+    // 逻辑或的左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 乘法的右边操作数
+    // 逻辑或的右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
@@ -812,16 +807,16 @@ bool IRGenerator::ir_eq(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 乘法节点，左结合，先计算左节点，后计算右节点
+    // 逻辑相等节点，左结合，先计算左节点，后计算右节点
 
-    // 乘法的左边操作数
+    // 左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 乘法的右边操作数
+    // 右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
@@ -845,7 +840,7 @@ bool IRGenerator::ir_eq(ast_node * node)
     return true;
 }
 
-/// @brief 逻辑相等AST节点翻译成线性中间IR
+/// @brief 逻辑不等AST节点翻译成线性中间IR
 /// @param node AST节点
 /// @return 翻译是否成功，true：成功，false：失败
 bool IRGenerator::ir_neq(ast_node * node)
@@ -853,16 +848,16 @@ bool IRGenerator::ir_neq(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 乘法节点，左结合，先计算左节点，后计算右节点
+    // 节点，左结合，先计算左节点，后计算右节点
 
-    // 乘法的左边操作数
+    // 左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 乘法的右边操作数
+    // 右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
@@ -894,16 +889,16 @@ bool IRGenerator::ir_ge(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 乘法节点，左结合，先计算左节点，后计算右节点
+    // 左结合，先计算左节点，后计算右节点
 
-    // 乘法的左边操作数
+    // 左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 乘法的右边操作数
+    // 右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
@@ -935,16 +930,16 @@ bool IRGenerator::ir_le(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 乘法节点，左结合，先计算左节点，后计算右节点
+    // 左结合，先计算左节点，后计算右节点
 
-    // 乘法的左边操作数
+    // 左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 乘法的右边操作数
+    // 右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
@@ -976,16 +971,16 @@ bool IRGenerator::ir_gne(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 乘法节点，左结合，先计算左节点，后计算右节点
+    // 左结合，先计算左节点，后计算右节点
 
-    // 乘法的左边操作数
+    // 左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 乘法的右边操作数
+    // 右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
@@ -1017,16 +1012,16 @@ bool IRGenerator::ir_lne(ast_node * node)
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
 
-    // 乘法节点，左结合，先计算左节点，后计算右节点
+    // 左结合，先计算左节点，后计算右节点
 
-    // 乘法的左边操作数
+    // 左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 乘法的右边操作数
+    // 右边操作数
     ast_node * right = ir_visit_ast_node(src2_node);
     if (!right) {
         // 某个变量没有定值
