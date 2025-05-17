@@ -56,6 +56,11 @@ std::vector<FormalParam *> & Function::getParams()
     return params;
 }
 
+/// @brief 添加函数的形参列表
+void Function::addParams(FormalParam * param)
+{
+    params.push_back(param);
+}
 /// @brief 获取函数内的IR指令代码
 /// @return IR指令代码
 InterCode & Function::getInterCode()
@@ -91,7 +96,7 @@ void Function::toString(std::string & str)
             str += ", ";
         }
 
-        std::string param_str = param->getType()->toString() + param->getIRName();
+        std::string param_str = param->getType()->toString() + " " + param->getIRName();
 
         str += param_str;
     }

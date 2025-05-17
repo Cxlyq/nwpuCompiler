@@ -334,13 +334,11 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
         } else if (param_decl_node->sons.size() > 2) { //数组型参
             // TODO: 处理数组形参
         } else {
-            ast_node * type_node = param_decl_node->sons[0];
-            ast_node * param_node = param_decl_node->sons[1];
-
+            ast_node *  type_node = param_decl_node->sons[0];
+            ast_node *  param_node = param_decl_node->sons[1];
             std::string param_name;
             param_name = param_node->name;
             Type * param_type_ir = type_node->type;
-            ;
             if (!param_type_ir) {
                 std::cerr << "Function formal params: Failed to determine IR type for parameter '"
                           << "' in function '" << currentFunc->getName() << "'" << param_name << "' in function '"
@@ -356,27 +354,30 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
                 return false;
             }
             param_value->setName(param_name);
-            Value * incoming_arg_value = currentFunc->realParams[arg_index];
-            if (!incoming_arg_value) {
-                std::cerr << "Function formal params: Internal Error, Cannot get incoming argument value for index "
-                          << arg_index << " for function '" << currentFunc->getName() << "'" << std::endl;
-                // TODO: Add location info, cleanup param_value
-                return false;
-            }
-            // TODO: 检测当前传入实参值和形参值的类型是否匹配
+            auto fParam = new FormalParam(param_type_ir, param_name);
+            currentFunc->addParams(fParam);
+            // Value * incoming_arg_value = currentFunc->realParams[arg_index];
+            // if (!incoming_arg_value) {
+            //     std::cerr << "Function formal params: Internal Error, Cannot get incoming argument value for index "
+            //               << arg_index << " for function '" << currentFunc->getName() << "'" << std::endl;
+            //     // TODO: Add location info, cleanup param_value
+            //     return false;
+            // }
+            // // TODO: 检测当前传入实参值和形参值的类型是否匹配
 
-            // 生成 MoveInstruction 将传入实参值复制到局部形参变量
-            // 这条指令确保了传入的值被存储在作用域中的 LocalVariable 中，供函数体使用。
-            // MoveInstruction(Function* func, Value* dest, Value* src)
-            Instruction * move_inst = new MoveInstruction(currentFunc, param_value, incoming_arg_value);
-            // 将生成的 MoveInstruction 添加到 node (形参列表节点) 的 blockInsts 中
-            // ir_function_define 会负责将这里的指令添加到函数IR代码中，放在 EntryInstruction 之后。
-            node->blockInsts.addInst(move_inst);
+            // // 生成 MoveInstruction 将传入实参值复制到局部形参变量
+            // // 这条指令确保了传入的值被存储在作用域中的 LocalVariable 中，供函数体使用。
+            // // MoveInstruction(Function* func, Value* dest, Value* src)
+            // Instruction * move_inst = new MoveInstruction(currentFunc, param_value, incoming_arg_value);
+            // // 将生成的 MoveInstruction 添加到 node (形参列表节点) 的 blockInsts 中
+            // // ir_function_define 会负责将这里的指令添加到函数IR代码中，放在 EntryInstruction 之后。
+            // node->blockInsts.addInst(move_inst);
         }
         arg_index++;
     }
 
     // 所有形参处理成功
+
     return true;
 }
 
@@ -439,10 +440,11 @@ bool IRGenerator::ir_function_call(ast_node * node)
     // TODO 这里请追加函数调用的语义错误检查，这里只进行了函数参数的个数检查等，其它请自行追加。
     if (realParams.size() != calledFunction->getParams().size()) {
         // 函数参数的个数不一致，语义错误
+        std::cout << realParams.size() << " " << calledFunction->getParams().size() << std::endl;
         minic_log(LOG_ERROR, "第%lld行的被调用函数(%s)未定义或声明", (long long) lineno, funcName.c_str());
         return false;
     }
-    currentFunc->realParams = realParams;
+    calledFunction->realParams = realParams;
     // 返回调用有返回值，则需要分配临时变量，用于保存函数调用的返回值
     Type * type = calledFunction->getReturnType();
 
