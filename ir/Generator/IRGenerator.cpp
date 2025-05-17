@@ -323,8 +323,6 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
         return false;
     }
 
-    unsigned int arg_index = 0; // 用于追踪当前处理的是第几个形参，以便获取对应的传入实参值
-
     // 遍历形参列表的每一个形参节点 (AST_TYPE_PARAM_DECL)
     // 假设每个 param_decl_node 的结构是 [TypeNode, Identifier/ArrayNameNode]
     for (ast_node * param_decl_node: node->sons) {
@@ -356,28 +354,15 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             param_value->setName(param_name);
             auto fParam = new FormalParam(param_type_ir, param_name);
             currentFunc->addParams(fParam);
-            // Value * incoming_arg_value = currentFunc->realParams[arg_index];
-            // if (!incoming_arg_value) {
-            //     std::cerr << "Function formal params: Internal Error, Cannot get incoming argument value for index "
-            //               << arg_index << " for function '" << currentFunc->getName() << "'" << std::endl;
-            //     // TODO: Add location info, cleanup param_value
-            //     return false;
-            // }
-            // // TODO: 检测当前传入实参值和形参值的类型是否匹配
 
-            // // 生成 MoveInstruction 将传入实参值复制到局部形参变量
-            // // 这条指令确保了传入的值被存储在作用域中的 LocalVariable 中，供函数体使用。
-            // // MoveInstruction(Function* func, Value* dest, Value* src)
-            // Instruction * move_inst = new MoveInstruction(currentFunc, param_value, incoming_arg_value);
-            // // 将生成的 MoveInstruction 添加到 node (形参列表节点) 的 blockInsts 中
-            // // ir_function_define 会负责将这里的指令添加到函数IR代码中，放在 EntryInstruction 之后。
-            // node->blockInsts.addInst(move_inst);
+            // 生成 MoveInstruction 将传入实参值复制到局部形参变量
+            // 这条指令确保了传入的值被存储在作用域中的 LocalVariable 中，供函数体使用。
+            // MoveInstruction(Function* func, Value* dest, Value* src)
+            Instruction * move_inst = new MoveInstruction(currentFunc, param_value, fParam);
+            node->blockInsts.addInst(move_inst);
         }
-        arg_index++;
     }
-
     // 所有形参处理成功
-
     return true;
 }
 
