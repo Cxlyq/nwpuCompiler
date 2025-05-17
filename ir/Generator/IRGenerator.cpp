@@ -264,7 +264,7 @@ bool IRGenerator::ir_function_define(ast_node * node)
     if (!type_node->type->isVoidType()) {
 
         // 保存函数返回值变量到函数信息中，在return语句翻译时需要设置值到这个变量中
-        retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type));
+        retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type, "ret"));
     }
     newFunc->setReturnValue(retValue);
 
@@ -344,14 +344,14 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
                           << "'" << std::endl;
                 return false;
             }
-            Value * param_value = module->newVarValue(param_type_ir);
+            Value * param_value = module->newVarValue(param_type_ir, param_name);
+            param_decl_node->val = param_value;
             if (!param_value) {
                 std::cerr << "Function formal params: Failed to create IR Value for parameter '"
                           << "' in function '" << currentFunc->getName() << "'" << param_name << "'"
                           << "' in function '" << currentFunc->getName() << "'" << std::endl;
                 return false;
             }
-            param_value->setName(param_name);
             auto fParam = new FormalParam(param_type_ir, param_name);
             currentFunc->addParams(fParam);
 

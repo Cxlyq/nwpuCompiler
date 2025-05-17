@@ -131,7 +131,7 @@ public:
     /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
     /// @param name 变量ID
     /// @param type 变量类型
-    Value * newVarValue(Type * type, std::string name = "");
+    Value * newVarValue(Type * type, std::string name);
 
     ///@brief 加法指令
     Value * createAdd(Value * lhs, Value * rhs, std::vector<Instruction *> & Insts);
