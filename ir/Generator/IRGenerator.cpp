@@ -1167,12 +1167,12 @@ bool IRGenerator::ir_assign(ast_node * node)
     // printf("yes.");
     //  TODO:这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    //printf("yes222\n");
-    // Value * temp = module->findVarValue(left->name);
-    // // if (temp->getValueCategory() != ValueCategory::VARIABLE) {
-    // //     minic_log(LOG_ERROR, "第%lld行的(%s)为常量，不允许赋值", (long long) node->line_no, left->name.c_str());
-    // //     return false;
-    // // }
+    // printf("yes222\n");
+    //  Value * temp = module->findVarValue(left->name);
+    //  // if (temp->getValueCategory() != ValueCategory::VARIABLE) {
+    //  //     minic_log(LOG_ERROR, "第%lld行的(%s)为常量，不允许赋值", (long long) node->line_no, left->name.c_str());
+    //  //     return false;
+    //  // }
 
     // // printf("yes333\n");
     // // if (nullptr == temp) {
@@ -1190,7 +1190,7 @@ bool IRGenerator::ir_assign(ast_node * node)
     ///检查右值是否是数组，若是需要load
     Value * Roperand = right->val;
     if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-       // printf("yes,right\n");
+        // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         Roperand = LoadInst;
         node->blockInsts.addInst(LoadInst);
@@ -1199,7 +1199,7 @@ bool IRGenerator::ir_assign(ast_node * node)
     ///检查右值
     node->blockInsts.addInst(left->blockInsts);
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-       // printf("yes,left\n");
+        // printf("yes,left\n");
         StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, Roperand);
         node->blockInsts.addInst(storeInst);
         node->val = storeInst;
@@ -1610,17 +1610,25 @@ bool IRGenerator::ir_array_access(ast_node * node)
     // std::cout << "NAME: " << tempVal->getName() << std::endl;
     ///获取定义的时候，声明数组各维度
     Type * type = tempVal->getType();
-    //std::cout << "array type: " << tempVal->getType()->toString() << std::endl;
+    // std::cout << "array type: " << tempVal->getType()->toString() << std::endl;
     if (type->isArrayType()) {
         auto *           arrayType = static_cast<ArrayType *>(type);
         std::vector<int> ori_dims = arrayType->getDimensions();
         int              offset_size = calcOffset(ori_dims, dims);
-        int              offset = offset_size * 4;
-        auto             addr = new BinaryInstruction(
+        // int              offset = offset_size * 4;
+        auto offest = new BinaryInstruction(
+            module->getCurrentFunction(),
+            IRInstOperator::IRINST_OP_MUL_I,
+            module->newConstInt(offset_size),
+            module->newConstInt(4),
+            IntegerType::getTypeInt());
+        node->blockInsts.addInst(offest);
+
+        auto addr = new BinaryInstruction(
             module->getCurrentFunction(),
             IRInstOperator::IRINST_OP_ADD_I,
             tempVal,
-            module->newConstInt(offset),
+            offest,
             IntegerType::getTypeInt());
         node->val = addr;
         node->blockInsts.addInst(addr);
