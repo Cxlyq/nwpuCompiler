@@ -1168,18 +1168,19 @@ bool IRGenerator::ir_assign(ast_node * node)
     //  TODO:这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
     // printf("yes222\n");
-    //  Value * temp = module->findVarValue(left->name);
-    //  // if (temp->getValueCategory() != ValueCategory::VARIABLE) {
-    //  //     minic_log(LOG_ERROR, "第%lld行的(%s)为常量，不允许赋值", (long long) node->line_no, left->name.c_str());
-    //  //     return false;
-    //  // }
+    Value * temp = module->findVarValue(left->name);
 
-    // // printf("yes333\n");
-    // // if (nullptr == temp) {
-    // //     // 变量不存在，语义错误
-    // //     minic_log(LOG_ERROR, "第%lld行的变量(%s)未定义或声明", (long long) node->line_no, left->name.c_str());
-    // //     return false;
-    // // }
+    if (temp->getValueCategory() != ValueCategory::VARIABLE) {
+        minic_log(LOG_ERROR, "第%lld行的(%s)为常量，不允许赋值", (long long) node->line_no, left->name.c_str());
+        return false;
+    }
+
+    // printf("yes333\n");
+    // if (nullptr == temp) {
+    //     // 变量不存在，语义错误
+    //     minic_log(LOG_ERROR, "第%lld行的变量(%s)未定义或声明", (long long) node->line_no, left->name.c_str());
+    //     return false;
+    // }
     // if (right->type->isFloatType()) {
     //     temp->setVal(right->float_val);
     // } else {
@@ -1687,7 +1688,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
             dims.push_back(dim_size);
         }
         // 调用 module->newArrayVarValue 分配数组变量
-        node->val = module->newArrayVarValue(var_type, array_name, dims);
+        node->val = module->newArrayVarValue(var_type, array_name, dims, ValueCategory::VARIABLE);
         if (init_val_node) {
             std::vector<int>             indices;
             std::vector<Instruction *> * insts = new std::vector<Instruction *>;
@@ -1778,18 +1779,22 @@ bool IRGenerator::ir_const_declare(ast_node * node)
             int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
             dims.push_back(dim_size);
         }
-        // TODO 数组尚未修改
-        //  调用 module->newArrayVarValue 分配数组变量
-        node->val = module->newArrayVarValue(var_type, array_name, dims);
-        // TODO处理初值
-        // if (init_val_node) {
-        //     std::vector<int> indices;
-        //     if (!init_array_recursive(var_value, dims, init_val_node, 0, indices)) {
-        //         reportError("数组初始化失败");
-        //         return false;
-        //     }
-        // }
-
+        // 调用 module->newArrayVarValue 分配数组变量
+        node->val = module->newArrayVarValue(var_type, array_name, dims, ValueCategory::CONSTANT);
+        if (init_val_node) {
+            std::vector<int>             indices;
+            std::vector<Instruction *> * insts = new std::vector<Instruction *>;
+            if (!init_array_flattened(node->val, dims, init_val_node, *insts)) {
+                printf("数组初始化失败\n");
+                return false;
+            }
+            for (auto inst: *insts) {
+                node->blockInsts.addInst(inst);
+            }
+        } else {
+            printf("Semantic error: constant variable must be initialized\n");
+            return false;
+        }
     } else {
         // 普通变量
         std::string var_name = id_node->name;

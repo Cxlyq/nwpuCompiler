@@ -172,7 +172,7 @@ public:
     void renameIR();
 
     /// @brief 在当前的作用域中查找，若没有查找到则创建数组变量
-    Value * newArrayVarValue(Type * type, std::string array_name, std::vector<int> dims);
+    Value * newArrayVarValue(Type * type, std::string array_name, std::vector<int> dims, ValueCategory valueCategory);
 
 protected:
     /// @brief 根据整数值获取当前符号
@@ -245,9 +245,9 @@ private:
     /// @brief 只保存全局变量
     std::vector<GlobalVariable *> globalVariableVector;
 
-    /// @brief 常量表
+    /// @brief 立即数表
     std::unordered_map<int32_t, ConstInt *> constIntMap;
 
-    /// @brief 常量表
+    /// @brief 立即数表
     std::unordered_map<float, ConstFloat *> constFloatMap;
 };
