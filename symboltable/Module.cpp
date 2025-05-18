@@ -234,7 +234,8 @@ Value * Module::createAdd(Value * lhs, Value * rhs, std::vector<Instruction *> &
 /// @param array_name 数组名称
 /// @param dims 数组的各维大小
 /// @return nullptr则说明变量已存在，否则为新建的变量
-Value * Module::newArrayVarValue(Type * type, std::string array_name, std::vector<int> dims)
+Value *
+Module::newArrayVarValue(Type * type, std::string array_name, std::vector<int> dims, ValueCategory valueCategory)
 {
     Value * retVal;
     // std::cout << " type: " << type->toString() << std::endl;
@@ -267,7 +268,7 @@ Value * Module::newArrayVarValue(Type * type, std::string array_name, std::vecto
 
     // 将数组添加到作用域中
     scopeStack->insertValue(retVal);
-
+    retVal->setCategory(valueCategory);
     return retVal;
 }
 
