@@ -237,7 +237,7 @@ Value * Module::createAdd(Value * lhs, Value * rhs, std::vector<Instruction *> &
 Value * Module::newArrayVarValue(Type * type, std::string array_name, std::vector<int> dims)
 {
     Value * retVal;
-
+    // std::cout << " type: " << type->toString() << std::endl;
     // 若数组名有效，检查当前作用域中是否存在该数组，如存在则语义错误
     if (!array_name.empty()) {
         Value * tempValue = scopeStack->findCurrentScope(array_name);

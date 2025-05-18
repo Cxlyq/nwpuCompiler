@@ -52,7 +52,7 @@ protected:
     /// @brief define-use链，这个定值被使用的所有边，即所有的User
     ///
     std::vector<Use *> uses;
-	
+
     enum ValueType { NONE, INT, FLOAT, ARRAY };
 
     union InitVal {
@@ -104,6 +104,10 @@ public:
     /// @return 变量名
     virtual Type * getType() const;
 
+    void setType(Type * _type)
+    {
+        this->type = _type;
+    }
     ///
     /// @brief 增加一条边，增加Value被使用次数
     /// @param use

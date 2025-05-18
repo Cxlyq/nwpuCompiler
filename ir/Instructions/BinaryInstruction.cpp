@@ -32,7 +32,10 @@
 BinaryInstruction * BinaryInstruction::createAutoTyped(
     Function * func, Value * lhs, Value * rhs, IRInstOperator intOp, IRInstOperator floatOp)
 {
-    bool           isFloat = lhs->getType()->isFloatType() || rhs->getType()->isFloatType();
+    bool isFloat = (lhs->getType()->isArrayType() ? lhs->getType()->getElementType()->isFloatType()
+                                                  : lhs->getType()->isFloatType()) ||
+                   (rhs->getType()->isArrayType() ? rhs->getType()->getElementType()->isFloatType()
+                                                  : rhs->getType()->isFloatType());
     IRInstOperator op = isFloat ? floatOp : intOp;
     Type *         floatTy = FloatType::getType();
     Type *         intTy = IntegerType::getTypeInt();

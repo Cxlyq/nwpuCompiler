@@ -7,6 +7,7 @@ ArrayType::ArrayType(Type * elemType, const std::vector<int> & dims) : elementTy
     assert(dims.size() > 0);
     // 计算总大小
     sizeInBytes = calculateSize();
+
     ID = ArrayTyID; // 设置类型ID
 }
 

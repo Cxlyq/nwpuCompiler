@@ -10,16 +10,16 @@ public:
     /// @brief 构造函数
     /// @param elemType 数组元素类型
     /// @param dims 数组的维度和每一维的大小
-    ArrayType(Type* elemType, const std::vector<int>& dims);
+    ArrayType(Type * elementType, const std::vector<int> & dims);
 
     /// @brief 获取数组的元素类型
-    Type* getElementType() const;
+    Type * getElementType() const override;
 
     /// @brief 获取数组的维度
-    const std::vector<int>& getDimensions() const;
+    const std::vector<int> & getDimensions() const;
 
     /// @brief 获取数组的大小（字节数）
-    int getSize() const override;  // 声明覆盖
+    int getSize() const override; // 声明覆盖
 
     /// @brief 获取数组的大小（字节数）
     int getSizeInBytes() const override;
@@ -28,13 +28,12 @@ public:
     size_t getNumDimensions() const;
 
     /// @brief 判断两个数组类型是否相等
-    bool operator==(const ArrayType& other) const;
-
+    bool operator==(const ArrayType & other) const;
 
     /// @brief 静态方法，获取数组类型
-    static ArrayType* getArrayType(Type* elemType, const std::vector<int>& dims);
+    static ArrayType * getArrayType(Type * elemType, const std::vector<int> & dims);
 
-    std::string toString()const override
+    std::string toString() const override
     {
         std::string result = "ArrayType(";
         result += elementType->toString() + ", [";
@@ -47,10 +46,11 @@ public:
         result += "])";
         return result;
     }
+
 private:
-    Type* elementType;  // 数组元素的类型
+    Type *           elementType; // 数组元素的类型
     std::vector<int> dimensions;  // 数组的维度信息
-    int sizeInBytes;  // 数组的大小（字节）
+    int              sizeInBytes; // 数组的大小（字节）
 
     /// @brief 计算数组的总字节数
     int calculateSize() const;

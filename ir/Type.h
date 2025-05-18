@@ -175,6 +175,10 @@ public:
 
     virtual int getSizeInBytes() const;
 
+    virtual Type * getElementType() const
+    {
+        return nullptr;
+    } // 默认实现为 nullptr
 
 protected:
     ///

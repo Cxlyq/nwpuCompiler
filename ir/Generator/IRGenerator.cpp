@@ -521,18 +521,41 @@ bool IRGenerator::ir_add(ast_node * node)
     //                                                     IRInstOperator::IRINST_OP_ADD_I,
     //                                                     left->val,
     //                                                     right->val,
-    //                                                     IntegerType::getTypeInt());
+    //
+    // IntegerType::getTypeInt());
+    //
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
 
     auto addInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IRInstOperator::IRINST_OP_ADD_I,
         IRInstOperator::IRINST_OP_ADD_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(addInst);
 
     node->val = addInst;
@@ -564,16 +587,37 @@ bool IRGenerator::ir_sub(ast_node * node)
         return false;
     }
 
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
     auto subInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IRInstOperator::IRINST_OP_SUB_I,
         IRInstOperator::IRINST_OP_SUB_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(subInst);
 
     node->val = subInst;
@@ -605,15 +649,37 @@ bool IRGenerator::ir_mul(ast_node * node)
         return false;
     }
 
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
     auto mulInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IRInstOperator::IRINST_OP_MUL_I,
         IRInstOperator::IRINST_OP_MUL_F);
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(mulInst);
 
     node->val = mulInst;
@@ -644,6 +710,7 @@ bool IRGenerator::ir_div(ast_node * node)
         // 某个变量没有定值
         return false;
     }
+
     if (((int) right->node_type) == 0 && !right->integer_val) {
         //为整数0时报除数为0错误
         return false;
@@ -654,16 +721,37 @@ bool IRGenerator::ir_div(ast_node * node)
         return false;
     }
 
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
     auto divInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IRInstOperator::IRINST_OP_DIV_I,
         IRInstOperator::IRINST_OP_DIV_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(divInst);
 
     node->val = divInst;
@@ -694,11 +782,37 @@ bool IRGenerator::ir_mod(ast_node * node)
         // 某个变量没有定值
         return false;
     }
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
 
     //取余运算不支持float类型
-    if (left->val->getType()->isFloatType() || right->val->getType()->isFloatType()) {
+    bool isFloat = (lhs->getType()->isArrayType() ? lhs->getType()->getElementType()->isFloatType()
+                                                  : lhs->getType()->isFloatType()) ||
+                   (rhs->getType()->isArrayType() ? rhs->getType()->getElementType()->isFloatType()
+                                                  : rhs->getType()->isFloatType());
+    if (isFloat) {
         return false;
     }
+    // TODO ,数组检查不了
     if (((int) right->node_type) == 0 && !right->integer_val) {
         //为整数0时报mod 0错误
         return false;
@@ -707,13 +821,13 @@ bool IRGenerator::ir_mod(ast_node * node)
     BinaryInstruction * modInst = new BinaryInstruction(
         module->getCurrentFunction(),
         IRInstOperator::IRINST_OP_MOD_I,
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IntegerType::getTypeInt());
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(modInst);
 
     node->val = modInst;
@@ -744,17 +858,42 @@ bool IRGenerator::ir_and(ast_node * node)
         // 某个变量没有定值
         return false;
     }
+
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
     // TODO 逻辑运算是否需要区别int和float型
+
+    // TODO,对float是否作检查，检查代码参考取余部分，
     BinaryInstruction * andInst = new BinaryInstruction(
         module->getCurrentFunction(),
         IRInstOperator::IRINST_OP_AND,
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IntegerType::getTypeInt());
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(andInst);
 
     node->val = andInst;
@@ -786,16 +925,38 @@ bool IRGenerator::ir_or(ast_node * node)
         return false;
     }
 
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
     BinaryInstruction * orInst = new BinaryInstruction(
         module->getCurrentFunction(),
         IRInstOperator::IRINST_OP_OR,
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IntegerType::getTypeInt());
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(orInst);
 
     node->val = orInst;
@@ -827,16 +988,37 @@ bool IRGenerator::ir_eq(ast_node * node)
         return false;
     }
 
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
     auto eqInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IRInstOperator::IRINST_OP_EQ_I,
         IRInstOperator::IRINST_OP_EQ_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(eqInst);
 
     node->val = eqInst;
@@ -868,16 +1050,38 @@ bool IRGenerator::ir_neq(ast_node * node)
         return false;
     }
 
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
     auto neqInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IRInstOperator::IRINST_OP_NEQ_I,
         IRInstOperator::IRINST_OP_NEQ_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(neqInst);
 
     node->val = neqInst;
@@ -909,16 +1113,37 @@ bool IRGenerator::ir_ge(ast_node * node)
         return false;
     }
 
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
     auto geInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IRInstOperator::IRINST_OP_GE_I,
         IRInstOperator::IRINST_OP_GE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(geInst);
 
     node->val = geInst;
@@ -949,17 +1174,38 @@ bool IRGenerator::ir_le(ast_node * node)
         // 某个变量没有定值
         return false;
     }
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
 
     auto leInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IRInstOperator::IRINST_OP_LE_I,
         IRInstOperator::IRINST_OP_LE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(leInst);
 
     node->val = leInst;
@@ -991,16 +1237,37 @@ bool IRGenerator::ir_gne(ast_node * node)
         return false;
     }
 
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
+
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
     auto gneInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IRInstOperator::IRINST_OP_GNE_I,
         IRInstOperator::IRINST_OP_GNE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(gneInst);
 
     node->val = gneInst;
@@ -1031,17 +1298,37 @@ bool IRGenerator::ir_lne(ast_node * node)
         // 某个变量没有定值
         return false;
     }
+    ///检查操作数是否是数组，若是需要load
+    node->blockInsts.addInst(left->blockInsts);
+    Value * lhs = left->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
 
+    node->blockInsts.addInst(right->blockInsts);
+    Value * rhs = right->val;
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
+        node->blockInsts.addInst(LoadInst);
+    }
     auto lneInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        left->val,
-        right->val,
+        lhs,
+        rhs,
         IRInstOperator::IRINST_OP_LNE_I,
         IRInstOperator::IRINST_OP_LNE_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    node->blockInsts.addInst(left->blockInsts);
-    node->blockInsts.addInst(right->blockInsts);
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(lneInst);
 
     node->val = lneInst;
@@ -1631,6 +1918,9 @@ bool IRGenerator::ir_array_access(ast_node * node)
             offest,
             IntegerType::getTypeInt());
         node->val = addr;
+        ///需要手动设置Type，否则addr默认是int类型的value
+        node->val->setType(type);
+        std::cout << "addr type: " << addr->getType()->toString() << std::endl;
         node->blockInsts.addInst(addr);
 
     } else {
