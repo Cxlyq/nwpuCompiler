@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <iostream>
 #include <sys/types.h>
 
 #include "Value.h"
@@ -104,6 +105,7 @@ void Value::removeUse(Use * use)
 ///
 int32_t Value::getScopeLevel()
 {
+    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
     return -1;
 }
 
@@ -113,6 +115,7 @@ int32_t Value::getScopeLevel()
 ///
 int32_t Value::getRegId()
 {
+    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
     return -1;
 }
 
@@ -127,6 +130,7 @@ bool Value::getMemoryAddr(int32_t * regId, int64_t * offset)
 {
     (void) regId;
     (void) offset;
+    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
     return false;
 }
 
@@ -136,6 +140,7 @@ bool Value::getMemoryAddr(int32_t * regId, int64_t * offset)
 ///
 int32_t Value::getLoadRegId()
 {
+    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
     return -1;
 }
 
@@ -146,10 +151,11 @@ int32_t Value::getLoadRegId()
 void Value::setLoadRegId(int32_t regId)
 {
     (void) regId;
+    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
 }
 
 // 为value赋初值
-
+// TODO:[重构] 将下面方法抽象为较少的父方法，在每一类value的对应文件中override Value对应子类的继承方法。
 float Value::getFloatInitVal()
 {
     return initVal.floatVal;
