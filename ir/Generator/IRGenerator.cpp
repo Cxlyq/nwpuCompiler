@@ -529,9 +529,11 @@ bool IRGenerator::ir_add(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -543,6 +545,7 @@ bool IRGenerator::ir_add(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -592,9 +595,11 @@ bool IRGenerator::ir_sub(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -606,6 +611,7 @@ bool IRGenerator::ir_sub(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
     auto subInst = BinaryInstruction::createAutoTyped(
@@ -654,9 +660,11 @@ bool IRGenerator::ir_mul(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -668,6 +676,7 @@ bool IRGenerator::ir_mul(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -726,9 +735,11 @@ bool IRGenerator::ir_div(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -740,6 +751,7 @@ bool IRGenerator::ir_div(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
     auto divInst = BinaryInstruction::createAutoTyped(
@@ -787,9 +799,11 @@ bool IRGenerator::ir_mod(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -801,6 +815,7 @@ bool IRGenerator::ir_mod(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -864,9 +879,11 @@ bool IRGenerator::ir_and(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -878,6 +895,7 @@ bool IRGenerator::ir_and(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -930,9 +948,11 @@ bool IRGenerator::ir_or(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -944,6 +964,7 @@ bool IRGenerator::ir_or(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -993,9 +1014,11 @@ bool IRGenerator::ir_eq(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -1007,6 +1030,7 @@ bool IRGenerator::ir_eq(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
     auto eqInst = BinaryInstruction::createAutoTyped(
@@ -1055,9 +1079,11 @@ bool IRGenerator::ir_neq(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -1069,6 +1095,7 @@ bool IRGenerator::ir_neq(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -1118,9 +1145,11 @@ bool IRGenerator::ir_ge(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -1132,6 +1161,7 @@ bool IRGenerator::ir_ge(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
     auto geInst = BinaryInstruction::createAutoTyped(
@@ -1179,9 +1209,11 @@ bool IRGenerator::ir_le(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -1193,6 +1225,7 @@ bool IRGenerator::ir_le(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -1242,9 +1275,11 @@ bool IRGenerator::ir_gne(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -1256,6 +1291,7 @@ bool IRGenerator::ir_gne(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
     auto gneInst = BinaryInstruction::createAutoTyped(
@@ -1303,9 +1339,11 @@ bool IRGenerator::ir_lne(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+
         // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
 
@@ -1317,6 +1355,7 @@ bool IRGenerator::ir_lne(ast_node * node)
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
         rhs = LoadInst;
+        rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
     auto lneInst = BinaryInstruction::createAutoTyped(
@@ -1349,15 +1388,26 @@ bool IRGenerator::ir_pos(ast_node * node)
         return false;
     }
 
+    node->blockInsts.addInst(expr->blockInsts);
+    Value * lhs = expr->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
+        lhs = LoadInst;
+        lhs->setType(module->findVarValue(expr->name)->getType());
+        node->blockInsts.addInst(LoadInst);
+    }
+
     // 生成IR指令：result = +expr->val
     auto posInst = UnaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        expr->val,
+        lhs,
         IRInstOperator::IRINST_OP_POS_I,
         IRInstOperator::IRINST_OP_POS_F);
 
     // 合并子表达式的IR并加入当前指令
-    node->blockInsts.addInst(expr->blockInsts);
+    // node->blockInsts.addInst(expr->blockInsts);
     node->blockInsts.addInst(posInst);
 
     // 设置当前节点的计算结果
@@ -1379,15 +1429,25 @@ bool IRGenerator::ir_neg(ast_node * node)
         return false;
     }
 
+    node->blockInsts.addInst(expr->blockInsts);
+    Value * lhs = expr->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
+        lhs = LoadInst;
+        lhs->setType(module->findVarValue(expr->name)->getType());
+        node->blockInsts.addInst(LoadInst);
+    }
     // 生成IR指令：result = -expr->val
     auto negInst = UnaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        expr->val,
+        lhs,
         IRInstOperator::IRINST_OP_NEG_I,
         IRInstOperator::IRINST_OP_NEG_F);
 
     // 合并子表达式的IR并加入当前指令
-    node->blockInsts.addInst(expr->blockInsts);
+    // node->blockInsts.addInst(expr->blockInsts);
     node->blockInsts.addInst(negInst);
 
     // 设置当前节点的计算结果
@@ -1408,16 +1468,26 @@ bool IRGenerator::ir_not(ast_node * node)
     if (!expr) {
         return false;
     }
+    node->blockInsts.addInst(expr->blockInsts);
+    Value * lhs = expr->val;
+    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
+    if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
+        lhs = LoadInst;
+        lhs->setType(module->findVarValue(expr->name)->getType());
+        node->blockInsts.addInst(LoadInst);
+    }
 
     // 生成IR指令：result = -expr->val
     auto notInst = UnaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        expr->val,
+        lhs,
         IRInstOperator::IRINST_OP_NOT_I,
         IRInstOperator::IRINST_OP_NOT_F);
 
     // 合并子表达式的IR并加入当前指令
-    node->blockInsts.addInst(expr->blockInsts);
+    // node->blockInsts.addInst(expr->blockInsts);
     node->blockInsts.addInst(notInst);
 
     // 设置当前节点的计算结果
@@ -1919,9 +1989,9 @@ bool IRGenerator::ir_array_access(ast_node * node)
             offest,
             IntegerType::getTypeInt());
         node->val = addr;
-        ///需要手动设置Type，否则addr默认是int类型的value
-        node->val->setType(type);
-        std::cout << "addr type: " << addr->getType()->toString() << std::endl;
+        // ///需要手动设置Type，否则addr默认是int类型的value
+        // node->val->setType(type);
+        // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
         node->blockInsts.addInst(addr);
 
     } else {

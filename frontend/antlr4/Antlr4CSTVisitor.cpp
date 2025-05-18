@@ -1025,6 +1025,8 @@ std::any MiniCCSTVisitor::visitLVal(MiniCParser::LValContext * ctx)
 
         // 创建一个新的节点表示数组访问（将标识符和下标组合）
         node = ast_node::New(ast_operator_type::AST_OP_ARRAY_ACCESS, node, indexNode, nullptr);
+        node->name = varId; // 更新节点名称为变量名
+                            // node->lineNo = lineNo; // 更新行号
     }
 
     return node;

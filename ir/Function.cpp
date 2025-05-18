@@ -14,9 +14,10 @@
 /// </table>
 ///
 
+#include <cstdio>
 #include <cstdlib>
 #include <string>
-
+#include <iostream>
 #include "IRConstant.h"
 #include "Function.h"
 
@@ -109,6 +110,7 @@ void Function::toString(std::string & str)
     for (auto & var: this->varsVector) {
 
         // 局部变量和临时变量需要输出declare语句
+
         str += "\tdeclare " + var->getType()->toString() + " " + var->getIRName();
 
         std::string extraStr;
@@ -126,8 +128,17 @@ void Function::toString(std::string & str)
 
         if (inst->hasResultValue()) {
 
+            //对于临时变量，没有数组，所以需要找到对应的元素类型
+
+            if (inst->getType()->isArrayType()) {
+                // 执行对应操作
+                //临时变量改为输出对应元素的类型
+                str += "\tdeclare " + inst->getType()->getElementType()->toString() + " " + inst->getIRName() + '\n';
+
+            } else {
+                str += "\tdeclare " + inst->getType()->toString() + " " + inst->getIRName() + "\n";
+            }
             // 局部变量和临时变量需要输出declare语句
-            str += "\tdeclare " + inst->getType()->toString() + " " + inst->getIRName() + "\n";
         }
     }
 
