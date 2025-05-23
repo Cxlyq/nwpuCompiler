@@ -177,8 +177,6 @@ set(IR_SRCS
 	ir/Instructions/UnaryInstruction.h
 	ir/Instructions/StoreInstruction.cpp
 	ir/Instructions/StoreInstruction.h
-	ir/Instructions/AddInstruction.cpp
-	ir/Instructions/AddInstruction.h
 	ir/Instructions/LoadInstruction.cpp
 	ir/Instructions/LoadInstruction.h
 
