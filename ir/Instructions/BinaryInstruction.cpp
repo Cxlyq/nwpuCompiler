@@ -66,117 +66,117 @@ void BinaryInstruction::toString(std::string & str)
     switch (op) {
         case IRInstOperator::IRINST_OP_ADD_I:
             //整数加法指令，二元运算
-            str = getIRName() + " = addi " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = add nsw i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_ADD_F:
             //浮点数加法指令，二元运算
-            str = getIRName() + " = addf " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = fadd float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_SUB_I:
             // 整数减法指令，二元运算
-            str = getIRName() + " = subi " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = sub nsw i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_SUB_F:
             // 浮点数减法指令，二元运算
-            str = getIRName() + " = subf " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = fsub float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_MUL_I:
             // 整数乘法指令，二元运算
-            str = getIRName() + " = muli " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = mul nsw i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_MUL_F:
             // 浮点数乘法指令，二元运算
-            str = getIRName() + " = mulf " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = fmul float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_DIV_I:
             // 整数除法指令，二元运算
-            str = getIRName() + " = divi " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = sdiv i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_DIV_F:
             // 浮点数除法指令，二元运算
-            str = getIRName() + " = divf " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = fdiv float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_MOD_I:
             // 整数取余指令，二元运算
-            str = getIRName() + " = modi " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = srem i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_AND:
             // 逻辑与指令，二元运算
-            str = getIRName() + " = and " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = and " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_OR:
             // 逻辑或指令，二元运算
-            str = getIRName() + " = or " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = or " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_EQ_I:
             // 整数相等指令，二元运算
-            str = getIRName() + " = eq_i " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = eq_i " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_EQ_F:
             // 浮点数相等指令，二元运算
-            str = getIRName() + " = eq_f " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = eq_f " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_NEQ_I:
             // 整数不等指令，二元运算
-            str = getIRName() + " = neq_i " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = neq_i " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_NEQ_F:
             // 浮点数不等指令，二元运算
-            str = getIRName() + " = neg_f " + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " = neg_f " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_GE_I:
             // 整数大于等于指令，二元运算
-            str = getIRName() + " =  ge_i" + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " =  ge_i" + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_GE_F:
             // 浮点数大于等于指令，二元运算
-            str = getIRName() + " =  ge_f" + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " =  ge_f" + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_LE_I:
             // 整数小于等于指令，二元运算
-            str = getIRName() + " =  le_i" + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " =  le_i" + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_LE_F:
             // 浮点数小于等于指令，二元运算
-            str = getIRName() + " =  le_f" + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " =  le_f" + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_GNE_I:
             // 整数大于指令，二元运算
-            str = getIRName() + " =  gne_i" + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " =  gne_i" + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_GNE_F:
             // 浮点数大于指令，二元运算
-            str = getIRName() + " =  gne_f" + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " =  gne_f" + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_LNE_I:
             // 整数小于指令，二元运算
-            str = getIRName() + " =  lne_i" + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " =  lne_i" + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_LNE_F:
             // 浮点数小于指令，二元运算
-            str = getIRName() + " =  lne_f" + src1->getIRName() + "," + src2->getIRName();
+            str = getIRName() + " =  lne_f" + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         default:

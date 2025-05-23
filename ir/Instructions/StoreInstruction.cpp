@@ -18,5 +18,16 @@ void StoreInstruction::toString(std::string & str)
     Value * addr = getOperand(0); // 获取地址
     Value * val = getOperand(1);  // 获取存储的值
 
-    str = "store " + val->getIRName() + " to " + addr->getIRName(); // 格式化成字符串
+    switch (addr->getType()->getTypeID()) {
+        case Type::IntegerTyID:
+            str = "store i32 " + val->getIRName() + ", i32* " + addr->getIRName() + ", align 4";
+            break;
+        case Type::FloatTyID:
+            // TODO
+            break;
+        default:
+            str = getIRName() + " = load from " + addr->getIRName();
+
+            break;
+    }
 }
