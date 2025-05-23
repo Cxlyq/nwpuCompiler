@@ -21,7 +21,6 @@
 #include "VoidType.h"
 #include "Register.h"
 #include <sys/types.h>
-#include "AddInstruction.h"
 
 Module::Module(std::string _name) : name(_name)
 {
@@ -218,15 +217,6 @@ ConstFloat * Module::findConstFloat(float val)
     return temp;
 }
 
-///@brief 加法指令
-Value * Module::createAdd(Value * lhs, Value * rhs, std::vector<Instruction *> & Insts)
-{
-    auto *  type = IntegerType::getTypeInt(); // 假设是整数加法
-    Value * result = new Value(type);
-    result->setName("addr");                                            // 例如 %t0
-    Insts.push_back(new AddInstruction(result, lhs, rhs, currentFunc)); // 你项目里可能有指令类
-    return result;
-}
 
 /// @brief 在当前的作用域中查找，若没有查找到则创建数组变量
 /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
