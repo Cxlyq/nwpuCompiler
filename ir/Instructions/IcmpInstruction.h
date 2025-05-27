@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "Constant.h"
 #include "Instruction.h" // 包含基类 Instruction 的定义，以及 IRInstOperator 枚举
 #include "Value.h"       // 包含 Value 类的定义，比较的操作数是 Value*
 
@@ -35,6 +36,18 @@ public:
         Function *     _func,
         IRInstOperator _predicate, // 这里的 op 就是比较谓词
         Value * _lhs, Value * _rhs);
+
+    ///
+    /// @brief 构造函数
+    /// @param _func 所属函数
+    /// @param _predicate 比较谓词 (例如 IRINST_OP_EQ_I, IRINST_OP_NEQ_I 等)
+    /// @param _lhs 左操作数
+    /// @param _rhsConst 右常数操作数
+    ///
+    explicit IcmpInstruction(
+        Function *     _func,
+        IRInstOperator _predicate, // 这里的 op 就是比较谓词
+        Value * _lhs, Constant * _rhsConst);
 
     ///
     /// @brief 析构函数
@@ -76,5 +89,10 @@ private:
     ///
     Value * rhs;
 
+    ///
+    /// @brief 右常数操作数
+    ///
+    Value * rhsConst;
+    bool    isRhsConst = false; // 标记 rhs 是否是常数
     // The comparison predicate (eq, ne, slt, sgt, sle, sge) is stored in the base class 'op'.
 };

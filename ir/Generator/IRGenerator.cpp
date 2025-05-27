@@ -24,6 +24,8 @@
 
 #include "AST.h"
 #include "Common.h"
+#include "ConstFloat.h"
+#include "ConstInt.h"
 #include "Function.h"
 #include "IRCode.h"
 #include "IRGenerator.h"
@@ -41,6 +43,8 @@
 #include "ConditionalBranchInstruction.h"
 #include "Value.h"
 #include "LoadInstruction.h"
+#include "IcmpInstruction.h"
+#include "FcmpInstruction.h"
 
 /// @brief 构造函数
 /// @param _root AST的根
@@ -2437,14 +2441,48 @@ bool IRGenerator::gen_condition_branch(
     current_block_insts.addInst(cond_eval_result->blockInsts); // Add the evaluation instructions to the current block
 
     Value * cond_val = cond_eval_result->val;
-    // Type *  cond_type = cond_val->getType();
+    Type *  cond_type = cond_val->getType();
 
     // --- 4. Ensure the condition value is of type i1 (boolean) ---
     // SysY treats non-zero int/float as true, zero as false. Need to convert if necessary.
     Value * branch_cond_val = nullptr; // This will be the final i1 value used for branching
-	//TODO: 类型检查
-    branch_cond_val = cond_val; // DANGER: This is a placeholder if your backend needs explicit i1.
-    // DANGER: Check if cond_val's type is compatible with ConditionalInstruction's condition input (usually i1).
+
+    if (cond_type->isInt1Byte()) {
+        branch_cond_val = cond_val;
+    } else if (cond_type->isIntegerType()) {
+        Constant * zero_const = new ConstInt(0);
+        if (!zero_const) {
+            std::cerr << "Internal Error: Failed to get zero constant for integer type." << std::endl;
+            return false;
+        }
+        // Create the icmp ne instruction: cond_val != 0
+        // Use the IcmpInstruction constructor.
+        Instruction * cmp_inst =
+            new IcmpInstruction(currentFunc, IRInstOperator::IRINST_OP_NEQ_I, cond_val, zero_const);
+        current_block_insts.addInst(cmp_inst);
+        branch_cond_val = static_cast<Value *>(cmp_inst); // The IcmpInstruction itself is the i1 Value result
+    } else if (cond_type->isFloatType()) {                // If it's a float type (like float/f32)
+        // Convert non-zero float to i1 true, zero to i1 false (value != 0.0)
+        // Use FcmpInstruction with 'une' predicate for float not equal.
+        Constant * zero_const = new ConstFloat(0.0f); // Assuming ConstantFloat::get(0.0f) returns a Value*
+        if (!zero_const) {
+            std::cerr << "Internal Error: Failed to get zero constant for float type." << std::endl;
+            return false;
+        }
+        // Create the fcmp une instruction: cond_val != 0.0
+        Instruction * fcmp_inst = new FcmpInstruction(
+            currentFunc,
+            IRInstOperator::IRINST_OP_NEQ_F,
+            cond_val,
+            zero_const); // Using NEQ_F maps to 'une' in Fcmp toString
+        current_block_insts.addInst(fcmp_inst);
+        branch_cond_val = static_cast<Value *>(fcmp_inst); // The FcmpInstruction itself is the i1 Value result
+
+    } else {
+        // Unsupported type for a condition
+        std::cerr << "Error: Invalid type for condition expression: " << cond_type->toString() << std::endl;
+        return false;
+    }
 
     if (!branch_cond_val) {
         std::cerr << "Internal Error: Branch condition value is null after type handling." << std::endl;
