@@ -2050,6 +2050,61 @@ bool IRGenerator::ir_array_access(ast_node * node)
     return true;
 }
 
+bool IRGenerator::funcall_array_access(ast_node * node)
+{
+
+    // 是数组变量，提取数组名和维度表达式
+    std::string             array_name;
+    std::vector<ast_node *> array_dims;
+    extract_array_info(node, array_name, array_dims);
+
+    ///设置name，否则作为左值会报错
+    node->name = array_name;
+    // 解析维度表达式为实际的常数
+    std::vector<int> dims;
+    for (auto * expr_node: array_dims) {
+        int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
+        dims.push_back(dim_size);
+    }
+
+    ///使用tempVal获取之前生成的节点
+    Value * tempVal = module->findVarValue(array_name);
+
+    Type * type = tempVal->getType();
+    if (type->isArrayType()) {
+        auto *           arrayType = static_cast<ArrayType *>(type);
+        std::vector<int> ori_dims = arrayType->getDimensions();
+        int              offset_size = calcOffset(ori_dims, dims);
+        // int              offset = offset_size * 4;		
+        auto offest = new BinaryInstruction(
+            module->getCurrentFunction(),
+            IRInstOperator::IRINST_OP_MUL_I,
+            module->newConstInt(offset_size),
+            module->newConstInt(4),
+            IntegerType::getTypeInt());
+        node->blockInsts.addInst(offest);
+
+        auto addr = new BinaryInstruction(
+            module->getCurrentFunction(),
+            IRInstOperator::IRINST_OP_ADD_I,
+            tempVal,
+            offest,
+            IntegerType::getTypeInt());
+        node->val = addr;
+        // ///需要手动设置Type，否则addr默认是int类型的value
+        // node->val->setType(type);
+        // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
+        node->blockInsts.addInst(addr);
+
+    } else {
+        // 处理错误情况
+        std::cerr << "Error: Expected an array type." << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 /// @brief 变量声明语句节点翻译成线性中间IR
 /// @param node AST节点
 /// @return 翻译是否成功，true：成功，false：失败
