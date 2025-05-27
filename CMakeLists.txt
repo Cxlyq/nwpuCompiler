@@ -181,6 +181,10 @@ set(IR_SRCS
 	ir/Instructions/LoadInstruction.h
 	ir/Instructions/CastInstruction.cpp
 	ir/Instructions/CastInstruction.h
+	ir/Instructions/IcmpInstruction.h
+	ir/Instructions/IcmpInstruction.cpp
+	ir/Instructions/FcmpInstruction.h
+	ir/Instructions/FcmpInstruction.cpp
 
 	ir/Types/ArrayType.h
 	ir/Types/ArrayType.cpp

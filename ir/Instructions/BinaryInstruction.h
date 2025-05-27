@@ -31,11 +31,9 @@ public:
     /// @param _srcVal2 源操作数2
     BinaryInstruction(Function * _func, IRInstOperator _op, Value * _srcVal1, Value * _srcVal2, Type * _type);
 
-    static BinaryInstruction * createAutoTyped(Function * func,
-        Value * lhs,
-        Value * rhs,
-        IRInstOperator intOp,
-        IRInstOperator floatOp);
+    static BinaryInstruction * createAutoTyped(
+        Function * func, Value * lhs, Value * rhs, IRInstOperator intOp, IRInstOperator floatOp,
+        bool isBoolType = false);
 
     /// @brief 转换成字符串
     void toString(std::string & str) override;

@@ -30,7 +30,7 @@
 /// @return BinaryInstruction* 二元操作指令对象
 /// @note 该函数会自动判断操作数的类型，选择合适的操作符
 BinaryInstruction * BinaryInstruction::createAutoTyped(
-    Function * func, Value * lhs, Value * rhs, IRInstOperator intOp, IRInstOperator floatOp)
+    Function * func, Value * lhs, Value * rhs, IRInstOperator intOp, IRInstOperator floatOp, bool isBoolType)
 {
     bool isFloat = (lhs->getType()->isArrayType() ? lhs->getType()->getElementType()->isFloatType()
                                                   : lhs->getType()->isFloatType()) ||
@@ -40,6 +40,9 @@ BinaryInstruction * BinaryInstruction::createAutoTyped(
     Type *         floatTy = FloatType::getType();
     Type *         intTy = IntegerType::getTypeInt();
     Type *         type = isFloat ? floatTy : intTy;
+    if (isBoolType) {
+        type = IntegerType::getTypeBool();
+    }
     return new BinaryInstruction(func, op, lhs, rhs, type);
 }
 

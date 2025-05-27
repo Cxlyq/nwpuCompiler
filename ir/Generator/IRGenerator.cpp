@@ -23,7 +23,10 @@
 #include <iostream>
 
 #include "AST.h"
+#include "ArrayType.h"
 #include "Common.h"
+#include "ConstFloat.h"
+#include "ConstInt.h"
 #include "Function.h"
 #include "IRCode.h"
 #include "IRGenerator.h"
@@ -42,6 +45,8 @@
 #include "Value.h"
 #include "LoadInstruction.h"
 #include "CastInstruction.h"
+#include "IcmpInstruction.h"
+#include "FcmpInstruction.h"
 
 /// @brief 构造函数
 /// @param _root AST的根
@@ -350,7 +355,49 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             std::cerr << "Function formal params: Invalid AST structure for parameter declaration." << std::endl;
             return false;
         } else if (param_decl_node->sons.size() > 2) { //数组型参
-            // TODO: 处理数组形参
+            std::vector<ast_node *> array_def_nodes;
+            for (auto node: param_decl_node->sons) {
+                array_def_nodes.push_back(node); // 维度节点
+            }
+            ast_node *       type_node = array_def_nodes[0];       // 第一个节点是类型
+            ast_node *       array_name_node = array_def_nodes[1]; // 第二个节点是数组名
+            std::vector<int> dims;                                 // 数组维度
+            // 提取数组维度信息
+            for (size_t i = 2; i < array_def_nodes.size(); ++i) {
+                ast_node * dim_node = array_def_nodes[i];
+                dims.push_back(dim_node->integer_val);
+            }
+
+            dims[0] = 0; // 形参数组的第一个维度为0，表示形参数组的大小不确定
+
+            std::string array_name = array_name_node->name;
+            Type *      param_type_ir = type_node->type;
+
+            if (!param_type_ir) {
+                std::cerr << "Function formal params: Failed to determine IR type for parameter '" << array_name
+                          << "' in function '" << currentFunc->getName() << "'" << std::endl;
+                return false;
+            }
+
+            ArrayType * arrayType = new ArrayType(param_type_ir, dims);
+            if (!arrayType) {
+                std::cerr << "Function formal params: Failer to generate Array Type!" << std::endl;
+            }
+            // 创建一个数组局部变量
+            Value * param_value = module->newVarValue(arrayType, array_name);
+            if (!param_value) {
+                std::cerr << "Function formal params: Failed to create IR Value for parameter '" << array_name
+                          << "' in function '" << currentFunc->getName() << "'" << std::endl;
+                return false;
+            }
+            param_decl_node->val = param_value;
+
+            auto fParam = new FormalParam(arrayType, array_name);
+            currentFunc->addParams(fParam);
+
+            // 生成 MoveInstruction 将传入实参值复制到局部形参变量
+            Instruction * move_inst = new MoveInstruction(currentFunc, param_value, fParam);
+            node->blockInsts.addInst(move_inst);
         } else {
             ast_node *  type_node = param_decl_node->sons[0];
             ast_node *  param_node = param_decl_node->sons[1];
@@ -985,7 +1032,7 @@ bool IRGenerator::ir_and(ast_node * node)
         IRInstOperator::IRINST_OP_AND,
         lhs,
         rhs,
-        IntegerType::getTypeInt());
+        IntegerType::getTypeBool());
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1051,7 +1098,7 @@ bool IRGenerator::ir_or(ast_node * node)
         IRInstOperator::IRINST_OP_OR,
         lhs,
         rhs,
-        IntegerType::getTypeInt());
+        IntegerType::getTypeBool());
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1152,7 +1199,8 @@ bool IRGenerator::ir_eq(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_EQ_I,
-        IRInstOperator::IRINST_OP_EQ_F);
+        IRInstOperator::IRINST_OP_EQ_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1272,7 +1320,8 @@ bool IRGenerator::ir_neq(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_NEQ_I,
-        IRInstOperator::IRINST_OP_NEQ_F);
+        IRInstOperator::IRINST_OP_NEQ_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1391,7 +1440,8 @@ bool IRGenerator::ir_ge(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_GE_I,
-        IRInstOperator::IRINST_OP_GE_F);
+        IRInstOperator::IRINST_OP_GE_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1509,7 +1559,8 @@ bool IRGenerator::ir_le(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_LE_I,
-        IRInstOperator::IRINST_OP_LE_F);
+        IRInstOperator::IRINST_OP_LE_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1630,7 +1681,8 @@ bool IRGenerator::ir_gne(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_GNE_I,
-        IRInstOperator::IRINST_OP_GNE_F);
+        IRInstOperator::IRINST_OP_GNE_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1750,7 +1802,8 @@ bool IRGenerator::ir_lne(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_LNE_I,
-        IRInstOperator::IRINST_OP_LNE_F);
+        IRInstOperator::IRINST_OP_LNE_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1899,7 +1952,8 @@ bool IRGenerator::ir_not(ast_node * node)
         module->getCurrentFunction(),
         lhs,
         IRInstOperator::IRINST_OP_NOT_I,
-        IRInstOperator::IRINST_OP_NOT_F);
+        IRInstOperator::IRINST_OP_NOT_F,
+        true);
 
     // 合并子表达式的IR并加入当前指令
     // node->blockInsts.addInst(expr->blockInsts);
@@ -2045,34 +2099,18 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     // node->sons[0] 是条件表达式
     // node->sons[1] 是 if 语句块
     // node->sons[2] 是 else 语句块 (可选)
-
     ast_node * cond_node = node->sons[0];
     ast_node * if_node = node->sons[1];
     ast_node * else_node = (node->sons.size() > 2) ? node->sons[2] : nullptr;
 
+    // 获取当前函数，if块必须位于函数内
     Function * currentFunc = module->getCurrentFunction();
-
-    // 1. 生成条件表达式的IR
-    // ir_visit_ast_node 会递归访问子节点并生成其IR。
-    // 生成的指令存储在 cond->blockInsts，结果值存储在 cond->val 中。
-    ast_node * cond = ir_visit_ast_node(cond_node);
-    if (!cond) {
-        printf("Ifelse: no condition block\n");
+    if (!currentFunc) {
+        std::cerr << "Error: If-else outside function." << std::endl;
         return false;
     }
 
-    // 将条件表达式生成的指令添加到当前节点的指令列表中。
-    // 这些指令将构成 if-else 结构前导基本块的一部分。
-    node->blockInsts.addInst(cond->blockInsts);
-
-    // 获取条件表达式的值 (应为一个布尔值，如 IR 中的 i1 类型)
-    Value * cond_val = cond->val;
-    if (!cond_val) {
-        printf("Ifelse: condition has no value.\n");
-        return false;
-    }
-
-    // 2. 创建表示 if-else 结构不同基本块入口的标签
+    // 1. 创建表示 if-else 结构不同基本块入口的标签
     // 这些标签将在后续指令中被引用（作为跳转目标）
     // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
 
@@ -2082,7 +2120,6 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     LabelInstruction * else_label = nullptr;
     // if-else 结构结束后的汇合点标签
     LabelInstruction * merge_label = new LabelInstruction(currentFunc);
-
     // 确定条件分支的假分支目标
     // 如果有 else 块，假分支跳到 else 块的标签
     // 如果没有 else 块，假分支跳到 merge 块的标签
@@ -2094,11 +2131,13 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         false_branch_target = merge_label;
     }
 
-    // 3. 添加条件分支指令 (br i1)
-    // 这个指令紧跟在条件表达式指令之后，根据 cond_val 的布尔值决定跳转。
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, cond_val, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
+    // 2. 生成条件表达式的IR
+    // 增加处理短路情况
+    if (!gen_condition_branch(cond_node, true_branch_label, false_branch_target, node->blockInsts)) {
+        // Error occurred during condition branching generation
+        std::cerr << "Error generating condition branch for if-else." << std::endl;
+        return false;
+    }
 
     // 前导基本块（包含条件求值和条件分支）的指令已生成并添加到 node->blockInsts。
     // 接下来生成 then 块、else 块和 merge 块的指令，并按顺序添加到 node->blockInsts。
@@ -2188,35 +2227,41 @@ bool IRGenerator::ir_while(ast_node * node)
     // 添加循环头部标签，标记这个基本块的开始
     node->blockInsts.addInst(loop_header_label);
 
-    // 访问条件表达式AST节点，生成其IR
-    ast_node * cond = ir_visit_ast_node(cond_node);
-    if (!cond) {
-        // 条件表达式生成失败
-        enterLabels.pop();
-        exitLabels.pop();
-        printf("While: Condition express generate failed.\n");
+    // // 访问条件表达式AST节点，生成其IR
+    // ast_node * cond = ir_visit_ast_node(cond_node);
+    // if (!cond) {
+    //     // 条件表达式生成失败
+    //     enterLabels.pop();
+    //     exitLabels.pop();
+    //     printf("While: Condition express generate failed.\n");
+    //     return false;
+    // }
+    // // 将条件表达式生成的指令添加到当前节点的指令列表中 (属于循环头部块)
+    // node->blockInsts.addInst(cond->blockInsts);
+
+    // // 获取条件表达式的值 (应为一个布尔值，i1 类型)
+    // Value * cond_val = cond->val;
+    // if (!cond_val) {
+    //     // 条件表达式必须产生一个值
+    //     enterLabels.pop();
+    //     exitLabels.pop();
+    //     printf("While: no value for condition expression\n");
+    //     return false; // 或者更详细的错误处理
+    // }
+
+    // // 添加条件分支指令 (br i1)
+    // // 如果条件为真 (cond_val)，跳转到 loop_body_label
+    // // 如果条件为假 (!cond_val)，跳转到 loop_exit_label
+    // ConditionalInstruction * cond_branch_inst =
+    //     new ConditionalInstruction(currentFunc, cond_val, loop_body_label, loop_exit_label);
+    // node->blockInsts.addInst(cond_branch_inst);
+
+    // 支持短路
+    if (!gen_condition_branch(cond_node, loop_body_label, loop_exit_label, node->blockInsts)) {
+        // Error occurred during condition branching generation
+        std::cerr << "Error generating condition branch for while." << std::endl;
         return false;
     }
-    // 将条件表达式生成的指令添加到当前节点的指令列表中 (属于循环头部块)
-    node->blockInsts.addInst(cond->blockInsts);
-
-    // 获取条件表达式的值 (应为一个布尔值，i1 类型)
-    Value * cond_val = cond->val;
-    if (!cond_val) {
-        // 条件表达式必须产生一个值
-        enterLabels.pop();
-        exitLabels.pop();
-        printf("While: no value for condition expression\n");
-        return false; // 或者更详细的错误处理
-    }
-    // TODO: 可选：检查 cond_val 的类型是否是布尔类型（例如 IR 中的 i1）
-
-    // 添加条件分支指令 (br i1)
-    // 如果条件为真 (cond_val)，跳转到 loop_body_label
-    // 如果条件为假 (!cond_val)，跳转到 loop_exit_label
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, cond_val, loop_body_label, loop_exit_label);
-    node->blockInsts.addInst(cond_branch_inst);
 
     // 4. 生成循环体块
     // 添加循环体标签，标记这个基本块的开始
@@ -2745,4 +2790,160 @@ void IRGenerator::flatten_init_node(
         // 是一个值节点，直接加入
         flat_list.push_back(node);
     }
+}
+
+bool IRGenerator::gen_condition_branch(
+    ast_node * cond_node, LabelInstruction * true_target, LabelInstruction * false_target,
+    InterCode & current_block_insts)
+{
+    if (!cond_node) {
+        std::cerr << "Error: Null condition node for branching." << std::endl;
+        return false;
+    }
+    Function * currentFunc = module->getCurrentFunction();
+    if (!currentFunc) {
+        std::cerr << "Error: gen_condition_branch called outside function context." << std::endl;
+        return false;
+    }
+
+    ast_operator_type op = cond_node->node_type; // 获取操作符类型
+    // --- 1. Check for short-circuiting operators (&&, ||) ---
+    if (op == ast_operator_type::AST_OP_AND || op == ast_operator_type::AST_OP_OR) {
+        // std::cout << "Handling short-circuiting!" << std::endl;
+        ast_node * left_node = cond_node->sons[0];
+        ast_node * right_node = cond_node->sons[1];
+
+        if (op == ast_operator_type::AST_OP_AND) {
+            // Short-circuit for && (a && b)
+            // Logic: Evaluate a. If a is true, evaluate b. If a is false, jump to false_target.
+            // a && b branches to true_target if (a is true AND b is true)
+            // a && b branches to false_target if (a is false OR (a is true AND b is false))
+
+            // Create a label to evaluate the right side (b) if the left side (a) is true
+            LabelInstruction * eval_right_label = new LabelInstruction(currentFunc);
+
+            // Recursively generate IR for the left operand (a)
+            // If 'a' is true, jump to eval_right_label. If 'a' is false, jump directly to the overall false_target.
+            if (!gen_condition_branch(left_node, eval_right_label, false_target, current_block_insts)) {
+                std::cerr << "Error generating left operand for &&." << std::endl;
+                return false;
+            }
+
+            // Add the label for the basic block that evaluates the right side
+            current_block_insts.addInst(eval_right_label);
+
+            // Recursively generate IR for the right operand (b)
+            // If 'b' is true, jump to the overall true_target. If 'b' is false, jump to the overall false_target.
+            // Note: This block is only reached if 'a' was true.
+            if (!gen_condition_branch(right_node, true_target, false_target, current_block_insts)) {
+                std::cerr << "Error generating right operand for &&." << std::endl;
+                return false;
+            }
+            return true; // Successfully generated IR for && short-circuiting
+
+        } else if (op == ast_operator_type::AST_OP_OR) {
+            // Short-circuit for || (a || b)
+            // Logic: Evaluate a. If a is false, evaluate b. If a is true, jump to true_target.
+            // a || b branches to true_target if (a is true OR (a is false AND b is true))
+            // a || b branches to false_target if (a is false AND b is false)
+
+            // Create a label to evaluate the right side (b) if the left side (a) is false
+            LabelInstruction * eval_right_label = new LabelInstruction(currentFunc);
+
+            // Recursively generate IR for the left operand (a)
+            // If 'a' is true, jump directly to the overall true_target. If 'a' is false, jump to eval_right_label.
+            if (!gen_condition_branch(left_node, true_target, eval_right_label, current_block_insts)) {
+                std::cerr << "Error generating left operand for ||." << std::endl;
+                return false;
+            }
+
+            // Add the label for the basic block that evaluates the right side
+            current_block_insts.addInst(eval_right_label);
+
+            // Recursively generate IR for the right operand (b)
+            // If 'b' is true, jump to the overall true_target. If 'b' is false, jump to the overall false_target.
+            // Note: This block is only reached if 'a' was false.
+            if (!gen_condition_branch(right_node, true_target, false_target, current_block_insts)) {
+                std::cerr << "Error generating right operand for ||." << std::endl;
+                return false;
+            }
+
+            return true; // Successfully generated IR for || short-circuiting
+        }
+        // Fall through if it's another binary op (like comparison)
+    }
+    // --- 2. Check for logical NOT (!) ---
+    else if (op == ast_operator_type::AST_OP_NOT) {
+        ast_node * operand_node = cond_node->sons[0];
+        // expr is true when expr is false, and false when expr is true.
+        // So, recursively generate IR for 'expr' but swap the true and false targets.
+        return gen_condition_branch(operand_node, false_target, true_target, current_block_insts);
+        // Fall through for other unary ops
+    }
+
+    // --- 3. Handle other condition types (comparisons, variables, literals, calls returning value) ---
+    // For these, evaluate the expression to get a single Value, then branch based on that value.
+
+    ast_node * cond_eval_result = ir_visit_ast_node(cond_node); // Generate IR for the condition expression
+    if (!cond_eval_result || !cond_eval_result->val) {
+        std::cerr << "Error: Condition expression failed to generate value." << std::endl;
+        return false;
+    }
+    current_block_insts.addInst(cond_eval_result->blockInsts); // Add the evaluation instructions to the current block
+
+    Value * cond_val = cond_eval_result->val;
+    Type *  cond_type = cond_val->getType();
+
+    // --- 4. Ensure the condition value is of type i1 (boolean) ---
+    // SysY treats non-zero int/float as true, zero as false. Need to convert if necessary.
+    Value * branch_cond_val = nullptr; // This will be the final i1 value used for branching
+
+    if (cond_type->isInt1Byte()) {
+        branch_cond_val = cond_val;
+    } else if (cond_type->isIntegerType()) {
+        Constant * zero_const = new ConstInt(0);
+        if (!zero_const) {
+            std::cerr << "Internal Error: Failed to get zero constant for integer type." << std::endl;
+            return false;
+        }
+        // Create the icmp ne instruction: cond_val != 0
+        // Use the IcmpInstruction constructor.
+        Instruction * cmp_inst =
+            new IcmpInstruction(currentFunc, IRInstOperator::IRINST_OP_NEQ_I, cond_val, zero_const);
+        current_block_insts.addInst(cmp_inst);
+        branch_cond_val = static_cast<Value *>(cmp_inst); // The IcmpInstruction itself is the i1 Value result
+    } else if (cond_type->isFloatType()) {                // If it's a float type (like float/f32)
+        // Convert non-zero float to i1 true, zero to i1 false (value != 0.0)
+        // Use FcmpInstruction with 'une' predicate for float not equal.
+        Constant * zero_const = new ConstFloat(0.0f); // Assuming ConstantFloat::get(0.0f) returns a Value*
+        if (!zero_const) {
+            std::cerr << "Internal Error: Failed to get zero constant for float type." << std::endl;
+            return false;
+        }
+        // Create the fcmp une instruction: cond_val != 0.0
+        Instruction * fcmp_inst = new FcmpInstruction(
+            currentFunc,
+            IRInstOperator::IRINST_OP_NEQ_F,
+            cond_val,
+            zero_const); // Using NEQ_F maps to 'une' in Fcmp toString
+        current_block_insts.addInst(fcmp_inst);
+        branch_cond_val = static_cast<Value *>(fcmp_inst); // The FcmpInstruction itself is the i1 Value result
+
+    } else {
+        // Unsupported type for a condition
+        std::cerr << "Error: Invalid type for condition expression: " << cond_type->toString() << std::endl;
+        return false;
+    }
+
+    if (!branch_cond_val) {
+        std::cerr << "Internal Error: Branch condition value is null after type handling." << std::endl;
+        return false;
+    }
+
+    // --- 5. Add the final conditional branch based on the resulting i1 value ---
+    // ConditionalInstruction(Function* func, Value* condition, LabelInstruction* true_target, LabelInstruction*
+    // false_target)
+    current_block_insts.addInst(new ConditionalInstruction(currentFunc, branch_cond_val, true_target, false_target));
+
+    return true; // Successfully generated IR for non-short-circuiting condition
 }

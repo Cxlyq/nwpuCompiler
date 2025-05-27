@@ -28,8 +28,8 @@
 /// @param floatOp 浮点操作符
 /// @return UnaryInstruction* 一元操作指令对象
 /// @note 该函数会自动判断操作数的类型，选择合适的操作符
-UnaryInstruction *
-UnaryInstruction::createAutoTyped(Function * func, Value * hs, IRInstOperator intOp, IRInstOperator floatOp)
+UnaryInstruction * UnaryInstruction::createAutoTyped(
+    Function * func, Value * hs, IRInstOperator intOp, IRInstOperator floatOp, bool isBoolType)
 {
     // bool isFloat = hs->getType()->isFloatType();
     bool isFloat =
@@ -38,6 +38,9 @@ UnaryInstruction::createAutoTyped(Function * func, Value * hs, IRInstOperator in
     Type *         floatTy = FloatType::getType();
     Type *         intTy = IntegerType::getTypeInt();
     Type *         type = isFloat ? floatTy : intTy;
+    if (isBoolType) {
+        type = IntegerType::getTypeBool();
+    }
     return new UnaryInstruction(func, op, hs, type);
 }
 

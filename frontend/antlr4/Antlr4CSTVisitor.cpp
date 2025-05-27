@@ -151,13 +151,36 @@ std::any MiniCCSTVisitor::visitFuncFParam(MiniCParser::FuncFParamContext * ctx)
     bool isArray = ctx->T_L_SQBRA().size() > 0;
 
     std::vector<ast_node *> dimensions;
-    if (ctx->expr().size() > 0) {
-        for (auto dimExpr: ctx->expr()) {
-            dimensions.push_back(std::any_cast<ast_node *>(visit(dimExpr)));
-        }
-    }
+    // if (ctx->expr().size() > 0) {
+    //     for (auto dimExpr: ctx->expr()) {
+    //         if(dimExpr == nullptr) {
+    // 			// 如果没有维度表达式，可能是空数组参数
+    // 			dimensions.push_back(ast_node * New(-1));
+    // 		} else {
+    // 			// 访问维度表达式，获取AST节点
+    // 			// 注意：这里的visitExpr返回的是ast_node *类型
+    // 			// 需要确保visitExpr函数正确处理了表达式的遍历
+    //         dimensions.push_back(std::any_cast<ast_node *>(visit(dimExpr)));
+    //     }
+    // }
 
+    // if (isArray) {
+    //     return create_array_param(paramType, paramId, dimensions);
     if (isArray) {
+        int dimCount = ctx->T_L_SQBRA().size(); // 维度数
+        int exprCount = ctx->expr().size();     // 表达式数量（可能小于维度数）
+
+        for (int i = 0; i < dimCount; ++i) {
+            if (i < exprCount && ctx->expr(i) != nullptr) {
+                // 有表达式，正常访问
+                dimensions.push_back(std::any_cast<ast_node *>(visit(ctx->expr(i))));
+            } else {
+                // 缺失的维度，使用特殊标记，比如 nullptr 或自定义空节点
+                // dimensions.insert(std::any_cast<ast_node *>(new ast_node((digit_int_attr){0, -1})));
+                dimensions.insert(dimensions.begin(), ast_node::New((digit_int_attr){(uint32_t) -1, -1}));
+            }
+        }
+
         return create_array_param(paramType, paramId, dimensions);
     } else {
         return create_var_param(paramType, paramId);

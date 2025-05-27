@@ -34,13 +34,10 @@ public:
     /// @param _srcVal 源操作数
     /// @param _func 所属函数
     ///
-    UnaryInstruction(Function * _func, IRInstOperator _op,Value * srcVal,Type * _type);
+    UnaryInstruction(Function * _func, IRInstOperator _op, Value * srcVal, Type * _type);
 
-    static  UnaryInstruction* createAutoTyped(Function * func,
-        Value * hs,
-        IRInstOperator intOp,
-        IRInstOperator floatOp);
+    static UnaryInstruction *
+    createAutoTyped(Function * func, Value * hs, IRInstOperator intOp, IRInstOperator floatOp, bool isBoolType = false);
     /// @brief 转换成字符串
     void toString(std::string & str) override;
-
 };

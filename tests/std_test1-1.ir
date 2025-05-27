@@ -1,0 +1,31 @@
+define i32 @main() {
+	declare i32 %l0
+	declare i32 %l1 ; variable: a
+	declare i32 %l2 ; variable: b
+	declare i32 %l3 ; variable: c
+	declare i32 %l4 ; variable: result
+	declare i1 %t5
+	declare i1 %t6
+	declare i32 %t7
+.L1:
+	entry
+	%l1 = 1
+	%l2 = 0
+	%l3 = 1
+	%l4 = 0
+.L3:
+	%t5 = icmp ne %l2, 0
+	bc %t5, label .L6, label .L5
+.L6:
+	%t6 = icmp ne %l3, 5
+	bc %t6, label .L4, label .L5
+.L4:
+	%t7 = add %l3, 1
+	%l3 = %t7
+	br label .L3
+.L5:
+	%l0 = %l4
+	br label .L2
+.L2:
+	exit %l0
+}
