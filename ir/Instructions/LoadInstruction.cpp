@@ -18,6 +18,16 @@ void LoadInstruction::toString(std::string & str)
 {
     // Value * result = getOperand(0); // 被赋值的变量
     Value * addr = getOperand(0); // 从哪个地址加载
+    switch (addr->getType()->getTypeID()) {
+        case Type::IntegerTyID:
+            str = getIRName() + " = load i32, i32* " + addr->getIRName() + ", align 4";
+            break;
+        case Type::FloatTyID:
+            str = getIRName() + " = load float, float* " + addr->getIRName() + ", align 4";
+            break;
+        default:
+            str = getIRName() + " = load from " + addr->getIRName();
 
-    str = getIRName() + " = load from " + addr->getIRName();
+            break;
+    }
 }
