@@ -2448,21 +2448,69 @@ bool IRGenerator::ir_array_access(ast_node * node)
     if (type->isArrayType()) {
         auto *           arrayType = static_cast<ArrayType *>(type);
         std::vector<int> ori_dims = arrayType->getDimensions();
-        int              offset_size = calcOffset(ori_dims, dims);
-        // int              offset = offset_size * 4;
-        auto offest = new BinaryInstruction(
+        // int              offset_size = calcOffset(ori_dims, dims);
+        //  int              offset = offset_size * 4;
+        int d = ori_dims.size();
+        int m = dims.size();
+
+        // 从后往前构造偏移表达式
+        Value * offset = nullptr;
+        Value * stride = module->newConstInt(1); // 初始stride=1
+
+        for (int i = d - 1; i >= d - m; --i) {
+            ast_node * expr_node = array_dims[i - (d - m)];
+
+            // 生成子表达式的 IR
+            ir_visit_ast_node(expr_node);
+            Value * indexVal = expr_node->val;
+
+            // tmp = indexVal * stride
+            auto term = new BinaryInstruction(
+                module->getCurrentFunction(),
+                IRInstOperator::IRINST_OP_MUL_I,
+                indexVal,
+                stride,
+                IntegerType::getTypeInt());
+            node->blockInsts.addInst(term);
+
+            // offset = offset + term
+            if (offset == nullptr) {
+                offset = term;
+            } else {
+                auto sum = new BinaryInstruction(
+                    module->getCurrentFunction(),
+                    IRInstOperator::IRINST_OP_ADD_I,
+                    offset,
+                    term,
+                    IntegerType::getTypeInt());
+                node->blockInsts.addInst(sum);
+                offset = sum;
+            }
+            if (i - 1 >= d - m) {
+                // 更新stride *= ori_dims[i]
+                auto new_stride = new BinaryInstruction(
+                    module->getCurrentFunction(),
+                    IRInstOperator::IRINST_OP_MUL_I,
+                    stride,
+                    module->newConstInt(ori_dims[i]),
+                    IntegerType::getTypeInt());
+                stride = new_stride;
+                node->blockInsts.addInst(new_stride);
+            }
+        }
+        auto offest_size = new BinaryInstruction(
             module->getCurrentFunction(),
             IRInstOperator::IRINST_OP_MUL_I,
-            module->newConstInt(offset_size),
+            offset,
             module->newConstInt(4),
             IntegerType::getTypeInt());
-        node->blockInsts.addInst(offest);
+        node->blockInsts.addInst(offest_size);
 
         auto addr = new BinaryInstruction(
             module->getCurrentFunction(),
             IRInstOperator::IRINST_OP_ADD_I,
             tempVal,
-            offest,
+            offest_size,
             IntegerType::getTypeInt());
         node->val = addr;
         // ///需要手动设置Type，否则addr默认是int类型的value
@@ -2503,21 +2551,70 @@ bool IRGenerator::funcall_array_access(ast_node * node)
     if (type->isArrayType()) {
         auto *           arrayType = static_cast<ArrayType *>(type);
         std::vector<int> ori_dims = arrayType->getDimensions();
-        int              offset_size = calcOffset(ori_dims, dims);
-        // int              offset = offset_size * 4;
-        auto offest = new BinaryInstruction(
+        // int              offset_size = calcOffset(ori_dims, dims);
+        //  int              offset = offset_size * 4;
+        int d = ori_dims.size();
+        int m = dims.size();
+
+        // 从后往前构造偏移表达式
+        Value * offset = nullptr;
+        Value * stride = module->newConstInt(1); // 初始stride=1
+
+        for (int i = d - 1; i >= d - m; --i) {
+            ast_node * expr_node = array_dims[i - (d - m)];
+
+            // 生成子表达式的 IR
+            ir_visit_ast_node(expr_node);
+            Value * indexVal = expr_node->val;
+
+            // tmp = indexVal * stride
+            auto term = new BinaryInstruction(
+                module->getCurrentFunction(),
+                IRInstOperator::IRINST_OP_MUL_I,
+                indexVal,
+                stride,
+                IntegerType::getTypeInt());
+            node->blockInsts.addInst(term);
+
+            // offset = offset + term
+            if (offset == nullptr) {
+                offset = term;
+            } else {
+                auto sum = new BinaryInstruction(
+                    module->getCurrentFunction(),
+                    IRInstOperator::IRINST_OP_ADD_I,
+                    offset,
+                    term,
+                    IntegerType::getTypeInt());
+                node->blockInsts.addInst(sum);
+                offset = sum;
+            }
+
+            if (i - 1 >= d - m) {
+                // 更新stride *= ori_dims[i]
+                auto new_stride = new BinaryInstruction(
+                    module->getCurrentFunction(),
+                    IRInstOperator::IRINST_OP_MUL_I,
+                    stride,
+                    module->newConstInt(ori_dims[i]),
+                    IntegerType::getTypeInt());
+                stride = new_stride;
+                node->blockInsts.addInst(new_stride);
+            }
+        }
+        auto offest_size = new BinaryInstruction(
             module->getCurrentFunction(),
             IRInstOperator::IRINST_OP_MUL_I,
-            module->newConstInt(offset_size),
+            offset,
             module->newConstInt(4),
             IntegerType::getTypeInt());
-        node->blockInsts.addInst(offest);
+        node->blockInsts.addInst(offest_size);
 
         auto addr = new BinaryInstruction(
             module->getCurrentFunction(),
             IRInstOperator::IRINST_OP_ADD_I,
             tempVal,
-            offest,
+            offest_size,
             IntegerType::getTypeInt());
         node->val = addr;
         // ///需要手动设置Type，否则addr默认是int类型的value
