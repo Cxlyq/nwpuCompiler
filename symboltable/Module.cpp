@@ -217,7 +217,6 @@ ConstFloat * Module::findConstFloat(float val)
     return temp;
 }
 
-
 /// @brief 在当前的作用域中查找，若没有查找到则创建数组变量
 /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
 /// @param type 变量类型
@@ -538,7 +537,7 @@ void Module::outputIR(const std::string & filePath)
         var->toDeclareString(str);
         fprintf(fp, "%s\n", str.c_str());
     }
-
+    std::cout << "passGV\n";
     // 遍历所有的线性IR指令，文本输出
     for (auto func: funcVector) {
 
@@ -546,6 +545,6 @@ void Module::outputIR(const std::string & filePath)
         func->toString(instStr);
         fprintf(fp, "%s", instStr.c_str());
     }
-
+    std::cout << "passFN\n";
     fclose(fp);
 }

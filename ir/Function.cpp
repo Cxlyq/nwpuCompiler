@@ -141,15 +141,17 @@ void Function::toString(std::string & str)
             // 局部变量和临时变量需要输出declare语句
         }
     }
+    std::cout << "passFNIN\n";
 
     // 遍历所有的线性IR指令，文本输出
     for (auto & inst: code.getInsts()) {
 
         std::string instStr;
         inst->toString(instStr);
+        
+        std::cout << instStr << std::endl;
 
         if (!instStr.empty()) {
-
             // Label指令不加Tab键
             if (inst->getOp() == IRInstOperator::IRINST_OP_LABEL) {
                 str += instStr + "\n";
@@ -161,6 +163,8 @@ void Function::toString(std::string & str)
 
     // 输出函数尾部
     str += "}\n";
+
+    std::cout << "passFNEND\n";
 }
 
 /// @brief 设置函数出口指令

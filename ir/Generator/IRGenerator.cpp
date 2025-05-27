@@ -118,7 +118,6 @@ bool IRGenerator::run()
 
     // 从根节点进行遍历
     node = ir_visit_ast_node(root);
-
     return node != nullptr;
 }
 
@@ -516,14 +515,6 @@ bool IRGenerator::ir_function_call(ast_node * node)
         std::cout << realParams.size() << " " << calledFunction->getParams().size() << std::endl;
         minic_log(LOG_ERROR, "第%lld行的被调用函数(%s)未定义或声明", (long long) lineno, funcName.c_str());
         return false;
-    } else {
-        // for (int paramNo = 0; paramNo < realParams.size(); paramNo++) {
-        //     if (realParams[paramNo]->getType() != calledFunction->getParams()[paramNo]->getType()) {
-        //         // 参数类型不匹配
-        //         minic_log(LOG_ERROR, "函数(%s)的第%d个参数类型不匹配", funcName.c_str(), paramNo + 1);
-        //         return false;
-        //     }
-        // }
     }
     calledFunction->realParams = realParams;
     // 返回调用有返回值，则需要分配临时变量，用于保存函数调用的返回值
@@ -536,7 +527,6 @@ bool IRGenerator::ir_function_call(ast_node * node)
 
     // 函数调用结果Value保存到node中，可能为空，上层节点可利用这个值
     node->val = funcCallInst;
-
     return true;
 }
 
@@ -2600,13 +2590,23 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
         Value * offset = nullptr;
         Value * stride = module->newConstInt(1); // 初始stride=1
 
+        auto new_stride = new BinaryInstruction(
+            module->getCurrentFunction(),
+            IRInstOperator::IRINST_OP_MUL_I,
+            stride,
+            module->newConstInt(5),
+            IntegerType::getTypeInt());
+        stride = new_stride;
+        std::cout << "Yes1\n";
+        insts.push_back(new_stride);
+        // node->blockInsts.addInst(new_stride);
+
         for (int i = d - 1; i >= d - m; --i) {
             ast_node * expr_node = array_dims[i - (d - m)];
 
             // 生成子表达式的 IR
             ir_visit_ast_node(expr_node);
             Value * indexVal = expr_node->val;
-
             // tmp = indexVal * stride
             auto term = new BinaryInstruction(
                 module->getCurrentFunction(),
@@ -2614,7 +2614,9 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
                 indexVal,
                 stride,
                 IntegerType::getTypeInt());
+            std::cout << "Yes2\n";
             insts.push_back(term);
+            // node->blockInsts.addInst(term);
 
             // offset = offset + term
             if (offset == nullptr) {
@@ -2626,20 +2628,24 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
                     offset,
                     term,
                     IntegerType::getTypeInt());
-                insts.push_back(sum);
+                std::cout << "Yes3\n";
+                // insts.push_back(sum);
+                node->blockInsts.addInst(sum);
                 offset = sum;
             }
 
-            if (i - 1 >= d - m) {
+            if (i - 1 > d - m) {
                 // 更新stride *= ori_dims[i]
                 auto new_stride = new BinaryInstruction(
                     module->getCurrentFunction(),
                     IRInstOperator::IRINST_OP_MUL_I,
                     stride,
-                    module->newConstInt(ori_dims[i]),
+                    module->newConstInt(5),
                     IntegerType::getTypeInt());
                 stride = new_stride;
-                insts.push_back(new_stride);
+                std::cout << "Yes4\n";
+                // insts.push_back(new_stride);
+                node->blockInsts.addInst(new_stride);
             }
         }
         auto offest_size = new BinaryInstruction(
@@ -2648,7 +2654,9 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
             offset,
             module->newConstInt(4),
             IntegerType::getTypeInt());
-        insts.push_back(offest_size);
+        std::cout << "Yes5\n";
+        // insts.push_back(offest_size);
+        node->blockInsts.addInst(offest_size);
 
         auto addr = new BinaryInstruction(
             module->getCurrentFunction(),
@@ -2656,11 +2664,13 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
             tempVal,
             offest_size,
             IntegerType::getTypeInt());
-        node->val = addr;
-        // ///需要手动设置Type，否则addr默认是int类型的value
-        // node->val->setType(type);
-        // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
-        insts.push_back(addr);
+        // node->val = addr;
+        //  ///需要手动设置Type，否则addr默认是int类型的value
+        //  node->val->setType(type);
+        //  std::cout << "addr type: " << addr->getType()->toString() << std::endl;
+        std::cout << "Yes6\n";
+        // insts.push_back(addr);
+        node->blockInsts.addInst(addr);
 
     } else {
         // 处理错误情况
@@ -2670,6 +2680,14 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
     if (node) {
         std::cout << "here" << std::endl;
     }
+    int count = 0;
+    for (auto inst: insts) {
+        count++;
+        if (inst == nullptr) {
+            std::cout << "NULL INST AT" << count << "\n";
+        }
+    }
+    std::cout << count << std::endl;
     return arrayPRParam;
 }
 
