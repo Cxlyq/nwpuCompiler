@@ -41,6 +41,7 @@ string getNodeName(ast_node * astnode)
         case ast_operator_type::AST_OP_LEAF_VAR_ID:
             nodeName = astnode->name;
             break;
+
         case ast_operator_type::AST_OP_LEAF_TYPE:
             nodeName = astnode->type->toString();
             break;

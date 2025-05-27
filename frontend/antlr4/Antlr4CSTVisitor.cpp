@@ -362,8 +362,8 @@ std::any MiniCCSTVisitor::visitConstDef(MiniCParser::ConstDefContext * ctx)
 
     auto       constId = ctx->T_ID()->getText();
     int64_t    lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
-    ast_node * id_node = new ast_node(constId, lineNo);
-
+    ast_node * id_node = new ast_node(constId, lineNo); // true表示是常量ID
+    id_node->is_lvar = true;                            // 标记为常量ID
     // 支持数组形式（多维数组定义）
     for (auto exprCtx: ctx->expr()) {
         ast_node * indexNode = std::any_cast<ast_node *>(visit(exprCtx));
@@ -483,6 +483,7 @@ std::any MiniCCSTVisitor::visitVarDef(MiniCParser::VarDefContext * ctx)
     auto       varId = ctx->T_ID()->getText();
     int64_t    lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
     ast_node * node = new ast_node(varId, lineNo);
+    node->is_lvar = true; // 标记为局部变量ID
 
     for (auto exprCtx: ctx->expr()) {
         ast_node * indexNode = std::any_cast<ast_node *>(visit(exprCtx));
@@ -592,6 +593,7 @@ std::any MiniCCSTVisitor::visitAssignStatement(MiniCParser::AssignStatementConte
 
     // 赋值左侧左值Lval遍历产生节点
     auto lvalNode = std::any_cast<ast_node *>(visitLVal(ctx->lVal()));
+    lvalNode->is_lvar = true; // 设置左值标志
 
     // 赋值右侧expr遍历
     auto exprNode = std::any_cast<ast_node *>(visitExpr(ctx->expr()));
@@ -1002,6 +1004,7 @@ std::any MiniCCSTVisitor::visitPrimaryExp(MiniCParser::PrimaryExpContext * ctx)
         return visitParenExpr(pexprCtx);
     } else if (Instanceof(lvalCtx, MiniCParser::LeftValueContext *, ctx)) {
         return visitLeftValue(lvalCtx);
+        // return visitRightValue(lvalCtx);
     } else if (Instanceof(bnumCtx, MiniCParser::BasicNumContext *, ctx)) {
         return visitBasicNum(bnumCtx);
     } else if (Instanceof(funcCtx, MiniCParser::FuncCallContext *, ctx)) {
@@ -1039,6 +1042,7 @@ std::any MiniCCSTVisitor::visitLVal(MiniCParser::LValContext * ctx)
     int64_t lineNo = (int64_t) ctx->T_ID()->getSymbol()->getLine();
 
     // 初始化变量节点，表示变量的标识符
+
     ast_node * node = new ast_node(varId, lineNo);
 
     // 如果存在下标表达式，则处理数组访问

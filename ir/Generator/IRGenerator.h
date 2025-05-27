@@ -202,6 +202,8 @@ protected:
     /// @return 翻译是否成功，true：成功，false：失败
     bool ir_array_access(ast_node * node);
 
+    bool funcall_array_access(ast_node * node);
+
     /// @brief 变量声明语句节点翻译成线性中间IR
     /// @param node AST节点
     /// @return 翻译是否成功，true：成功，false：失败
@@ -261,6 +263,7 @@ protected:
     //                                         const std::vector<int> & dims,
     //                                         int depth,
     //                                         std::vector<int> & indices)
+    std::string generateTempName(const std::string & base);
 
 private:
     /// @brief 抽象语法树的根
@@ -274,7 +277,6 @@ private:
     std::stack<LabelInstruction *> enterLabels;
 
     void flatten_ast_initval(ast_node * node, std::vector<ast_node *> & out_flat);
-
 
     /// @brief Generates IR for a condition expression that branches to true_target or false_target.
     ///        Handles short-circuiting for AND (&&) and OR (||).

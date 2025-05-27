@@ -255,10 +255,14 @@ protected:
     /// @return std::any AST的节点
     std::any visitLeftValue(MiniCParser::LeftValueContext * ctx) override;
 
-    /// @brief 非终结符basicNum的分析
-    /// @param ctx CST上下文
-    /// @return std::any AST的节点
-    std::any visitBasicNum(MiniCParser::BasicNumContext * ctx) override;
+
+   
+
+        /// @brief 非终结符basicNum的分析
+        /// @param ctx CST上下文
+        /// @return std::any AST的节点
+        std::any
+        visitBasicNum(MiniCParser::BasicNumContext * ctx) override;
 
     /// @brief 非终结符funcCall的分析
     /// @param ctx CST上下文
