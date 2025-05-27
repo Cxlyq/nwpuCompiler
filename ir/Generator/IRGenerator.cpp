@@ -2442,32 +2442,7 @@ bool IRGenerator::gen_condition_branch(
     // --- 4. Ensure the condition value is of type i1 (boolean) ---
     // SysY treats non-zero int/float as true, zero as false. Need to convert if necessary.
     Value * branch_cond_val = nullptr; // This will be the final i1 value used for branching
-
-    // TODO: Need proper type checking and comparison instruction generation
-    // Example conversion logic (assuming you have CmpInstruction and Constant classes):
-    // if (isSysYIntegerConditionType(cond_type) || isSysYFloatConditionType(cond_type)) {
-    //     // Convert non-zero to true (i1), zero to false (i1)
-    //     Value* zero_const = getZeroConstant(cond_type);
-    //     if (!zero_const) {
-    //         std::cerr << "Error: Cannot get zero constant for condition type." << std::endl; // TODO: Add location
-    //         return false;
-    //     }
-    //     // Create a comparison instruction: value != 0
-    //     Instruction* cmp_inst = new CmpInstruction(currentFunc, CmpOperator::NE, cond_val, zero_const);
-    //     current_block_insts.addInst(cmp_inst);
-    //     branch_cond_val = static_cast<Value*>(cmp_inst); // The comparison instruction *is* the resulting i1 value
-    // } else if (cond_type->isBooleanType()) { // Assuming you have a BooleanType (i1)
-    //     branch_cond_val = cond_val; // Already boolean
-    // } else {
-    //     std::cerr << "Error: Invalid type for condition expression." << std::endl;
-    //     // TODO: Add location info
-    //     return false;
-    // }
-
-    // --- Temporary Placeholder for type conversion ---
-    // Assuming for now that ir_visit_ast_node for comparisons etc. already returns i1.
-    // If not, you MUST add the conversion logic here.
-    // If integers/floats are used directly as conditions, they must be compared to zero.
+	//TODO: 类型检查
     branch_cond_val = cond_val; // DANGER: This is a placeholder if your backend needs explicit i1.
     // DANGER: Check if cond_val's type is compatible with ConditionalInstruction's condition input (usually i1).
 
