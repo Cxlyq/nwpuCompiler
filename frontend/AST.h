@@ -42,6 +42,8 @@ enum class ast_operator_type : int {
     /// @brief 变量ID叶子节点
     AST_OP_LEAF_VAR_ID,
 
+    /// @brief 变量ID叶子节点
+    AST_OP_LEAF_LVAR_ID,
     // TODO: 复杂类型细化（数组...）
     /// @brief 复杂类型的节点
     AST_OP_LEAF_TYPE,
@@ -231,6 +233,8 @@ public:
     /// @param _line_no 行号
     ast_node(std::string id, int64_t _line_no);
 
+    ast_node(std::string _id, int64_t _line_no, bool is_lvar);
+
     /// @brief 判断是否是叶子节点
     /// @param type 节点类型
     /// @return true：是叶子节点 false：内部节点
@@ -295,10 +299,9 @@ extern ast_node * ast_root;
 /// @param second_child 第一个孩子节点
 /// @param third_child 第一个孩子节点
 /// @return 创建的节点
-ast_node * create_contain_node(ast_operator_type node_type,
-                               ast_node * first_child = nullptr,
-                               ast_node * second_child = nullptr,
-                               ast_node * third_child = nullptr);
+ast_node * create_contain_node(
+    ast_operator_type node_type, ast_node * first_child = nullptr, ast_node * second_child = nullptr,
+    ast_node * third_child = nullptr);
 
 /// @brief 创建函数定义类型的内部AST节点
 /// @param type_node 函数返回值类型

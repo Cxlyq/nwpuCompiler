@@ -72,6 +72,14 @@ ast_node::ast_node(std::string _id, int64_t _line_no)
     name = _id;
 }
 
+/// @brief 针对标识符ID的叶子构造函数
+/// @param _id 标识符ID
+/// @param _line_no 行号
+ast_node::ast_node(std::string _id, int64_t _line_no, bool is_lvar)
+    : ast_node(ast_operator_type::AST_OP_LEAF_LVAR_ID, VoidType::getType(), _line_no)
+{
+    name = _id;
+}
 /// @brief 判断是否是叶子节点
 /// @return true：是叶子节点 false：内部节点
 bool ast_node::isLeafNode()
@@ -275,10 +283,8 @@ ast_node * create_func_def(type_attr & type, var_id_attr & id, ast_node * block_
 /// @param second_child 第一个孩子节点
 /// @param third_child 第一个孩子节点
 /// @return 创建的节点
-ast_node * create_contain_node(ast_operator_type node_type,
-                               ast_node * first_child,
-                               ast_node * second_child,
-                               ast_node * third_child)
+ast_node * create_contain_node(
+    ast_operator_type node_type, ast_node * first_child, ast_node * second_child, ast_node * third_child)
 {
     ast_node * node = new ast_node(node_type);
 
@@ -297,15 +303,13 @@ ast_node * create_contain_node(ast_operator_type node_type,
     return node;
 }
 
-
-
 Type * typeAttr2Type(type_attr & attr)
 {
     if (attr.type == BasicType::TYPE_INT) {
         return IntegerType::getTypeInt();
-    }else if (attr.type == BasicType::TYPE_FLOAT) {
+    } else if (attr.type == BasicType::TYPE_FLOAT) {
         return FloatType::getType();
-    }else{
+    } else {
         return VoidType::getType();
     }
 }
@@ -430,14 +434,14 @@ ast_node * add_var_decl_node(ast_node * stmt_node, var_id_attr & id)
     return stmt_node;
 }
 
- ///@brief 创建变量形参节点
+///@brief 创建变量形参节点
 /// @param dataType 变量类型
 /// @param idAttr 变量标识符
 /// @return 创建的节点
-ast_node* create_var_param(type_attr dataType, var_id_attr idAttr)
+ast_node * create_var_param(type_attr dataType, var_id_attr idAttr)
 {
-    Type* type = convert_basic_type(dataType.type);
-    ast_node* paramNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAM, type, idAttr.lineno);
+    Type *     type = convert_basic_type(dataType.type);
+    ast_node * paramNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAM, type, idAttr.lineno);
     ast_node * type_node = create_type_node(dataType);
     ast_node * id_node = ast_node::New(idAttr.id, idAttr.lineno);
     paramNode->insert_son_node(type_node); // id 已通过 strdup 分配
@@ -452,32 +456,31 @@ ast_node* create_var_param(type_attr dataType, var_id_attr idAttr)
 /// @return 创建的节点
 /// @note 数组维度的表达式作为孩子节点
 /// @note 这里的维度表达式是一个或多个孩子节点，可能是整数字面量，也可能是变量名
-ast_node* create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node*>& dimensions)
+ast_node * create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node *> & dimensions)
 {
-    Type* type = convert_basic_type(dataType.type);
-    ast_node* arrayParamNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAM, type, idAttr.lineno);
+    Type *     type = convert_basic_type(dataType.type);
+    ast_node * arrayParamNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAM, type, idAttr.lineno);
 
-    ast_node* type_node = create_type_node(dataType);
-    ast_node* id_node = ast_node::New(idAttr.id, idAttr.lineno);
+    ast_node * type_node = create_type_node(dataType);
+    ast_node * id_node = ast_node::New(idAttr.id, idAttr.lineno);
 
     arrayParamNode->insert_son_node(type_node);
     arrayParamNode->insert_son_node(id_node);
 
     // 把维度信息挂到arrayParamNode下面
-    for (auto dim : dimensions) {
+    for (auto dim: dimensions) {
         arrayParamNode->insert_son_node(dim);
     }
 
     return arrayParamNode;
 }
 
-
 /// @brief 创建参数列表节点
 /// @param params 形参列表
 /// @return 创建的节点
-ast_node* create_param_list(const std::vector<ast_node*>& params)
+ast_node * create_param_list(const std::vector<ast_node *> & params)
 {
-    ast_node * listNode = new ast_node(ast_operator_type:: AST_OP_FUNC_FORMAL_PARAMS, VoidType::getType(), -1);
+    ast_node * listNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAMS, VoidType::getType(), -1);
     listNode->sons = params;
     return listNode;
 }
@@ -485,33 +488,32 @@ ast_node* create_param_list(const std::vector<ast_node*>& params)
 /// @brief 将基本类型转换为 Type
 /// @param bt 基本类型
 /// @return 对应的 Type 指针
-Type* convert_basic_type(BasicType bt)
+Type * convert_basic_type(BasicType bt)
 {
     switch (bt) {
         case BasicType::TYPE_INT:
             return IntegerType::getTypeInt();
         case BasicType::TYPE_FLOAT:
-            return FloatType::getType();  // 假设你有 FloatType::getType()
+            return FloatType::getType(); // 假设你有 FloatType::getType()
         case BasicType::TYPE_VOID:
             return VoidType::getType();
         default:
-            return nullptr;  // 或抛异常
+            return nullptr; // 或抛异常
     }
 }
 
 /// @brief 深拷贝当前节点
-ast_node *ast_node::deep_copy() const {
-    ast_node *copy = new ast_node(*this);  // 复制当前节点（浅拷贝）
+ast_node * ast_node::deep_copy() const
+{
+    ast_node * copy = new ast_node(*this); // 复制当前节点（浅拷贝）
 
-    copy->sons.clear();  // 避免拷贝旧指针
+    copy->sons.clear(); // 避免拷贝旧指针
 
-    for (auto *son : this->sons) {
+    for (auto * son: this->sons) {
         if (son) {
-            copy->sons.push_back(son->deep_copy());  // 递归深拷贝
+            copy->sons.push_back(son->deep_copy()); // 递归深拷贝
         }
     }
 
     return copy;
 }
-
-

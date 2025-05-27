@@ -187,6 +187,11 @@ protected:
     /// @return 翻译是否成功，true：成功，false：失败
     bool ir_leaf_node_var_id(ast_node * node);
 
+    /// @brief 标识符叶子节点翻译成线性中间IR
+    /// @param node AST节点
+    /// @return 翻译是否成功，true：成功，false：失败
+    bool ir_leaf_node_Lvar_id(ast_node * node);
+
     /// @brief 无符号整数字面量叶子节点翻译成线性中间IR
     /// @param node AST节点
     /// @return 翻译是否成功，true：成功，false：失败

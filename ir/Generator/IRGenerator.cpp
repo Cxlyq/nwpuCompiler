@@ -57,6 +57,7 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     // TODO:[类型] 复杂类型,浮点数（数组）
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_LITERAL_UINT] = &IRGenerator::ir_leaf_node_uint;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_VAR_ID] = &IRGenerator::ir_leaf_node_var_id;
+    ast2ir_handlers[ast_operator_type::AST_OP_LEAF_VAR_ID] = &IRGenerator::ir_leaf_node_Lvar_id;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_TYPE] = &IRGenerator::ir_leaf_node_type;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT] = &IRGenerator::ir_leaf_node_float;
     ast2ir_handlers[ast_operator_type::AST_OP_ARRAY_ACCESS] = &IRGenerator::ir_array_access;
@@ -2382,6 +2383,22 @@ bool IRGenerator::ir_leaf_node_var_id(ast_node * node)
 
     return true;
 }
+/// @brief 标识符叶子节点翻译成线性中间IR，变量声明的不走这个语句
+/// @param node AST节点
+/// @return 翻译是否成功，true：成功，false：失败
+bool IRGenerator::ir_leaf_node_Lvar_id(ast_node * node)
+{
+    Value * val;
+
+    // 查找ID型Value
+    // 变量，则需要在符号表中查找对应的值
+
+    val = module->findVarValue(node->name);
+
+    node->val = val;
+
+    return true;
+}
 
 /// @brief 无符号整数字面量叶子节点翻译成线性中间IR
 /// @param node AST节点
@@ -2496,7 +2513,7 @@ bool IRGenerator::funcall_array_access(ast_node * node)
         auto *           arrayType = static_cast<ArrayType *>(type);
         std::vector<int> ori_dims = arrayType->getDimensions();
         int              offset_size = calcOffset(ori_dims, dims);
-        // int              offset = offset_size * 4;		
+        // int              offset = offset_size * 4;
         auto offest = new BinaryInstruction(
             module->getCurrentFunction(),
             IRInstOperator::IRINST_OP_MUL_I,
