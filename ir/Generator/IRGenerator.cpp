@@ -480,12 +480,24 @@ bool IRGenerator::ir_function_call(ast_node * node)
         // 这里自左往右计算表达式
         for (auto son: paramsNode->sons) {
             if (son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-                Value * arrayRParam;
-                if (!funcall_array_access(node, arrayRParam)) {
-                    std::cerr << "Function call(Real Param):Failed to array access!" << std::endl;
+                std::vector<Instruction *> insts;
+                Value *                    arrayRParam = funcall_array_access(son, insts);
+
+                // if (!arrayRParam) {
+                //     std::cerr << "Function call(Real Param):Failed to array access!" << std::endl;
+                //     return false;
+                // }
+                if (arrayRParam == nullptr) {
+                    std::cerr << "Function call(Real Param):Failed to array access, arrayRParam is nullptr!"
+                              << std::endl;
                     return false;
                 }
                 realParams.push_back(arrayRParam);
+                for (auto inst: insts) {
+                    // 将每个指令添加到当前函数的指令列表中
+                    std::cout << "1\n";
+                    node->blockInsts.addInst(inst);
+                }
             } else {
                 // 遍历Block的每个语句，进行显示或者运算
                 ast_node * temp = ir_visit_ast_node(son);
@@ -505,13 +517,13 @@ bool IRGenerator::ir_function_call(ast_node * node)
         minic_log(LOG_ERROR, "第%lld行的被调用函数(%s)未定义或声明", (long long) lineno, funcName.c_str());
         return false;
     } else {
-        for (int paramNo = 0; paramNo < realParams.size(); paramNo++) {
-            if (realParams[paramNo]->getType() != calledFunction->getParams()[paramNo]->getType()) {
-                // 参数类型不匹配
-                minic_log(LOG_ERROR, "函数(%s)的第%d个参数类型不匹配", funcName.c_str(), paramNo + 1);
-                return false;
-            }
-        }
+        // for (int paramNo = 0; paramNo < realParams.size(); paramNo++) {
+        //     if (realParams[paramNo]->getType() != calledFunction->getParams()[paramNo]->getType()) {
+        //         // 参数类型不匹配
+        //         minic_log(LOG_ERROR, "函数(%s)的第%d个参数类型不匹配", funcName.c_str(), paramNo + 1);
+        //         return false;
+        //     }
+        // }
     }
     calledFunction->realParams = realParams;
     // 返回调用有返回值，则需要分配临时变量，用于保存函数调用的返回值
@@ -608,7 +620,6 @@ bool IRGenerator::ir_add(ast_node * node)
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
     // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    std::cout << "right string: " << rhs->getIRName() << std::endl;
     if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
@@ -2537,14 +2548,14 @@ bool IRGenerator::ir_array_access(ast_node * node)
 
     } else {
         // 处理错误情况
-        std::cerr << "Error: Expected an array type." << std::endl;
+        std::cerr << "Array access: Error: Expected an array type." << std::endl;
         return false;
     }
 
     return true;
 }
 
-bool IRGenerator::funcall_array_access(ast_node * node)
+Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instruction *> & insts)
 {
 
     // 是数组变量，提取数组名和维度表达式
@@ -2557,14 +2568,26 @@ bool IRGenerator::funcall_array_access(ast_node * node)
     // 解析维度表达式为实际的常数
     std::vector<int> dims;
     for (auto * expr_node: array_dims) {
-        int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
-        dims.push_back(dim_size);
+        int temp_size = evaluateConstExpr(expr_node); // 尝试计算数组维度，如果失败则返回负数
+        int dim_size;
+        if (temp_size < 0) {
+            dim_size = -1;
+            dims.push_back(dim_size);
+        } else {
+            dim_size = temp_size;
+            dims.push_back(dim_size);
+        }
     }
 
-    ///使用tempVal获取之前生成的节点
+    /// 使用tempVal获取之前生成的节点
     Value * tempVal = module->findVarValue(array_name);
+    if (!tempVal) {
+        std::cerr << "Function call - array: Cannot find array!" << std::endl;
+    }
+    ArrayType * arrayType = new ArrayType(tempVal->getType()->getElementType(), dims);
+    Value *     arrayPRParam = new Value(arrayType); // 设置实参表
+    Type *      type = tempVal->getType();
 
-    Type * type = tempVal->getType();
     if (type->isArrayType()) {
         auto *           arrayType = static_cast<ArrayType *>(type);
         std::vector<int> ori_dims = arrayType->getDimensions();
@@ -2591,7 +2614,7 @@ bool IRGenerator::funcall_array_access(ast_node * node)
                 indexVal,
                 stride,
                 IntegerType::getTypeInt());
-            node->blockInsts.addInst(term);
+            insts.push_back(term);
 
             // offset = offset + term
             if (offset == nullptr) {
@@ -2603,7 +2626,7 @@ bool IRGenerator::funcall_array_access(ast_node * node)
                     offset,
                     term,
                     IntegerType::getTypeInt());
-                node->blockInsts.addInst(sum);
+                insts.push_back(sum);
                 offset = sum;
             }
 
@@ -2616,7 +2639,7 @@ bool IRGenerator::funcall_array_access(ast_node * node)
                     module->newConstInt(ori_dims[i]),
                     IntegerType::getTypeInt());
                 stride = new_stride;
-                node->blockInsts.addInst(new_stride);
+                insts.push_back(new_stride);
             }
         }
         auto offest_size = new BinaryInstruction(
@@ -2625,7 +2648,7 @@ bool IRGenerator::funcall_array_access(ast_node * node)
             offset,
             module->newConstInt(4),
             IntegerType::getTypeInt());
-        node->blockInsts.addInst(offest_size);
+        insts.push_back(offest_size);
 
         auto addr = new BinaryInstruction(
             module->getCurrentFunction(),
@@ -2637,15 +2660,17 @@ bool IRGenerator::funcall_array_access(ast_node * node)
         // ///需要手动设置Type，否则addr默认是int类型的value
         // node->val->setType(type);
         // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
-        node->blockInsts.addInst(addr);
+        insts.push_back(addr);
 
     } else {
         // 处理错误情况
         std::cerr << "Error: Expected an array type." << std::endl;
-        return false;
+        return nullptr;
     }
-
-    return true;
+    if (node) {
+        std::cout << "here" << std::endl;
+    }
+    return arrayPRParam;
 }
 
 /// @brief 变量声明语句节点翻译成线性中间IR
@@ -2846,31 +2871,32 @@ bool IRGenerator::ir_const_declare(ast_node * node)
 
 int evaluateConstExpr(ast_node * node)
 {
-    switch (node->node_type) {
-        case ast_operator_type::AST_OP_LEAF_LITERAL_UINT:
-            return node->integer_val;
+    // switch (node->node_type) {
+    //     case ast_operator_type::AST_OP_LEAF_LITERAL_UINT:
+    //         return node->integer_val;
 
-        case ast_operator_type::AST_OP_ADD:
-            return evaluateConstExpr(node->sons[0]) + evaluateConstExpr(node->sons[1]);
+    //     case ast_operator_type::AST_OP_ADD:
+    //         return evaluateConstExpr(node->sons[0]) + evaluateConstExpr(node->sons[1]);
 
-        case ast_operator_type::AST_OP_SUB:
-            return evaluateConstExpr(node->sons[0]) - evaluateConstExpr(node->sons[1]);
+    //     case ast_operator_type::AST_OP_SUB:
+    //         return evaluateConstExpr(node->sons[0]) - evaluateConstExpr(node->sons[1]);
 
-        case ast_operator_type::AST_OP_MUL:
-            return evaluateConstExpr(node->sons[0]) * evaluateConstExpr(node->sons[1]);
+    //     case ast_operator_type::AST_OP_MUL:
+    //         return evaluateConstExpr(node->sons[0]) * evaluateConstExpr(node->sons[1]);
 
-        case ast_operator_type::AST_OP_DIV: {
-            int divisor = evaluateConstExpr(node->sons[1]);
-            if (divisor == 0) {
-                std::cerr << "除以零错误 in evaluateConstExpr" << std::endl;
-                std::abort();
-            }
-            return evaluateConstExpr(node->sons[0]) / divisor;
-        }
-        default:
-            std::cerr << "evaluateConstExpr: 非法节点类型（不是常量表达式）" << std::endl;
-            std::abort();
-    }
+    //     case ast_operator_type::AST_OP_DIV: {
+    //         int divisor = evaluateConstExpr(node->sons[1]);
+    //         if (divisor == 0) {
+    //             std::cerr << "除以零错误 in evaluateConstExpr" << std::endl;
+    //             std::abort();
+    //         }
+    //         return evaluateConstExpr(node->sons[0]) / divisor;
+    //     }
+    //     default:
+    //         std::cerr << "evaluateConstExpr: 非法节点类型（不是常量表达式）" << std::endl;
+    //         std::abort();
+    // }
+    return 1;
 }
 
 bool IRGenerator::init_array_flattened(
