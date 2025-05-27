@@ -72,14 +72,6 @@ ast_node::ast_node(std::string _id, int64_t _line_no)
     name = _id;
 }
 
-/// @brief 针对标识符ID的叶子构造函数
-/// @param _id 标识符ID
-/// @param _line_no 行号
-ast_node::ast_node(std::string _id, int64_t _line_no, bool is_lvar)
-    : ast_node(ast_operator_type::AST_OP_LEAF_LVAR_ID, VoidType::getType(), _line_no)
-{
-    name = _id;
-}
 /// @brief 判断是否是叶子节点
 /// @return true：是叶子节点 false：内部节点
 bool ast_node::isLeafNode()

@@ -57,7 +57,6 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     // TODO:[类型] 复杂类型,浮点数（数组）
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_LITERAL_UINT] = &IRGenerator::ir_leaf_node_uint;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_VAR_ID] = &IRGenerator::ir_leaf_node_var_id;
-    ast2ir_handlers[ast_operator_type::AST_OP_LEAF_VAR_ID] = &IRGenerator::ir_leaf_node_Lvar_id;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_TYPE] = &IRGenerator::ir_leaf_node_type;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT] = &IRGenerator::ir_leaf_node_float;
     ast2ir_handlers[ast_operator_type::AST_OP_ARRAY_ACCESS] = &IRGenerator::ir_array_access;
@@ -580,39 +579,39 @@ bool IRGenerator::ir_add(ast_node * node)
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     // TODO 数组还需要改
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
+        // printf("yes,left\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst);
+    }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
     // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,right\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-    //     rhs = LoadInst;
-    //     rhs->setType(module->findVarValue(right->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-    }
-
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
+    std::cout << "right string: " << rhs->getIRName() << std::endl;
+    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+        // printf("yes,right\n");
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst;
         rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
+        node->blockInsts.addInst(LoadInst);
     }
+    // if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+    //     LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst1;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    // }
+
+    // if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+    //     LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst2;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst2);
+    // }
     auto addInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -2379,23 +2378,15 @@ bool IRGenerator::ir_leaf_node_var_id(ast_node * node)
 
     val = module->findVarValue(node->name);
 
-    node->val = val;
+    //
+    if (node->is_lvar) {
+        node->val = val;
+    } else {
+        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), val);
+        node->val = LoadInst;
 
-    return true;
-}
-/// @brief 标识符叶子节点翻译成线性中间IR，变量声明的不走这个语句
-/// @param node AST节点
-/// @return 翻译是否成功，true：成功，false：失败
-bool IRGenerator::ir_leaf_node_Lvar_id(ast_node * node)
-{
-    Value * val;
-
-    // 查找ID型Value
-    // 变量，则需要在符号表中查找对应的值
-
-    val = module->findVarValue(node->name);
-
-    node->val = val;
+        node->blockInsts.addInst(LoadInst);
+    }
 
     return true;
 }

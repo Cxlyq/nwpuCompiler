@@ -42,8 +42,6 @@ enum class ast_operator_type : int {
     /// @brief 变量ID叶子节点
     AST_OP_LEAF_VAR_ID,
 
-    /// @brief 变量ID叶子节点
-    AST_OP_LEAF_LVAR_ID,
     // TODO: 复杂类型细化（数组...）
     /// @brief 复杂类型的节点
     AST_OP_LEAF_TYPE,
@@ -173,6 +171,8 @@ public:
     /// @brief 深拷贝当前节点
     ast_node * deep_copy() const;
 
+    bool is_lvar = false; ///< 是否是局部变量
+
     /// @brief 节点类型
     ast_operator_type node_type;
 
@@ -232,8 +232,6 @@ public:
     /// @param _id 标识符ID
     /// @param _line_no 行号
     ast_node(std::string id, int64_t _line_no);
-
-    ast_node(std::string _id, int64_t _line_no, bool is_lvar);
 
     /// @brief 判断是否是叶子节点
     /// @param type 节点类型
