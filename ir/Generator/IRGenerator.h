@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "AST.h"
+#include "IRCode.h"
 #include "Instruction.h"
 #include "LabelInstruction.h"
 #include "Module.h"
@@ -273,6 +274,18 @@ private:
     std::stack<LabelInstruction *> enterLabels;
 
     void flatten_ast_initval(ast_node * node, std::vector<ast_node *> & out_flat);
+
+
+    /// @brief Generates IR for a condition expression that branches to true_target or false_target.
+    ///        Handles short-circuiting for AND (&&) and OR (||).
+    /// @param cond_node The AST node for the condition expression.
+    /// @param true_target The label to jump to if the condition is true.
+    /// @param false_target The label to jump to if the condition is false.
+    /// @param current_block_insts The BlockInsts list to add generated instructions to.
+    /// @return True if generation was successful, false otherwise.
+    bool gen_condition_branch(
+        ast_node * cond_node, LabelInstruction * true_target, LabelInstruction * false_target,
+        InterCode & current_block_insts);
 };
 
 int evaluateConstExpr(ast_node * node);

@@ -1622,34 +1622,18 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     // node->sons[0] 是条件表达式
     // node->sons[1] 是 if 语句块
     // node->sons[2] 是 else 语句块 (可选)
-
     ast_node * cond_node = node->sons[0];
     ast_node * if_node = node->sons[1];
     ast_node * else_node = (node->sons.size() > 2) ? node->sons[2] : nullptr;
 
+    // 获取当前函数，if块必须位于函数内
     Function * currentFunc = module->getCurrentFunction();
-
-    // 1. 生成条件表达式的IR
-    // ir_visit_ast_node 会递归访问子节点并生成其IR。
-    // 生成的指令存储在 cond->blockInsts，结果值存储在 cond->val 中。
-    ast_node * cond = ir_visit_ast_node(cond_node);
-    if (!cond) {
-        printf("Ifelse: no condition block\n");
+    if (!currentFunc) {
+        std::cerr << "Error: If-else outside function." << std::endl;
         return false;
     }
 
-    // 将条件表达式生成的指令添加到当前节点的指令列表中。
-    // 这些指令将构成 if-else 结构前导基本块的一部分。
-    node->blockInsts.addInst(cond->blockInsts);
-
-    // 获取条件表达式的值 (应为一个布尔值，如 IR 中的 i1 类型)
-    Value * cond_val = cond->val;
-    if (!cond_val) {
-        printf("Ifelse: condition has no value.\n");
-        return false;
-    }
-
-    // 2. 创建表示 if-else 结构不同基本块入口的标签
+    // 1. 创建表示 if-else 结构不同基本块入口的标签
     // 这些标签将在后续指令中被引用（作为跳转目标）
     // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
 
@@ -1659,7 +1643,6 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     LabelInstruction * else_label = nullptr;
     // if-else 结构结束后的汇合点标签
     LabelInstruction * merge_label = new LabelInstruction(currentFunc);
-
     // 确定条件分支的假分支目标
     // 如果有 else 块，假分支跳到 else 块的标签
     // 如果没有 else 块，假分支跳到 merge 块的标签
@@ -1671,11 +1654,39 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         false_branch_target = merge_label;
     }
 
-    // 3. 添加条件分支指令 (br i1)
-    // 这个指令紧跟在条件表达式指令之后，根据 cond_val 的布尔值决定跳转。
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, cond_val, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
+    // // 2. 生成条件表达式的IR
+    // // ir_visit_ast_node 会递归访问子节点并生成其IR。
+    // // 生成的指令存储在 cond->blockInsts，结果值存储在 cond->val 中。
+    // ast_node * cond = ir_visit_ast_node(cond_node);
+    // if (!cond) {
+    //     printf("Ifelse: no condition block\n");
+    //     return false;
+    // }
+
+    // // 将条件表达式生成的指令添加到当前节点的指令列表中。
+    // // 这些指令将构成 if-else 结构前导基本块的一部分。
+    // node->blockInsts.addInst(cond->blockInsts);
+
+    // // 获取条件表达式的值 (应为一个布尔值，如 IR 中的 i1 类型)
+    // Value * cond_val = cond->val;
+    // if (!cond_val) {
+    //     printf("Ifelse: condition has no value.\n");
+    //     return false;
+    // }
+
+    // // 3. 添加条件分支指令 (br i1)
+    // // 这个指令紧跟在条件表达式指令之后，根据 cond_val 的布尔值决定跳转。
+    // ConditionalInstruction * cond_branch_inst =
+    //     new ConditionalInstruction(currentFunc, cond_val, true_branch_label, false_branch_target);
+    // node->blockInsts.addInst(cond_branch_inst);
+
+    // 2. 生成条件表达式的IR
+    // 增加处理短路情况
+    if (!gen_condition_branch(cond_node, true_branch_label, false_branch_target, node->blockInsts)) {
+        // Error occurred during condition branching generation
+        std::cerr << "Error generating condition branch for if-else." << std::endl;
+        return false;
+    }
 
     // 前导基本块（包含条件求值和条件分支）的指令已生成并添加到 node->blockInsts。
     // 接下来生成 then 块、else 块和 merge 块的指令，并按顺序添加到 node->blockInsts。
@@ -2322,4 +2333,151 @@ void IRGenerator::flatten_init_node(
         // 是一个值节点，直接加入
         flat_list.push_back(node);
     }
+}
+
+bool IRGenerator::gen_condition_branch(
+    ast_node * cond_node, LabelInstruction * true_target, LabelInstruction * false_target,
+    InterCode & current_block_insts)
+{
+    if (!cond_node) {
+        std::cerr << "Error: Null condition node for branching." << std::endl;
+        return false;
+    }
+    Function * currentFunc = module->getCurrentFunction();
+    if (!currentFunc) {
+        std::cerr << "Error: gen_condition_branch called outside function context." << std::endl;
+        return false;
+    }
+
+    ast_operator_type op = cond_node->node_type; // 获取操作符类型
+    // --- 1. Check for short-circuiting operators (&&, ||) ---
+    if (op == ast_operator_type::AST_OP_AND || op == ast_operator_type::AST_OP_OR) {
+        // std::cout << "Handling short-circuiting!" << std::endl;
+        ast_node * left_node = cond_node->sons[0];
+        ast_node * right_node = cond_node->sons[1];
+
+        if (op == ast_operator_type::AST_OP_AND) {
+            // Short-circuit for && (a && b)
+            // Logic: Evaluate a. If a is true, evaluate b. If a is false, jump to false_target.
+            // a && b branches to true_target if (a is true AND b is true)
+            // a && b branches to false_target if (a is false OR (a is true AND b is false))
+
+            // Create a label to evaluate the right side (b) if the left side (a) is true
+            LabelInstruction * eval_right_label = new LabelInstruction(currentFunc);
+
+            // Recursively generate IR for the left operand (a)
+            // If 'a' is true, jump to eval_right_label. If 'a' is false, jump directly to the overall false_target.
+            if (!gen_condition_branch(left_node, eval_right_label, false_target, current_block_insts)) {
+                std::cerr << "Error generating left operand for &&." << std::endl;
+                return false;
+            }
+
+            // Add the label for the basic block that evaluates the right side
+            current_block_insts.addInst(eval_right_label);
+
+            // Recursively generate IR for the right operand (b)
+            // If 'b' is true, jump to the overall true_target. If 'b' is false, jump to the overall false_target.
+            // Note: This block is only reached if 'a' was true.
+            if (!gen_condition_branch(right_node, true_target, false_target, current_block_insts)) {
+                std::cerr << "Error generating right operand for &&." << std::endl;
+                return false;
+            }
+            return true; // Successfully generated IR for && short-circuiting
+
+        } else if (op == ast_operator_type::AST_OP_OR) {
+            // Short-circuit for || (a || b)
+            // Logic: Evaluate a. If a is false, evaluate b. If a is true, jump to true_target.
+            // a || b branches to true_target if (a is true OR (a is false AND b is true))
+            // a || b branches to false_target if (a is false AND b is false)
+
+            // Create a label to evaluate the right side (b) if the left side (a) is false
+            LabelInstruction * eval_right_label = new LabelInstruction(currentFunc);
+
+            // Recursively generate IR for the left operand (a)
+            // If 'a' is true, jump directly to the overall true_target. If 'a' is false, jump to eval_right_label.
+            if (!gen_condition_branch(left_node, true_target, eval_right_label, current_block_insts)) {
+                std::cerr << "Error generating left operand for ||." << std::endl;
+                return false;
+            }
+
+            // Add the label for the basic block that evaluates the right side
+            current_block_insts.addInst(eval_right_label);
+
+            // Recursively generate IR for the right operand (b)
+            // If 'b' is true, jump to the overall true_target. If 'b' is false, jump to the overall false_target.
+            // Note: This block is only reached if 'a' was false.
+            if (!gen_condition_branch(right_node, true_target, false_target, current_block_insts)) {
+                std::cerr << "Error generating right operand for ||." << std::endl;
+                return false;
+            }
+
+            return true; // Successfully generated IR for || short-circuiting
+        }
+        // Fall through if it's another binary op (like comparison)
+    }
+    // --- 2. Check for logical NOT (!) ---
+    else if (op == ast_operator_type::AST_OP_NOT) {
+        ast_node * operand_node = cond_node->sons[0];
+        // expr is true when expr is false, and false when expr is true.
+        // So, recursively generate IR for 'expr' but swap the true and false targets.
+        return gen_condition_branch(operand_node, false_target, true_target, current_block_insts);
+        // Fall through for other unary ops
+    }
+
+    // --- 3. Handle other condition types (comparisons, variables, literals, calls returning value) ---
+    // For these, evaluate the expression to get a single Value, then branch based on that value.
+
+    ast_node * cond_eval_result = ir_visit_ast_node(cond_node); // Generate IR for the condition expression
+    if (!cond_eval_result || !cond_eval_result->val) {
+        std::cerr << "Error: Condition expression failed to generate value." << std::endl;
+        return false;
+    }
+    current_block_insts.addInst(cond_eval_result->blockInsts); // Add the evaluation instructions to the current block
+
+    Value * cond_val = cond_eval_result->val;
+    // Type *  cond_type = cond_val->getType();
+
+    // --- 4. Ensure the condition value is of type i1 (boolean) ---
+    // SysY treats non-zero int/float as true, zero as false. Need to convert if necessary.
+    Value * branch_cond_val = nullptr; // This will be the final i1 value used for branching
+
+    // TODO: Need proper type checking and comparison instruction generation
+    // Example conversion logic (assuming you have CmpInstruction and Constant classes):
+    // if (isSysYIntegerConditionType(cond_type) || isSysYFloatConditionType(cond_type)) {
+    //     // Convert non-zero to true (i1), zero to false (i1)
+    //     Value* zero_const = getZeroConstant(cond_type);
+    //     if (!zero_const) {
+    //         std::cerr << "Error: Cannot get zero constant for condition type." << std::endl; // TODO: Add location
+    //         return false;
+    //     }
+    //     // Create a comparison instruction: value != 0
+    //     Instruction* cmp_inst = new CmpInstruction(currentFunc, CmpOperator::NE, cond_val, zero_const);
+    //     current_block_insts.addInst(cmp_inst);
+    //     branch_cond_val = static_cast<Value*>(cmp_inst); // The comparison instruction *is* the resulting i1 value
+    // } else if (cond_type->isBooleanType()) { // Assuming you have a BooleanType (i1)
+    //     branch_cond_val = cond_val; // Already boolean
+    // } else {
+    //     std::cerr << "Error: Invalid type for condition expression." << std::endl;
+    //     // TODO: Add location info
+    //     return false;
+    // }
+
+    // --- Temporary Placeholder for type conversion ---
+    // Assuming for now that ir_visit_ast_node for comparisons etc. already returns i1.
+    // If not, you MUST add the conversion logic here.
+    // If integers/floats are used directly as conditions, they must be compared to zero.
+    branch_cond_val = cond_val; // DANGER: This is a placeholder if your backend needs explicit i1.
+    // DANGER: Check if cond_val's type is compatible with ConditionalInstruction's condition input (usually i1).
+
+    if (!branch_cond_val) {
+        std::cerr << "Internal Error: Branch condition value is null after type handling." << std::endl;
+        return false;
+    }
+
+    // --- 5. Add the final conditional branch based on the resulting i1 value ---
+    // ConditionalInstruction(Function* func, Value* condition, LabelInstruction* true_target, LabelInstruction*
+    // false_target)
+    current_block_insts.addInst(new ConditionalInstruction(currentFunc, branch_cond_val, true_target, false_target));
+
+    return true; // Successfully generated IR for non-short-circuiting condition
 }
