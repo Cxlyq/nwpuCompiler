@@ -23,6 +23,7 @@
 #include <iostream>
 
 #include "AST.h"
+#include "ArrayType.h"
 #include "Common.h"
 #include "ConstFloat.h"
 #include "ConstInt.h"
@@ -353,7 +354,49 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             std::cerr << "Function formal params: Invalid AST structure for parameter declaration." << std::endl;
             return false;
         } else if (param_decl_node->sons.size() > 2) { //数组型参
-            // TODO: 处理数组形参
+            std::vector<ast_node *> array_def_nodes;
+            for (auto node: param_decl_node->sons) {
+                array_def_nodes.push_back(node); // 维度节点
+            }
+            ast_node *       type_node = array_def_nodes[0];       // 第一个节点是类型
+            ast_node *       array_name_node = array_def_nodes[1]; // 第二个节点是数组名
+            std::vector<int> dims;                                 // 数组维度
+            // 提取数组维度信息
+            for (size_t i = 2; i < array_def_nodes.size(); ++i) {
+                ast_node * dim_node = array_def_nodes[i];
+                dims.push_back(dim_node->integer_val);
+            }
+
+            dims[0] = 0; // 形参数组的第一个维度为0，表示形参数组的大小不确定
+
+            std::string array_name = array_name_node->name;
+            Type *      param_type_ir = type_node->type;
+
+            if (!param_type_ir) {
+                std::cerr << "Function formal params: Failed to determine IR type for parameter '" << array_name
+                          << "' in function '" << currentFunc->getName() << "'" << std::endl;
+                return false;
+            }
+
+            ArrayType * arrayType = new ArrayType(param_type_ir, dims);
+            if (!arrayType) {
+                std::cerr << "Function formal params: Failer to generate Array Type!" << std::endl;
+            }
+            // 创建一个数组局部变量
+            Value * param_value = module->newVarValue(arrayType, array_name);
+            if (!param_value) {
+                std::cerr << "Function formal params: Failed to create IR Value for parameter '" << array_name
+                          << "' in function '" << currentFunc->getName() << "'" << std::endl;
+                return false;
+            }
+            param_decl_node->val = param_value;
+
+            auto fParam = new FormalParam(arrayType, array_name);
+            currentFunc->addParams(fParam);
+
+            // 生成 MoveInstruction 将传入实参值复制到局部形参变量
+            Instruction * move_inst = new MoveInstruction(currentFunc, param_value, fParam);
+            node->blockInsts.addInst(move_inst);
         } else {
             ast_node *  type_node = param_decl_node->sons[0];
             ast_node *  param_node = param_decl_node->sons[1];
