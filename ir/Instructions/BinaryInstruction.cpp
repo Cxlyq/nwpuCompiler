@@ -121,62 +121,62 @@ void BinaryInstruction::toString(std::string & str)
 
         case IRInstOperator::IRINST_OP_EQ_I:
             // 整数相等指令，二元运算
-            str = getIRName() + " = eq_i " + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = icmp eq i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_EQ_F:
             // 浮点数相等指令，二元运算
-            str = getIRName() + " = eq_f " + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = fcmp oeq float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_NEQ_I:
             // 整数不等指令，二元运算
-            str = getIRName() + " = neq_i " + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = icmp ne i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_NEQ_F:
             // 浮点数不等指令，二元运算
-            str = getIRName() + " = neg_f " + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = fcmp one float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_GE_I:
             // 整数大于等于指令，二元运算
-            str = getIRName() + " =  ge_i" + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = icmp sge i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_GE_F:
             // 浮点数大于等于指令，二元运算
-            str = getIRName() + " =  ge_f" + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = fcmp oge float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_LE_I:
             // 整数小于等于指令，二元运算
-            str = getIRName() + " =  le_i" + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = icmp sle i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_LE_F:
             // 浮点数小于等于指令，二元运算
-            str = getIRName() + " =  le_f" + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = fcmp ole float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_GNE_I:
             // 整数大于指令，二元运算
-            str = getIRName() + " =  gne_i" + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = icmp sgt i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_GNE_F:
             // 浮点数大于指令，二元运算
-            str = getIRName() + " =  gne_f" + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = fcmp ogt float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_LNE_I:
             // 整数小于指令，二元运算
-            str = getIRName() + " =  lne_i" + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = icmp slt i32 " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_LNE_F:
             // 浮点数小于指令，二元运算
-            str = getIRName() + " =  lne_f" + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = fcmp olt float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         default:

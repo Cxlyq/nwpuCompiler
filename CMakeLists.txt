@@ -179,6 +179,8 @@ set(IR_SRCS
 	ir/Instructions/StoreInstruction.h
 	ir/Instructions/LoadInstruction.cpp
 	ir/Instructions/LoadInstruction.h
+	ir/Instructions/CastInstruction.cpp
+	ir/Instructions/CastInstruction.h
 
 	ir/Types/ArrayType.h
 	ir/Types/ArrayType.cpp

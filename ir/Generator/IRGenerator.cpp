@@ -41,6 +41,7 @@
 #include "ConditionalBranchInstruction.h"
 #include "Value.h"
 #include "LoadInstruction.h"
+#include "CastInstruction.h"
 
 /// @brief 构造函数
 /// @param _root AST的根
@@ -551,16 +552,19 @@ bool IRGenerator::ir_add(ast_node * node)
     //     rhs->setType(module->findVarValue(right->name)->getType());
     //     node->blockInsts.addInst(LoadInst);
     // }
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    }
 
-    LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-    lhs = LoadInst1;
-    lhs->setType(module->findVarValue(left->name)->getType());
-    node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-
-    LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-    rhs = LoadInst2;
-    rhs->setType(module->findVarValue(right->name)->getType());
-    node->blockInsts.addInst(LoadInst2);
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
     auto addInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -627,15 +631,19 @@ bool IRGenerator::ir_sub(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-    lhs = LoadInst1;
-    lhs->setType(module->findVarValue(left->name)->getType());
-    node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    }
 
-    LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-    rhs = LoadInst2;
-    rhs->setType(module->findVarValue(right->name)->getType());
-    node->blockInsts.addInst(LoadInst2);
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
 
     auto subInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -703,15 +711,19 @@ bool IRGenerator::ir_mul(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-    lhs = LoadInst1;
-    lhs->setType(module->findVarValue(left->name)->getType());
-    node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    }
 
-    LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-    rhs = LoadInst2;
-    rhs->setType(module->findVarValue(right->name)->getType());
-    node->blockInsts.addInst(LoadInst2);
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
 
     auto mulInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -788,16 +800,19 @@ bool IRGenerator::ir_div(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-    lhs = LoadInst1;
-    lhs->setType(module->findVarValue(left->name)->getType());
-    node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    }
 
-    LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-    rhs = LoadInst2;
-    rhs->setType(module->findVarValue(right->name)->getType());
-    node->blockInsts.addInst(LoadInst2);
-
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
     auto divInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -877,15 +892,19 @@ bool IRGenerator::ir_mod(ast_node * node)
         return false;
     }
 
-    LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-    lhs = LoadInst1;
-    lhs->setType(module->findVarValue(left->name)->getType());
-    node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    }
 
-    LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-    rhs = LoadInst2;
-    rhs->setType(module->findVarValue(right->name)->getType());
-    node->blockInsts.addInst(LoadInst2);
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
 
     BinaryInstruction * modInst = new BinaryInstruction(
         module->getCurrentFunction(),
@@ -940,6 +959,11 @@ bool IRGenerator::ir_and(ast_node * node)
         lhs->setType(module->findVarValue(left->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
+
+    // // 2. 对左值做 icmp ne，判断是否为真
+    // Value * zero = module->newConstInt(0);
+    // Value * cmp1 = new ICmpInstruction(currentFunc, ICmpInstruction::ICMP_NE, lhs_val, zero);
+    // node->blockInsts.addInst(cmp1);
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
@@ -1038,6 +1062,15 @@ bool IRGenerator::ir_or(ast_node * node)
 
     return true;
 }
+/// @brief 逻辑表达式生成的临时变量
+/// @param 变量名
+/// @return 序列号+变量名
+std::string IRGenerator::generateTempName(const std::string & base)
+{
+    static std::unordered_map<std::string, int> nameCounters;
+    int                                         count = nameCounters[base]++;
+    return base + std::to_string(count);
+}
 
 /// @brief 逻辑相等AST节点翻译成线性中间IR
 /// @param node AST节点
@@ -1067,26 +1100,53 @@ bool IRGenerator::ir_eq(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
     // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
     // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
+
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
     }
+
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
+
+    // 2. 创建表示结构不同基本块入口的标签
+    // 这些标签将在后续指令中被引用（作为跳转目标）
+    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
+    Function * currentFunc = module->getCurrentFunction();
+
+    // 真块的入口标签
+    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
+    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
+    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
+    // 汇合点标签
+    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
+
     auto eqInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1099,6 +1159,34 @@ bool IRGenerator::ir_eq(ast_node * node)
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(eqInst);
 
+    ConditionalInstruction * cond_branch_inst =
+        new ConditionalInstruction(currentFunc, eqInst, true_branch_label, false_branch_target);
+    node->blockInsts.addInst(cond_branch_inst);
+    // 添加标签
+    node->blockInsts.addInst(true_branch_label);
+    Value * zero = module->newConstInt(0);
+
+    Value *     one = module->newConstInt(1);
+    std::string tmpName = generateTempName("ValueOfLogic");
+
+    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
+    ValueOfLogic->setType(IntegerType::getTypeInt());
+    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
+    node->blockInsts.addInst(storeInst1);
+    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
+    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
+    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
+    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(false_branch_target);
+    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
+    node->blockInsts.addInst(storeInst2);
+
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(merge_label);
+    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
+    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
+    node->blockInsts.addInst(LoadInst3);
     node->val = eqInst;
 
     return true;
@@ -1132,26 +1220,52 @@ bool IRGenerator::ir_neq(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
     // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
     // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
+
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
     }
+
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
+
+    // 2. 创建表示结构不同基本块入口的标签
+    // 这些标签将在后续指令中被引用（作为跳转目标）
+    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
+    Function * currentFunc = module->getCurrentFunction();
+
+    // 真块的入口标签
+    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
+    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
+    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
+    // 汇合点标签
+    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
 
     auto neqInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1165,6 +1279,33 @@ bool IRGenerator::ir_neq(ast_node * node)
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(neqInst);
 
+    ConditionalInstruction * cond_branch_inst =
+        new ConditionalInstruction(currentFunc, neqInst, true_branch_label, false_branch_target);
+    node->blockInsts.addInst(cond_branch_inst);
+    // 添加标签
+    node->blockInsts.addInst(true_branch_label);
+    Value * zero = module->newConstInt(0);
+
+    Value *     one = module->newConstInt(1);
+    std::string tmpName = generateTempName("ValueOfLogic");
+    Value *     ValueOfLogic = module->newVarValueWithInt(left->type, tmpName, 0, ValueCategory::VARIABLE);
+    ValueOfLogic->setType(left->val->getType());
+    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
+    node->blockInsts.addInst(storeInst1);
+    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
+    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
+    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
+    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(false_branch_target);
+    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
+    node->blockInsts.addInst(storeInst2);
+
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(merge_label);
+    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
+    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
+    node->blockInsts.addInst(LoadInst3);
     node->val = neqInst;
 
     return true;
@@ -1198,26 +1339,53 @@ bool IRGenerator::ir_ge(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
     // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
     // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
+
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
     }
+
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
+
+    // 2. 创建表示结构不同基本块入口的标签
+    // 这些标签将在后续指令中被引用（作为跳转目标）
+    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
+    Function * currentFunc = module->getCurrentFunction();
+
+    // 真块的入口标签
+    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
+    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
+    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
+    // 汇合点标签
+    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
+
     auto geInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1229,7 +1397,34 @@ bool IRGenerator::ir_ge(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(geInst);
+    ConditionalInstruction * cond_branch_inst =
+        new ConditionalInstruction(currentFunc, geInst, true_branch_label, false_branch_target);
+    node->blockInsts.addInst(cond_branch_inst);
+    // 添加标签
+    node->blockInsts.addInst(true_branch_label);
+    Value * zero = module->newConstInt(0);
 
+    Value *     one = module->newConstInt(1);
+    std::string tmpName = generateTempName("ValueOfLogic");
+
+    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
+    ValueOfLogic->setType(IntegerType::getTypeInt());
+    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
+    node->blockInsts.addInst(storeInst1);
+    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
+    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
+    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
+    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(false_branch_target);
+    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
+    node->blockInsts.addInst(storeInst2);
+
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(merge_label);
+    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
+    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
+    node->blockInsts.addInst(LoadInst3);
     node->val = geInst;
 
     return true;
@@ -1262,26 +1457,52 @@ bool IRGenerator::ir_le(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
     // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
     // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
+
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
     }
+
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
+
+    // 2. 创建表示结构不同基本块入口的标签
+    // 这些标签将在后续指令中被引用（作为跳转目标）
+    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
+    Function * currentFunc = module->getCurrentFunction();
+
+    // 真块的入口标签
+    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
+    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
+    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
+    // 汇合点标签
+    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
 
     auto leInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1294,6 +1515,35 @@ bool IRGenerator::ir_le(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(leInst);
+
+    ConditionalInstruction * cond_branch_inst =
+        new ConditionalInstruction(currentFunc, leInst, true_branch_label, false_branch_target);
+    node->blockInsts.addInst(cond_branch_inst);
+    // 添加标签
+    node->blockInsts.addInst(true_branch_label);
+    Value * zero = module->newConstInt(0);
+
+    Value *     one = module->newConstInt(1);
+    std::string tmpName = generateTempName("ValueOfLogic");
+
+    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
+    ValueOfLogic->setType(IntegerType::getTypeInt());
+    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
+    node->blockInsts.addInst(storeInst1);
+    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
+    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
+    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
+    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(false_branch_target);
+    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
+    node->blockInsts.addInst(storeInst2);
+
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(merge_label);
+    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
+    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
+    node->blockInsts.addInst(LoadInst3);
 
     node->val = leInst;
 
@@ -1328,26 +1578,53 @@ bool IRGenerator::ir_gne(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
     // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
     // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
+
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
     }
+
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
+
+    // 2. 创建表示结构不同基本块入口的标签
+    // 这些标签将在后续指令中被引用（作为跳转目标）
+    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
+    Function * currentFunc = module->getCurrentFunction();
+
+    // 真块的入口标签
+    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
+    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
+    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
+    // 汇合点标签
+    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
+
     auto gneInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1359,6 +1636,35 @@ bool IRGenerator::ir_gne(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(gneInst);
+
+    ConditionalInstruction * cond_branch_inst =
+        new ConditionalInstruction(currentFunc, gneInst, true_branch_label, false_branch_target);
+    node->blockInsts.addInst(cond_branch_inst);
+    // 添加标签
+    node->blockInsts.addInst(true_branch_label);
+    Value * zero = module->newConstInt(0);
+
+    Value *     one = module->newConstInt(1);
+    std::string tmpName = generateTempName("ValueOfLogic");
+
+    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
+    ValueOfLogic->setType(IntegerType::getTypeInt());
+    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
+    node->blockInsts.addInst(storeInst1);
+    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
+    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
+    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
+    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(false_branch_target);
+    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
+    node->blockInsts.addInst(storeInst2);
+
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(merge_label);
+    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
+    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
+    node->blockInsts.addInst(LoadInst3);
 
     node->val = gneInst;
 
@@ -1392,26 +1698,53 @@ bool IRGenerator::ir_lne(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
     // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
     // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
+
+    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+        lhs = LoadInst1;
+        lhs->setType(module->findVarValue(left->name)->getType());
+        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
     }
+
+    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
+        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
+        rhs = LoadInst2;
+        rhs->setType(module->findVarValue(right->name)->getType());
+        node->blockInsts.addInst(LoadInst2);
+    }
+
+    // 2. 创建表示结构不同基本块入口的标签
+    // 这些标签将在后续指令中被引用（作为跳转目标）
+    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
+    Function * currentFunc = module->getCurrentFunction();
+
+    // 真块的入口标签
+    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
+    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
+    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
+    // 汇合点标签
+    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
+
     auto lneInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1423,6 +1756,34 @@ bool IRGenerator::ir_lne(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(lneInst);
+    ConditionalInstruction * cond_branch_inst =
+        new ConditionalInstruction(currentFunc, lneInst, true_branch_label, false_branch_target);
+    node->blockInsts.addInst(cond_branch_inst);
+    // 添加标签
+    node->blockInsts.addInst(true_branch_label);
+    Value * zero = module->newConstInt(0);
+
+    Value *     one = module->newConstInt(1);
+    std::string tmpName = generateTempName("ValueOfLogic");
+
+    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
+    ValueOfLogic->setType(IntegerType::getTypeInt());
+    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
+    node->blockInsts.addInst(storeInst1);
+    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
+    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
+    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
+    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(false_branch_target);
+    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
+    node->blockInsts.addInst(storeInst2);
+
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(merge_label);
+    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
+    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
+    node->blockInsts.addInst(LoadInst3);
 
     node->val = lneInst;
 
@@ -1597,10 +1958,25 @@ bool IRGenerator::ir_assign(ast_node * node)
     // } else {
     //     temp->setVal(right->integer_val);
     // }
+
     node->blockInsts.addInst(right->blockInsts);
 
     ///检查右值是否是数组，若是需要load
     Value * Roperand = right->val;
+
+    /// 检查类型是否匹配，若不匹配，插入类型转换指令
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if (module->findVarValue(right->name)) {
+            LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
+            LoadInst1->setType(module->findVarValue(right->name)->getType());
+            node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+        }
+        // int -> float 强制转换
+        CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), Roperand, left->val->getType());
+        node->blockInsts.addInst(castInst);
+        Roperand = castInst;
+    }
+
     if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
@@ -1610,16 +1986,9 @@ bool IRGenerator::ir_assign(ast_node * node)
 
     ///检查右值
     node->blockInsts.addInst(left->blockInsts);
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,left\n");
-        StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, Roperand);
-        node->blockInsts.addInst(storeInst);
-        node->val = storeInst;
-    } else {
-        StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, Roperand);
-        node->blockInsts.addInst(storeInst);
-        node->val = storeInst;
-    }
+    StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, Roperand);
+    node->blockInsts.addInst(storeInst);
+    node->val = storeInst;
 
     return true;
 }

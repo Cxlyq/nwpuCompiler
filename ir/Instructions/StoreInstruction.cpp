@@ -23,10 +23,10 @@ void StoreInstruction::toString(std::string & str)
             str = "store i32 " + val->getIRName() + ", i32* " + addr->getIRName() + ", align 4";
             break;
         case Type::FloatTyID:
-            // TODO
+            str = "store float " + val->getIRName() + ", float* " + addr->getIRName() + ", align 4";
             break;
         default:
-            str = getIRName() + " = load from " + addr->getIRName();
+            str = "store  " + val->getIRName() + ",  " + addr->getIRName() + ", align 4";
 
             break;
     }

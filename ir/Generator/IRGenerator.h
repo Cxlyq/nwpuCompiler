@@ -260,6 +260,7 @@ protected:
     //                                         const std::vector<int> & dims,
     //                                         int depth,
     //                                         std::vector<int> & indices)
+    std::string generateTempName(const std::string & base);
 
 private:
     /// @brief 抽象语法树的根
