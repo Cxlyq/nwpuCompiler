@@ -913,7 +913,7 @@ bool IRGenerator::ir_and(ast_node * node)
         IRInstOperator::IRINST_OP_AND,
         lhs,
         rhs,
-        IntegerType::getTypeInt());
+        IntegerType::getTypeBool());
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -979,7 +979,7 @@ bool IRGenerator::ir_or(ast_node * node)
         IRInstOperator::IRINST_OP_OR,
         lhs,
         rhs,
-        IntegerType::getTypeInt());
+        IntegerType::getTypeBool());
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1044,7 +1044,8 @@ bool IRGenerator::ir_eq(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_EQ_I,
-        IRInstOperator::IRINST_OP_EQ_F);
+        IRInstOperator::IRINST_OP_EQ_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1110,7 +1111,8 @@ bool IRGenerator::ir_neq(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_NEQ_I,
-        IRInstOperator::IRINST_OP_NEQ_F);
+        IRInstOperator::IRINST_OP_NEQ_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1175,7 +1177,8 @@ bool IRGenerator::ir_ge(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_GE_I,
-        IRInstOperator::IRINST_OP_GE_F);
+        IRInstOperator::IRINST_OP_GE_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1240,7 +1243,8 @@ bool IRGenerator::ir_le(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_LE_I,
-        IRInstOperator::IRINST_OP_LE_F);
+        IRInstOperator::IRINST_OP_LE_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1305,7 +1309,8 @@ bool IRGenerator::ir_gne(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_GNE_I,
-        IRInstOperator::IRINST_OP_GNE_F);
+        IRInstOperator::IRINST_OP_GNE_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1369,7 +1374,8 @@ bool IRGenerator::ir_lne(ast_node * node)
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_LNE_I,
-        IRInstOperator::IRINST_OP_LNE_F);
+        IRInstOperator::IRINST_OP_LNE_F,
+        true);
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1490,7 +1496,8 @@ bool IRGenerator::ir_not(ast_node * node)
         module->getCurrentFunction(),
         lhs,
         IRInstOperator::IRINST_OP_NOT_I,
-        IRInstOperator::IRINST_OP_NOT_F);
+        IRInstOperator::IRINST_OP_NOT_F,
+        true);
 
     // 合并子表达式的IR并加入当前指令
     // node->blockInsts.addInst(expr->blockInsts);
