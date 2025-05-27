@@ -1660,32 +1660,6 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         false_branch_target = merge_label;
     }
 
-    // // 2. 生成条件表达式的IR
-    // // ir_visit_ast_node 会递归访问子节点并生成其IR。
-    // // 生成的指令存储在 cond->blockInsts，结果值存储在 cond->val 中。
-    // ast_node * cond = ir_visit_ast_node(cond_node);
-    // if (!cond) {
-    //     printf("Ifelse: no condition block\n");
-    //     return false;
-    // }
-
-    // // 将条件表达式生成的指令添加到当前节点的指令列表中。
-    // // 这些指令将构成 if-else 结构前导基本块的一部分。
-    // node->blockInsts.addInst(cond->blockInsts);
-
-    // // 获取条件表达式的值 (应为一个布尔值，如 IR 中的 i1 类型)
-    // Value * cond_val = cond->val;
-    // if (!cond_val) {
-    //     printf("Ifelse: condition has no value.\n");
-    //     return false;
-    // }
-
-    // // 3. 添加条件分支指令 (br i1)
-    // // 这个指令紧跟在条件表达式指令之后，根据 cond_val 的布尔值决定跳转。
-    // ConditionalInstruction * cond_branch_inst =
-    //     new ConditionalInstruction(currentFunc, cond_val, true_branch_label, false_branch_target);
-    // node->blockInsts.addInst(cond_branch_inst);
-
     // 2. 生成条件表达式的IR
     // 增加处理短路情况
     if (!gen_condition_branch(cond_node, true_branch_label, false_branch_target, node->blockInsts)) {
@@ -1782,35 +1756,41 @@ bool IRGenerator::ir_while(ast_node * node)
     // 添加循环头部标签，标记这个基本块的开始
     node->blockInsts.addInst(loop_header_label);
 
-    // 访问条件表达式AST节点，生成其IR
-    ast_node * cond = ir_visit_ast_node(cond_node);
-    if (!cond) {
-        // 条件表达式生成失败
-        enterLabels.pop();
-        exitLabels.pop();
-        printf("While: Condition express generate failed.\n");
+    // // 访问条件表达式AST节点，生成其IR
+    // ast_node * cond = ir_visit_ast_node(cond_node);
+    // if (!cond) {
+    //     // 条件表达式生成失败
+    //     enterLabels.pop();
+    //     exitLabels.pop();
+    //     printf("While: Condition express generate failed.\n");
+    //     return false;
+    // }
+    // // 将条件表达式生成的指令添加到当前节点的指令列表中 (属于循环头部块)
+    // node->blockInsts.addInst(cond->blockInsts);
+
+    // // 获取条件表达式的值 (应为一个布尔值，i1 类型)
+    // Value * cond_val = cond->val;
+    // if (!cond_val) {
+    //     // 条件表达式必须产生一个值
+    //     enterLabels.pop();
+    //     exitLabels.pop();
+    //     printf("While: no value for condition expression\n");
+    //     return false; // 或者更详细的错误处理
+    // }
+
+    // // 添加条件分支指令 (br i1)
+    // // 如果条件为真 (cond_val)，跳转到 loop_body_label
+    // // 如果条件为假 (!cond_val)，跳转到 loop_exit_label
+    // ConditionalInstruction * cond_branch_inst =
+    //     new ConditionalInstruction(currentFunc, cond_val, loop_body_label, loop_exit_label);
+    // node->blockInsts.addInst(cond_branch_inst);
+
+    // 支持短路
+    if (!gen_condition_branch(cond_node, loop_body_label, loop_exit_label, node->blockInsts)) {
+        // Error occurred during condition branching generation
+        std::cerr << "Error generating condition branch for while." << std::endl;
         return false;
     }
-    // 将条件表达式生成的指令添加到当前节点的指令列表中 (属于循环头部块)
-    node->blockInsts.addInst(cond->blockInsts);
-
-    // 获取条件表达式的值 (应为一个布尔值，i1 类型)
-    Value * cond_val = cond->val;
-    if (!cond_val) {
-        // 条件表达式必须产生一个值
-        enterLabels.pop();
-        exitLabels.pop();
-        printf("While: no value for condition expression\n");
-        return false; // 或者更详细的错误处理
-    }
-    // TODO: 可选：检查 cond_val 的类型是否是布尔类型（例如 IR 中的 i1）
-
-    // 添加条件分支指令 (br i1)
-    // 如果条件为真 (cond_val)，跳转到 loop_body_label
-    // 如果条件为假 (!cond_val)，跳转到 loop_exit_label
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, cond_val, loop_body_label, loop_exit_label);
-    node->blockInsts.addInst(cond_branch_inst);
 
     // 4. 生成循环体块
     // 添加循环体标签，标记这个基本块的开始
