@@ -463,6 +463,8 @@ bool IRGenerator::ir_function_call(ast_node * node)
     currentFunc->setExistFuncCall(true);
 
     // 如果没有孩子，也认为是没有参数
+
+    // 有参数：
     if (!paramsNode->sons.empty()) {
 
         int32_t argsCount = (int32_t) paramsNode->sons.size();
@@ -476,15 +478,22 @@ bool IRGenerator::ir_function_call(ast_node * node)
         // 遍历参数列表，孩子是表达式
         // 这里自左往右计算表达式
         for (auto son: paramsNode->sons) {
-
-            // 遍历Block的每个语句，进行显示或者运算
-            ast_node * temp = ir_visit_ast_node(son);
-            if (!temp) {
-                return false;
+            if (son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+                Value * arrayRParam;
+                if (!funcall_array_access(node, arrayRParam)) {
+                    std::cerr << "Function call(Real Param):Failed to array access!" << std::endl;
+                    return false;
+                }
+                realParams.push_back(arrayRParam);
+            } else {
+                // 遍历Block的每个语句，进行显示或者运算
+                ast_node * temp = ir_visit_ast_node(son);
+                if (!temp) {
+                    return false;
+                }
+                realParams.push_back(temp->val);
+                node->blockInsts.addInst(temp->blockInsts);
             }
-
-            realParams.push_back(temp->val);
-            node->blockInsts.addInst(temp->blockInsts);
         }
     }
 
@@ -494,6 +503,14 @@ bool IRGenerator::ir_function_call(ast_node * node)
         std::cout << realParams.size() << " " << calledFunction->getParams().size() << std::endl;
         minic_log(LOG_ERROR, "第%lld行的被调用函数(%s)未定义或声明", (long long) lineno, funcName.c_str());
         return false;
+    } else {
+        for (int paramNo = 0; paramNo < realParams.size(); paramNo++) {
+            if (realParams[paramNo]->getType() != calledFunction->getParams()[paramNo]->getType()) {
+                // 参数类型不匹配
+                minic_log(LOG_ERROR, "函数(%s)的第%d个参数类型不匹配", funcName.c_str(), paramNo + 1);
+                return false;
+            }
+        }
     }
     calledFunction->realParams = realParams;
     // 返回调用有返回值，则需要分配临时变量，用于保存函数调用的返回值
