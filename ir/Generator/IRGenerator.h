@@ -202,7 +202,7 @@ protected:
     /// @return 翻译是否成功，true：成功，false：失败
     bool ir_array_access(ast_node * node);
 
-    bool funcall_array_access(ast_node * node);
+    Value * funcall_array_access(ast_node * node, std::vector<Instruction *> & insts);
 
     /// @brief 变量声明语句节点翻译成线性中间IR
     /// @param node AST节点
