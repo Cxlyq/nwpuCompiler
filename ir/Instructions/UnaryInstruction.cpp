@@ -64,22 +64,22 @@ void UnaryInstruction::toString(std::string & str)
     switch (op) {
         case IRInstOperator::IRINST_OP_POS_I:
             // 整数单目正指令，一元运算
-            str = getIRName() + " = pos_i " + src->getIRName();
+
             break;
 
         case IRInstOperator::IRINST_OP_POS_F:
             // 浮点数数单目正指令，一元运算
-            str = getIRName() + " = pos_f " + src->getIRName();
+
             break;
 
         case IRInstOperator::IRINST_OP_NEG_I:
             // 整数单目负指令，一元运算
-            str = getIRName() + " = neg_i " + src->getIRName();
+            str = getIRName() + " = sub nsw i32 0, " + src->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_NEG_F:
             // 浮点数单目负指令，一元运算
-            str = getIRName() + " = neg_f " + src->getIRName();
+            str = getIRName() + " = fsub float 0x0000000000000000, " + src->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_NOT_I:
