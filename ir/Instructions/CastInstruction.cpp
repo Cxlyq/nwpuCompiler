@@ -36,23 +36,21 @@ CastInstruction::CastInstruction(Function * _func, Value * _srcVal, Type * _type
 /// @param str 转换后的字符串
 void CastInstruction::toString(std::string & str)
 {
-
     Value * src = getOperand(0);
+    Type *  srcType = src->getType(); // 源类型
+    Type *  dstType = this->type;     // 目标类型（当前指令的类型）
 
-    switch (type->getTypeID()) {
-        case Type::FloatTyID:
-            // 整数单目正指令，一元运算
-            str = getIRName() + " = sitofp i32 " + src->getIRName() + " to float";
-            break;
-
-        case Type::IntegerTyID:
-            // 浮点数数单目正指令，一元运算
-            str = getIRName() + " = fptosi float " + src->getIRName() + " to i32";
-            break;
-
-        default:
-            // 未知指令
-            Instruction::toString(str);
-            break;
+    if (srcType->isInt1Byte() && dstType->getTypeID() == Type::IntegerTyID) {
+        // i1 -> i32
+        str = getIRName() + " = zext i1 " + src->getIRName() + " to i32";
+    } else if (srcType->getTypeID() == Type::IntegerTyID && dstType->getTypeID() == Type::FloatTyID) {
+        // i32 -> float
+        str = getIRName() + " = sitofp i32 " + src->getIRName() + " to float";
+    } else if (srcType->getTypeID() == Type::FloatTyID && dstType->getTypeID() == Type::IntegerTyID) {
+        // float -> i32
+        str = getIRName() + " = fptosi float " + src->getIRName() + " to i32";
+    } else {
+        // fallback
+        Instruction::toString(str);
     }
 }
