@@ -2432,11 +2432,11 @@ bool IRGenerator::ir_array_access(ast_node * node)
     ///设置name，否则作为左值会报错
     node->name = array_name;
     // 解析维度表达式为实际的常数
-    std::vector<int> dims;
-    for (auto * expr_node: array_dims) {
-        int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
-        dims.push_back(dim_size);
-    }
+    // std::vector<int> dims;
+    // for (auto * expr_node: array_dims) {
+    //     int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
+    //     dims.push_back(dim_size);
+    // }
 
     ///使用tempVal获取之前生成的节点
     Value * tempVal = module->findVarValue(array_name);
@@ -2451,7 +2451,7 @@ bool IRGenerator::ir_array_access(ast_node * node)
         // int              offset_size = calcOffset(ori_dims, dims);
         //  int              offset = offset_size * 4;
         int d = ori_dims.size();
-        int m = dims.size();
+        int m = array_dims.size();
 
         // 从后往前构造偏移表达式
         Value * offset = nullptr;
@@ -2463,7 +2463,7 @@ bool IRGenerator::ir_array_access(ast_node * node)
             // 生成子表达式的 IR
             ir_visit_ast_node(expr_node);
             Value * indexVal = expr_node->val;
-
+            std::cout << "array dims: " << m << ", access dims: " << m << std::endl;
             // tmp = indexVal * stride
             auto term = new BinaryInstruction(
                 module->getCurrentFunction(),
@@ -2538,11 +2538,11 @@ bool IRGenerator::funcall_array_access(ast_node * node)
     ///设置name，否则作为左值会报错
     node->name = array_name;
     // 解析维度表达式为实际的常数
-    std::vector<int> dims;
-    for (auto * expr_node: array_dims) {
-        int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
-        dims.push_back(dim_size);
-    }
+    // std::vector<int> dims;
+    // for (auto * expr_node: array_dims) {
+    //     int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
+    //     dims.push_back(dim_size);
+    // }
 
     ///使用tempVal获取之前生成的节点
     Value * tempVal = module->findVarValue(array_name);
@@ -2554,7 +2554,7 @@ bool IRGenerator::funcall_array_access(ast_node * node)
         // int              offset_size = calcOffset(ori_dims, dims);
         //  int              offset = offset_size * 4;
         int d = ori_dims.size();
-        int m = dims.size();
+        int m = array_dims.size();
 
         // 从后往前构造偏移表达式
         Value * offset = nullptr;
