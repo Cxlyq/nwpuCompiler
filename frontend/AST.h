@@ -203,6 +203,14 @@ public:
     /// @brief 线性IR指令或者运行产生的Value，用于线性IR指令产生用
     Value * val = nullptr;
 
+    std::string getNodeName() const
+    {
+        if (!name.empty()) {
+            return this->name;
+        } else {
+            return "!no_name!";
+        }
+    }
     ///
     /// @brief 在进入block等节点时是否要进行作用域管理。默认要做。
     ///
