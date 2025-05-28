@@ -171,6 +171,8 @@ public:
     /// @brief 深拷贝当前节点
     ast_node * deep_copy() const;
 
+    bool is_lvar = false; ///< 是否是局部变量
+
     /// @brief 节点类型
     ast_operator_type node_type;
 
@@ -295,10 +297,9 @@ extern ast_node * ast_root;
 /// @param second_child 第一个孩子节点
 /// @param third_child 第一个孩子节点
 /// @return 创建的节点
-ast_node * create_contain_node(ast_operator_type node_type,
-                               ast_node * first_child = nullptr,
-                               ast_node * second_child = nullptr,
-                               ast_node * third_child = nullptr);
+ast_node * create_contain_node(
+    ast_operator_type node_type, ast_node * first_child = nullptr, ast_node * second_child = nullptr,
+    ast_node * third_child = nullptr);
 
 /// @brief 创建函数定义类型的内部AST节点
 /// @param type_node 函数返回值类型
