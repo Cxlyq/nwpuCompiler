@@ -27,6 +27,7 @@
 #include "Common.h"
 #include "ConstFloat.h"
 #include "ConstInt.h"
+#include "FloatType.h"
 #include "Function.h"
 #include "IRCode.h"
 #include "IRGenerator.h"
@@ -628,19 +629,23 @@ bool IRGenerator::ir_add(ast_node * node)
         rhs->setType(module->findVarValue(right->name)->getType());
         node->blockInsts.addInst(LoadInst);
     }
-    // if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-    //     LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst1;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-    // }
 
-    // if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-    //     LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-    //     rhs = LoadInst2;
-    //     rhs->setType(module->findVarValue(right->name)->getType());
-    //     node->blockInsts.addInst(LoadInst2);
-    // }
+    // 操作数不同时进行类型转换
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            lhs = castInst;
+        }
+        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            rhs = castInst;
+        }
+    }
+
     auto addInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -707,18 +712,20 @@ bool IRGenerator::ir_sub(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-    }
-
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
+    // 操作数不同时进行类型转换
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            lhs = castInst;
+        }
+        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            rhs = castInst;
+        }
     }
 
     auto subInst = BinaryInstruction::createAutoTyped(
@@ -787,18 +794,20 @@ bool IRGenerator::ir_mul(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-    }
-
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
+    // 操作数不同时进行类型转换
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            lhs = castInst;
+        }
+        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            rhs = castInst;
+        }
     }
 
     auto mulInst = BinaryInstruction::createAutoTyped(
@@ -876,19 +885,22 @@ bool IRGenerator::ir_div(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    /// 操作数不同时进行类型转换
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            lhs = castInst;
+        }
+        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            rhs = castInst;
+        }
     }
 
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
-    }
     auto divInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -966,20 +978,6 @@ bool IRGenerator::ir_mod(ast_node * node)
     if (((int) right->node_type) == 0 && !right->integer_val) {
         //为整数0时报mod 0错误
         return false;
-    }
-
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-    }
-
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
     }
 
     BinaryInstruction * modInst = new BinaryInstruction(
@@ -1197,18 +1195,20 @@ bool IRGenerator::ir_eq(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-    }
-
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
+    // 操作数不同时进行类型转换
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            lhs = castInst;
+        }
+        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            rhs = castInst;
+        }
     }
 
     // 2. 创建表示结构不同基本块入口的标签
@@ -1318,20 +1318,21 @@ bool IRGenerator::ir_neq(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    // 操作数不同时进行类型转换
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            lhs = castInst;
+        }
+        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            rhs = castInst;
+        }
     }
-
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
-    }
-
     // 2. 创建表示结构不同基本块入口的标签
     // 这些标签将在后续指令中被引用（作为跳转目标）
     // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
@@ -1438,18 +1439,20 @@ bool IRGenerator::ir_ge(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-    }
-
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
+    // 操作数不同时进行类型转换
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            lhs = castInst;
+        }
+        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            rhs = castInst;
+        }
     }
 
     // 2. 创建表示结构不同基本块入口的标签
@@ -1557,18 +1560,20 @@ bool IRGenerator::ir_le(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-    }
-
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
+    // 操作数不同时进行类型转换
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            lhs = castInst;
+        }
+        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            rhs = castInst;
+        }
     }
 
     // 2. 创建表示结构不同基本块入口的标签
@@ -1679,18 +1684,20 @@ bool IRGenerator::ir_gne(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-    }
-
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
+    // 操作数不同时进行类型转换
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            lhs = castInst;
+        }
+        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            rhs = castInst;
+        }
     }
 
     // 2. 创建表示结构不同基本块入口的标签
@@ -1800,20 +1807,21 @@ bool IRGenerator::ir_lne(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
 
-    if (left->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst1;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
+    // 操作数不同时进行类型转换
+    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
+        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            lhs = castInst;
+        }
+        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
+            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+            CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
+            node->blockInsts.addInst(castInst);
+            rhs = castInst;
+        }
     }
-
-    if (right->val->getValueCategory() == ValueCategory::VARIABLE) {
-        LoadInstruction * LoadInst2 = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst2;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst2);
-    }
-
     // 2. 创建表示结构不同基本块入口的标签
     // 这些标签将在后续指令中被引用（作为跳转目标）
     // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
@@ -1868,7 +1876,6 @@ bool IRGenerator::ir_lne(ast_node * node)
     node->blockInsts.addInst(LoadInst3);
 
     node->val = lneInst;
-
     return true;
 }
 
@@ -1896,19 +1903,8 @@ bool IRGenerator::ir_pos(ast_node * node)
         node->blockInsts.addInst(LoadInst);
     }
 
-    // 生成IR指令：result = +expr->val
-    auto posInst = UnaryInstruction::createAutoTyped(
-        module->getCurrentFunction(),
-        lhs,
-        IRInstOperator::IRINST_OP_POS_I,
-        IRInstOperator::IRINST_OP_POS_F);
-
-    // 合并子表达式的IR并加入当前指令
-    // node->blockInsts.addInst(expr->blockInsts);
-    node->blockInsts.addInst(posInst);
-
     // 设置当前节点的计算结果
-    node->val = posInst;
+    node->val = lhs;
 
     return true;
 }
@@ -1929,13 +1925,15 @@ bool IRGenerator::ir_neg(ast_node * node)
     node->blockInsts.addInst(expr->blockInsts);
     Value * lhs = expr->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(expr->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(expr->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
+    //
+
     // 生成IR指令：result = -expr->val
     auto negInst = UnaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1968,13 +1966,23 @@ bool IRGenerator::ir_not(ast_node * node)
     node->blockInsts.addInst(expr->blockInsts);
     Value * lhs = expr->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(expr->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(expr->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
+    Value * zero = module->newConstInt(0);
+
+    auto cmpInst = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        lhs,
+        zero,
+        IRInstOperator::IRINST_OP_NEQ_I,
+        IRInstOperator::IRINST_OP_NEQ_F,
+        true);
+    node->blockInsts.addInst(cmpInst);
 
     // 生成IR指令：result = -expr->val
     auto notInst = UnaryInstruction::createAutoTyped(
@@ -1987,9 +1995,11 @@ bool IRGenerator::ir_not(ast_node * node)
     // 合并子表达式的IR并加入当前指令
     // node->blockInsts.addInst(expr->blockInsts);
     node->blockInsts.addInst(notInst);
-
+    notInst->setType(IntegerType::getTypeBool());
+    CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), notInst, IntegerType::getTypeInt());
+    node->blockInsts.addInst(castInst);
     // 设置当前节点的计算结果
-    node->val = notInst;
+    node->val = castInst;
 
     return true;
 }
@@ -2049,11 +2059,6 @@ bool IRGenerator::ir_assign(ast_node * node)
 
     /// 检查类型是否匹配，若不匹配，插入类型转换指令
     if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
-        if (module->findVarValue(right->name)) {
-            LoadInstruction * LoadInst1 = new LoadInstruction(module->getCurrentFunction(), left->val);
-            LoadInst1->setType(module->findVarValue(right->name)->getType());
-            node->blockInsts.addInst(LoadInst1); // llvm格式中表达式需要先load
-        }
         // int -> float 强制转换
         CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), Roperand, left->val->getType());
         node->blockInsts.addInst(castInst);

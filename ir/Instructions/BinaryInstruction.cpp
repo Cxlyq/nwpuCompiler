@@ -139,7 +139,7 @@ void BinaryInstruction::toString(std::string & str)
 
         case IRInstOperator::IRINST_OP_NEQ_F:
             // 浮点数不等指令，二元运算
-            str = getIRName() + " = fcmp one float " + src1->getIRName() + ", " + src2->getIRName();
+            str = getIRName() + " = fcmp une float " + src1->getIRName() + ", " + src2->getIRName();
             break;
 
         case IRInstOperator::IRINST_OP_GE_I:
