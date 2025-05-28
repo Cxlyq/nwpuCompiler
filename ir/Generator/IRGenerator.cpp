@@ -1003,9 +1003,23 @@ bool IRGenerator::ir_and(ast_node * node)
 {
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
+    Value *    zero = module->newConstInt(0);
+    Value *    one = module->newConstInt(1);
 
     // 逻辑与节点，左结合，先计算左节点，后计算右节点
+    // 2. 创建表示结构不同基本块入口的标签
+    // 这些标签将在后续指令中被引用（作为跳转目标）
+    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
+    Function * currentFunc = module->getCurrentFunction();
 
+    // 第一个变量为真，检查第二个变量的入口标签
+    LabelInstruction * check_nonzero = new LabelInstruction(currentFunc);
+    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
+    LabelInstruction * store_true = new LabelInstruction(currentFunc);
+    LabelInstruction * store_false = new LabelInstruction(currentFunc);
+
+    // 汇合点标签
+    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
     // 逻辑与的左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
@@ -1013,16 +1027,9 @@ bool IRGenerator::ir_and(ast_node * node)
         return false;
     }
 
-    // 逻辑与的右边操作数
-    ast_node * right = ir_visit_ast_node(src2_node);
-    if (!right) {
-        // 某个变量没有定值
-        return false;
-    }
-
-    ///检查操作数是否是数组，若是需要load
-    node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
+    node->blockInsts.addInst(left->blockInsts);
+    ///检查操作数是否是数组，若是需要load
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
@@ -1033,15 +1040,28 @@ bool IRGenerator::ir_and(ast_node * node)
         node->blockInsts.addInst(LoadInst);
     }
 
-    // // 2. 对左值做 icmp ne，判断是否为真
-    // Value * zero = module->newConstInt(0);
-    // Value * cmp1 = new ICmpInstruction(currentFunc, ICmpInstruction::ICMP_NE, lhs_val, zero);
-    // node->blockInsts.addInst(cmp1);
+    auto neqInst1 = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        lhs,
+        zero,
+        IRInstOperator::IRINST_OP_NEQ_I,
+        IRInstOperator::IRINST_OP_NEQ_F,
+        true);
+    node->blockInsts.addInst(neqInst1);
+    ConditionalInstruction * cond_branch_inst1 =
+        new ConditionalInstruction(currentFunc, neqInst1, check_nonzero, store_false);
+    node->blockInsts.addInst(cond_branch_inst1);
+    // 添加标签
+    node->blockInsts.addInst(check_nonzero);
+    // 逻辑与的右边操作数
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) {
+        // 某个变量没有定值
+        return false;
+    }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
     if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
@@ -1050,22 +1070,61 @@ bool IRGenerator::ir_and(ast_node * node)
         node->blockInsts.addInst(LoadInst);
     }
 
-    // TODO 逻辑运算是否需要区别int和float型
-
-    // TODO,对float是否作检查，检查代码参考取余部分，
-    BinaryInstruction * andInst = new BinaryInstruction(
+    auto neqInst2 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        IRInstOperator::IRINST_OP_AND,
-        lhs,
         rhs,
-        IntegerType::getTypeBool());
+        zero,
+        IRInstOperator::IRINST_OP_NEQ_I,
+        IRInstOperator::IRINST_OP_NEQ_F,
+        true);
+    node->blockInsts.addInst(neqInst2);
+
+    ConditionalInstruction * cond_branch_inst2 =
+        new ConditionalInstruction(currentFunc, neqInst2, store_true, store_false);
+    node->blockInsts.addInst(cond_branch_inst2);
+    // 添加标签
+    node->blockInsts.addInst(store_true);
+
+    // // 2. 对左值做 icmp ne，判断是否为真
+    // Value * zero = module->newConstInt(0);
+    // Value * cmp1 = new ICmpInstruction(currentFunc, ICmpInstruction::ICMP_NE, lhs_val, zero);
+    // node->blockInsts.addInst(cmp1);
+
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
-    node->blockInsts.addInst(andInst);
 
-    node->val = andInst;
+    std::string tmpName = generateTempName("ValueOfLogic");
+    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
+    // ValueOfLogic->setType(left->val->getType());
+    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
+    node->blockInsts.addInst(storeInst1);
+    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
+    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
+    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
+    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(store_false);
+    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
+    node->blockInsts.addInst(storeInst2);
+
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(merge_label);
+    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
+    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
+    node->blockInsts.addInst(LoadInst3);
+    // TODO 逻辑运算是否需要区别int和float型
+
+    // TODO,对float是否作检查，检查代码参考取余部分，
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
+
+    node->val = ValueOfLogic;
 
     return true;
 }
@@ -1077,26 +1136,33 @@ bool IRGenerator::ir_or(ast_node * node)
 {
     ast_node * src1_node = node->sons[0];
     ast_node * src2_node = node->sons[1];
+    Value *    zero = module->newConstInt(0);
+    Value *    one = module->newConstInt(1);
 
-    // 逻辑或节点，左结合，先计算左节点，后计算右节点
+    // 逻辑与节点，左结合，先计算左节点，后计算右节点
+    // 2. 创建表示结构不同基本块入口的标签
+    // 这些标签将在后续指令中被引用（作为跳转目标）
+    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
+    Function * currentFunc = module->getCurrentFunction();
 
-    // 逻辑或的左边操作数
+    // 第一个变量为真，检查第二个变量的入口标签
+    LabelInstruction * check_nonzero = new LabelInstruction(currentFunc);
+    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
+    LabelInstruction * store_true = new LabelInstruction(currentFunc);
+    LabelInstruction * store_false = new LabelInstruction(currentFunc);
+
+    // 汇合点标签
+    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
+    // 逻辑与的左边操作数
     ast_node * left = ir_visit_ast_node(src1_node);
     if (!left) {
         // 某个变量没有定值
         return false;
     }
 
-    // 逻辑或的右边操作数
-    ast_node * right = ir_visit_ast_node(src2_node);
-    if (!right) {
-        // 某个变量没有定值
-        return false;
-    }
-
-    ///检查操作数是否是数组，若是需要load
-    node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
+    node->blockInsts.addInst(left->blockInsts);
+    ///检查操作数是否是数组，若是需要load
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
@@ -1107,10 +1173,28 @@ bool IRGenerator::ir_or(ast_node * node)
         node->blockInsts.addInst(LoadInst);
     }
 
+    auto neqInst1 = BinaryInstruction::createAutoTyped(
+        module->getCurrentFunction(),
+        lhs,
+        zero,
+        IRInstOperator::IRINST_OP_NEQ_I,
+        IRInstOperator::IRINST_OP_NEQ_F,
+        true);
+    node->blockInsts.addInst(neqInst1);
+    ConditionalInstruction * cond_branch_inst1 =
+        new ConditionalInstruction(currentFunc, neqInst1, store_true, check_nonzero);
+    node->blockInsts.addInst(cond_branch_inst1);
+    // 添加标签
+    node->blockInsts.addInst(check_nonzero);
+    // 逻辑与的右边操作数
+    ast_node * right = ir_visit_ast_node(src2_node);
+    if (!right) {
+        // 某个变量没有定值
+        return false;
+    }
+
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
     if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
@@ -1119,19 +1203,61 @@ bool IRGenerator::ir_or(ast_node * node)
         node->blockInsts.addInst(LoadInst);
     }
 
-    BinaryInstruction * orInst = new BinaryInstruction(
+    auto neqInst2 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        IRInstOperator::IRINST_OP_OR,
-        lhs,
         rhs,
-        IntegerType::getTypeBool());
+        zero,
+        IRInstOperator::IRINST_OP_NEQ_I,
+        IRInstOperator::IRINST_OP_NEQ_F,
+        true);
+    node->blockInsts.addInst(neqInst2);
+
+    ConditionalInstruction * cond_branch_inst2 =
+        new ConditionalInstruction(currentFunc, neqInst2, store_true, store_false);
+    node->blockInsts.addInst(cond_branch_inst2);
+    // 添加标签
+    node->blockInsts.addInst(store_true);
+
+    // // 2. 对左值做 icmp ne，判断是否为真
+    // Value * zero = module->newConstInt(0);
+    // Value * cmp1 = new ICmpInstruction(currentFunc, ICmpInstruction::ICMP_NE, lhs_val, zero);
+    // node->blockInsts.addInst(cmp1);
+
+    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
+    // std::cout << "right string: " << rhs->getIRName() << std::endl;
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
-    node->blockInsts.addInst(orInst);
 
-    node->val = orInst;
+    std::string tmpName = generateTempName("ValueOfLogic");
+    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
+    // ValueOfLogic->setType(left->val->getType());
+    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
+    node->blockInsts.addInst(storeInst1);
+    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
+    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
+    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
+    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(store_false);
+    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
+    node->blockInsts.addInst(storeInst2);
+
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    node->blockInsts.addInst(merge_label);
+    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
+    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
+    node->blockInsts.addInst(LoadInst3);
+    // TODO 逻辑运算是否需要区别int和float型
+
+    // TODO,对float是否作检查，检查代码参考取余部分，
+
+    // 创建临时变量保存IR的值，以及线性IR指令
+    // node->blockInsts.addInst(left->blockInsts);
+    // node->blockInsts.addInst(right->blockInsts);
+
+    node->val = ValueOfLogic;
 
     return true;
 }
@@ -1366,8 +1492,8 @@ bool IRGenerator::ir_neq(ast_node * node)
 
     Value *     one = module->newConstInt(1);
     std::string tmpName = generateTempName("ValueOfLogic");
-    Value *     ValueOfLogic = module->newVarValueWithInt(left->type, tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(left->val->getType());
+    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
+    ValueOfLogic->setType(IntegerType::getTypeInt());
     StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
     node->blockInsts.addInst(storeInst1);
     // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
