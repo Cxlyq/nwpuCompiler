@@ -43,7 +43,7 @@ public:
     static bool isReg(std::string name);
 
     /// @brief 最大寄存器数目
-    static const int maxRegNum = 16;
+    static const int maxRegNum = 64;
 
     /// @brief 可使用的通用寄存器的个数r0-r10
     static const int maxUsableRegNum = 11;
@@ -52,5 +52,8 @@ public:
     static const std::string regName[maxRegNum];
 
     /// @brief 对寄存器R0分配Value，记录位置
-    static RegVariable * intRegVal[PlatformRiscV64::maxRegNum];
+    static RegVariable * intRegVal[PlatformRiscV64::maxRegNum / 2];
+
+    /// @brief 对寄存器R0分配Value，记录位置(浮点型)
+    static RegVariable * floatRegVal[PlatformRiscV64::maxRegNum / 2];
 };

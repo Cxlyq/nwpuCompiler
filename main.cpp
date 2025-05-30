@@ -97,14 +97,14 @@ static struct option long_options[] = {
     {"optimize", required_argument, 0, 'O'},
     {"target", required_argument, 0, 't'},
     {"asmir", no_argument, 0, 'c'},
-    {0, 0, 0, 0}
-};
+    {0, 0, 0, 0}};
 
 /// @brief 显示帮助
 /// @param exeName
 static void showHelp(const std::string & exeName)
 {
-    std::cout << exeName + " -S [--symbol] [-A | --antlr4 | -D | --recursive-descent] [-T | --ast | -I | --ir] [-o output | --output=output] source\n";
+    std::cout << exeName + " -S [--symbol] [-A | --antlr4 | -D | --recursive-descent] [-T | --ast | -I | --ir] [-o "
+                           "output | --output=output] source\n";
     std::cout << "Options:\n";
     std::cout << "  -h, --help                 Show this help message\n";
     std::cout << "  -o, --output=FILE          Specify output file\n";
@@ -135,7 +135,7 @@ static int ArgsAnalysis(int argc, char * argv[])
     // -t要求必须带有目标CPU，指明目标CPU的汇编
     // -c选项在输出汇编时有效，附带输出IR指令内容
     const char options[] = "ho:STIADO:t:c";
-    int option_index = 0;
+    int        option_index = 0;
 
     opterr = 1;
 
@@ -365,6 +365,11 @@ static int compile(std::string inputFile, std::string outputFile)
             if (gCPUTarget == "ARM32") {
                 // 输出面向ARM32的汇编指令
                 generator = new CodeGeneratorArm32(module);
+                generator->setShowLinearIR(gAsmAlsoShowIR);
+                generator->run(outputFile);
+            } else if (gCPUTarget == "RISCV64") {
+                // TODO 需补充输出面向RICSV64的CodeGenerator类
+                //  generator = new CodeGenerator(module);
                 generator->setShowLinearIR(gAsmAlsoShowIR);
                 generator->run(outputFile);
             } else {
