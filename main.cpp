@@ -22,11 +22,9 @@
 #include "Antlr4Executor.h"
 #include "CodeGenerator.h"
 #include "CodeGeneratorArm32.h"
-#include "FlexBisonExecutor.h"
 #include "FrontEndExecutor.h"
 #include "Graph.h"
 #include "IRGenerator.h"
-#include "RecursiveDescentExecutor.h"
 #include "Module.h"
 
 ///
@@ -55,21 +53,6 @@ static bool gShowASM = false;
 static bool gShowSymbol = false;
 
 ///
-/// @brief 前端分析器，默认选Flex和Bison
-///
-static bool gFrontEndFlexBison = true;
-
-///
-/// @brief 前端分析器Antlr4，是否选中
-///
-static bool gFrontEndAntlr4 = false;
-
-///
-/// @brief 前端分析器用递归下降分析法，是否选中
-///
-static bool gFrontEndRecursiveDescentParsing = false;
-
-///
 /// @brief 在输出汇编时是否输出中间IR作为注释
 ///
 static bool gAsmAlsoShowIR = false;
@@ -92,8 +75,6 @@ static struct option long_options[] = {
     {"symbol", no_argument, 0, 'S'},
     {"ast", no_argument, 0, 'T'},
     {"ir", no_argument, 0, 'I'},
-    {"antlr4", no_argument, 0, 'A'},
-    {"recursive-descent", no_argument, 0, 'D'},
     {"optimize", required_argument, 0, 'O'},
     {"target", required_argument, 0, 't'},
     {"asmir", no_argument, 0, 'c'},
@@ -103,7 +84,7 @@ static struct option long_options[] = {
 /// @param exeName
 static void showHelp(const std::string & exeName)
 {
-    std::cout << exeName + " -S [--symbol] [-A | --antlr4 | -D | --recursive-descent] [-T | --ast | -I | --ir] [-o "
+    std::cout << exeName + " -S [--symbol] [-T | --ast | -I | --ir] [-o "
                            "output | --output=output] source\n";
     std::cout << "Options:\n";
     std::cout << "  -h, --help                 Show this help message\n";
@@ -111,8 +92,6 @@ static void showHelp(const std::string & exeName)
     std::cout << "  -S, --symbol               Show symbol information\n";
     std::cout << "  -T, --ast                  Output abstract syntax tree\n";
     std::cout << "  -I, --ir                   Output intermediate representation\n";
-    std::cout << "  -A, --antlr4               Use Antlr4 for lexical and syntax analysis\n";
-    std::cout << "  -D, --recursive-descent    Use recursive descent parsing\n";
     std::cout << "  -O, --optimize=LEVEL       Set optimization level\n";
     std::cout << "  -t, --target=CPU           Specify target CPU architecture\n";
     std::cout << "  -c, --asmir                Show IR instructions as comments in assembly output\n";
@@ -157,19 +136,6 @@ lb_check:
             case 'I':
                 // 产生中间IR
                 gShowLineIR = true;
-                break;
-                break;
-            case 'A':
-                // 选用antlr4
-                gFrontEndAntlr4 = true;
-                gFrontEndFlexBison = false;
-                gFrontEndRecursiveDescentParsing = false;
-                break;
-            case 'D':
-                // 选用递归下降分析法与词法手动实现
-                gFrontEndAntlr4 = false;
-                gFrontEndFlexBison = false;
-                gFrontEndRecursiveDescentParsing = true;
                 break;
             case 'O':
                 // 优化级别分析，暂时没有用，如开启优化时请使用
@@ -218,19 +184,16 @@ lb_check:
         return -1;
     }
 
-    int flag = (int) gShowLineIR + (int) gShowAST;
-
-    if (0 == flag) {
+    if (!(gShowLineIR || gShowAST)) {
         // 没有指定，则输出汇编指令
         gShowASM = true;
-    } else if (flag != 1) {
+    } else if (gShowLineIR && gShowAST) {
         // 线性中间IR、抽象语法树只能同时选择一个
         return -1;
     }
 
     // 没有指定输出文件则产生默认文件
     if (gOutputFile.empty()) {
-
         // 默认文件名
         if (gShowAST) {
             gOutputFile = "output.png";
@@ -271,17 +234,7 @@ static int compile(std::string inputFile, std::string outputFile)
 
         // 创建词法语法分析器
         FrontEndExecutor * frontEndExecutor;
-        if (gFrontEndAntlr4) {
-            // Antlr4
-            frontEndExecutor = new Antlr4Executor(inputFile);
-        } else if (gFrontEndRecursiveDescentParsing) {
-            // 递归下降分析法
-            frontEndExecutor = new RecursiveDescentExecutor(inputFile);
-        } else {
-            // 默认为Flex+Bison
-            frontEndExecutor = new FlexBisonExecutor(inputFile);
-        }
-
+        frontEndExecutor = new Antlr4Executor(inputFile);
         // 前端执行：词法分析、语法分析后产生抽象语法树，其root为全局变量ast_root
         subResult = frontEndExecutor->run();
         if (!subResult) {
