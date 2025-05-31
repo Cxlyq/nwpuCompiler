@@ -193,7 +193,15 @@ bool PlatformRiscV64::isDisp(int num)
 /// @return 是否是
 bool PlatformRiscV64::isReg(std::string name)
 {
-    return name == "r0" || name == "r1" || name == "r2" || name == "r3" || name == "r4" || name == "r5" ||
-           name == "r6" || name == "r7" || name == "r8" || name == "r9" || name == "r10" || name == "fp" ||
-           name == "ip" || name == "sp" || name == "lr" || name == "pc";
+    return name == "zero" || name == "ra" || name == "sp" || name == "gp" || name == "tp" || name == "t0" ||
+           name == "t1" || name == "t2" || name == "s0/fp" || name == "s1" || name == "a0" || name == "a1" ||
+           name == "a2" || name == "a3" || name == "a4" || name == "a5" || name == "a6" || name == "a7" ||
+           name == "s2" || name == "s3" || name == "s4" || name == "s5" || name == "s6" || name == "s7" ||
+           name == "s8" || name == "s9" || name == "s10" || name == "s11" || name == "t3" || name == "t4" ||
+           name == "t5" || name == "t6" || name == "ft0" || name == "ft1" || name == "ft2" || name == "ft3" ||
+           name == "ft4" || name == "ft5" || name == "ft6" || name == "ft7" || name == "fs0" || name == "fs1" ||
+           name == "fa0" || name == "fa1" || name == "fa2" || name == "fa3" || name == "fa4" || name == "fa5" ||
+           name == "fa6" || name == "fa7" || name == "fs2" || name == "fs3" || name == "fs4" || name == "fs5" ||
+           name == "fs6" || name == "fs7" || name == "fs8" || name == "fs9" || name == "fs10" || name == "fs11" ||
+           name == "ft8" || name == "ft9" || name == "ft10" || name == "ft11";
 }
