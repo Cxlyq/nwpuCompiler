@@ -84,8 +84,7 @@ static struct option long_options[] = {
 /// @param exeName
 static void showHelp(const std::string & exeName)
 {
-    std::cout << exeName + " -S [--symbol] [-T | --ast | -I | --ir] [-o "
-                           "output | --output=output] source\n";
+    std::cout << exeName + " -S [--symbol] [-T | --ast | -I | --ir | -c | --asmir ] [-o output | --output=output] source\n";
     std::cout << "Options:\n";
     std::cout << "  -h, --help                 Show this help message\n";
     std::cout << "  -o, --output=FILE          Specify output file\n";
@@ -321,7 +320,7 @@ static int compile(std::string inputFile, std::string outputFile)
                 generator->setShowLinearIR(gAsmAlsoShowIR);
                 generator->run(outputFile);
             } else if (gCPUTarget == "RISCV64") {
-                // TODO 需补充输出面向RICSV64的CodeGenerator类
+                // TODO:[后端] 需补充输出面向RICSV64的CodeGenerator类
                 //  generator = new CodeGenerator(module);
                 generator->setShowLinearIR(gAsmAlsoShowIR);
                 generator->run(outputFile);
