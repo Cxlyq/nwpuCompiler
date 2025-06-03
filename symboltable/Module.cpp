@@ -21,6 +21,7 @@
 #include "VoidType.h"
 #include "Register.h"
 #include <sys/types.h>
+#include "/home/code/exp04-minic-expr/backend/riscv64/LiveVariableAnalysis.h"
 
 Module::Module(std::string _name) : name(_name)
 {
@@ -216,7 +217,6 @@ ConstFloat * Module::findConstFloat(float val)
 
     return temp;
 }
-
 
 /// @brief 在当前的作用域中查找，若没有查找到则创建数组变量
 /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
@@ -545,6 +545,34 @@ void Module::outputIR(const std::string & filePath)
         std::string instStr;
         func->toString(instStr);
         fprintf(fp, "%s", instStr.c_str());
+        // // 活跃变量分析
+        // fprintf(fp, "\n; ---------- Live Variable Analysis ----------\n");
+
+        // LiveVariableAnalysis lva;
+        // lva.run(func);
+
+        // // 获取基本块
+        // const auto & blocks = lva.getBasicBlocks();
+
+        // for (auto * block: blocks) {
+        //     fprintf(fp, "BasicBlock: %s\n", block->label.c_str());
+
+        //     const auto & liveIn = lva.getLiveIn(block->label);
+        //     fprintf(fp, "  LiveIn: ");
+        //     for (auto * val: liveIn) {
+        //         fprintf(fp, "%s ", val->getName().c_str());
+        //     }
+        //     fprintf(fp, "\n");
+
+        //     const auto & liveOut = lva.getLiveOut(block->label);
+        //     fprintf(fp, "  LiveOut: ");
+        //     for (auto * val: liveOut) {
+        //         fprintf(fp, "%s ", val->getName().c_str());
+        //     }
+        //     fprintf(fp, "\n\n");
+        // }
+
+        // fprintf(fp, "; -------------------------------------------\n\n");
     }
 
     fclose(fp);
