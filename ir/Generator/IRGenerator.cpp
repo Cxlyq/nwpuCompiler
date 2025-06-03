@@ -2193,7 +2193,6 @@ bool IRGenerator::ir_return(ast_node * node)
         }
     }
 
-    // TODO: 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
     Function * currentFunc = module->getCurrentFunction();
 
     // 返回值存在时则移动指令到node中
@@ -2844,9 +2843,9 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims, ValueCategory::VARIABLE);
         if (init_val_node) {
-            std::vector<int>             indices;
+            std::vector<ast_node *>      init_list;
             std::vector<Instruction *> * insts = new std::vector<Instruction *>;
-            if (!init_array_flattened(node->val, dims, init_val_node, *insts)) {
+            if (!init_array_flattened(node->val, dims, init_val_node, *insts, init_list)) {
                 printf("数组初始化失败\n");
                 return false;
             }
@@ -2936,9 +2935,9 @@ bool IRGenerator::ir_const_declare(ast_node * node)
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims, ValueCategory::CONSTANT);
         if (init_val_node) {
-            std::vector<int>             indices;
+            std::vector<ast_node *>      init_list;
             std::vector<Instruction *> * insts = new std::vector<Instruction *>;
-            if (!init_array_flattened(node->val, dims, init_val_node, *insts)) {
+            if (!init_array_flattened(node->val, dims, init_val_node, *insts, init_list)) {
                 printf("数组初始化失败\n");
                 return false;
             }
@@ -2946,7 +2945,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                 node->blockInsts.addInst(inst);
             }
         } else {
-            printf("Semantic error: constant variable must be initialized\n");
+            std::cerr << "Semantic error: constant variable must be initialized\n" << std::endl;
             return false;
         }
     } else {
@@ -3025,7 +3024,8 @@ int evaluateConstExpr(ast_node * node)
 }
 // FIXME： 存放常量数组的初值
 bool IRGenerator::init_array_flattened(
-    Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts)
+    Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts,
+    std::vector<ast_node *> & init_list)
 {
     // 1. 计算总元素数
     int total_elems = 1;
@@ -3035,7 +3035,7 @@ bool IRGenerator::init_array_flattened(
     // 2. 拉平成一维值数组
     std::vector<ast_node *> flat_list;
     flatten_init_node(initNode, dims, 0, flat_list);
-
+    init_list = flat_list;
     // 3. 填充 IR
     for (int i = 0; i < total_elems; ++i) {
         ast_node * val_node = (i < flat_list.size()) ? flat_list[i] : nullptr;

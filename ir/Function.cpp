@@ -17,9 +17,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-#include <iostream>
 #include "IRConstant.h"
 #include "Function.h"
+#include "ArrayType.h"
 
 /// @brief 指定函数名字、函数类型的构造函数
 /// @param _name 函数名称
@@ -347,4 +347,28 @@ void Function::realArgCountInc()
 void Function::realArgCountReset()
 {
     this->realArgCount = 0;
+}
+
+/// @brief 创建局部数组变量的辅助函数
+/// @param type 变量类型
+/// @param array_name 数组名称
+/// @param dims 数组的维度大小
+/// @param scope_level 数组所在作用域层级
+/// @return 新创建的局部数组变量
+LocalVariable *
+Function::newArrayLocalVarValue(Type * type, std::string array_name, std::vector<int> dims, int32_t scope_level)
+{
+    ArrayType *     arrayType = ArrayType::getArrayType(type, dims);
+    LocalVariable * newArrayVar = new LocalVariable(arrayType, array_name, scope_level);
+
+    // 分配栈空间（单位可能是字节，也可能是字长对齐）
+    int totalSize = arrayType->getSizeInBytes();
+    int offset = frameAllocator.allocate(totalSize); // 栈帧分配器维护当前偏移
+
+    newArrayVar->setMemoryAddr(FP_REG, offset); // 通常 FP_REG 是一个常量如 -1 表示 RBP
+
+    // 加入局部变量表
+    varsVector.push_back(newArrayVar);
+
+    return newArrayVar;
 }
