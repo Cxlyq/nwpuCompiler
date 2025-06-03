@@ -97,7 +97,6 @@ bool ast_node::isLeafNode()
 
 /// @brief 创建指定节点类型的节点，请注意在指定有效的孩子后必须追加一个空指针nullptr，表明可变参数结束
 /// @param type 节点类型
-/// @param son_num 孩子节点的个数
 /// @param ...
 /// 可变参数，可支持插入若干个孩子节点，自左往右的次序，最后一个孩子节点必须指定为nullptr。如果没有孩子，则指定为nullptr
 /// @return 创建的节点
@@ -470,12 +469,12 @@ ast_node * create_array_param(type_attr dataType, var_id_attr idAttr, const std:
 /// @brief 创建参数列表节点
 /// @param params 形参列表
 /// @return 创建的节点
-ast_node * create_param_list(const std::vector<ast_node *> & params)
-{
-    ast_node * listNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAMS, VoidType::getType(), -1);
-    listNode->sons = params;
-    return listNode;
-}
+// ast_node * create_param_list(const std::vector<ast_node *> & params)
+// {
+//     ast_node * listNode = new ast_node(ast_operator_type::AST_OP_FUNC_FORMAL_PARAMS, VoidType::getType(), -1);
+//     listNode->sons = params;
+//     return listNode;
+// }
 
 /// @brief 将基本类型转换为 Type
 /// @param bt 基本类型

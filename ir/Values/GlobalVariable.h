@@ -90,6 +90,7 @@ public:
         return false;
     }
 
+    // FIXME: 全局变量的赋初值指令生成，注意区分常量和变量，常量直接做替换
     ///
     /// @brief Declare指令IR显示
     /// @param str
