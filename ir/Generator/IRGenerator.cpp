@@ -1,4 +1,4 @@
-///
+﻿///
 /// @file IRGenerator.cpp
 /// @brief AST遍历产生线性IR的源文件
 /// @author zenglj (zenglj@live.com)
@@ -55,7 +55,7 @@
 IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), module(_module)
 {
     /* 叶子节点 */
-    // TODO:[类型] 复杂类型,浮点数（数组）
+
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_LITERAL_UINT] = &IRGenerator::ir_leaf_node_uint;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_VAR_ID] = &IRGenerator::ir_leaf_node_var_id;
     ast2ir_handlers[ast_operator_type::AST_OP_LEAF_TYPE] = &IRGenerator::ir_leaf_node_type;
@@ -98,7 +98,7 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     /* 变量定义语句 */
     ast2ir_handlers[ast_operator_type::AST_OP_VAR_DECL_STMT] = &IRGenerator::ir_declare_statment;
     ast2ir_handlers[ast_operator_type::AST_OP_VAR_DECL] = &IRGenerator::ir_variable_declare;
-    // TODO:[常量]常量定义
+
     ast2ir_handlers[ast_operator_type::AST_OP_CONST_DECL_STMT] = &IRGenerator::ir_const_declare_statment;
     ast2ir_handlers[ast_operator_type::AST_OP_CONST_DECL] = &IRGenerator::ir_const_declare;
 
@@ -208,13 +208,12 @@ bool IRGenerator::ir_default(ast_node * node)
 bool IRGenerator::ir_compile_unit(ast_node * node)
 {
     module->setCurrentFunction(nullptr);
-
     for (auto son: node->sons) {
 
         // 遍历编译单元，要么是函数定义，要么是语句
         ast_node * son_node = ir_visit_ast_node(son);
         if (!son_node) {
-            // TODO 自行追加语义错误处理
+            std::cerr << "Compile unit: Failed to compile unit!" << std::endl;
             return false;
         }
     }
@@ -228,11 +227,11 @@ bool IRGenerator::ir_compile_unit(ast_node * node)
 bool IRGenerator::ir_function_define(ast_node * node)
 {
     bool result;
-
+    std::cout << "here0" << std::endl;
     // 创建一个函数，用于当前函数处理
     if (module->getCurrentFunction()) {
         // 函数中嵌套定义函数，这是不允许的，错误退出
-        // TODO 自行追加语义错误处理
+        std::cerr << "Function define: Not allow to define a new function in the function!" << std::endl;
         return false;
     }
 
@@ -288,10 +287,10 @@ bool IRGenerator::ir_function_define(ast_node * node)
     // 新建一个Value，用于保存函数的返回值，如果没有返回值可不用申请
     LocalVariable * retValue = nullptr;
     if (!type_node->type->isVoidType()) {
-
         // 保存函数返回值变量到函数信息中，在return语句翻译时需要设置值到这个变量中
         retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type, "ret"));
     }
+    std::cout << "here" << std::endl;
     newFunc->setReturnValue(retValue);
 
     // TODO: 这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
@@ -596,23 +595,10 @@ bool IRGenerator::ir_add(ast_node * node)
         return false;
     }
 
-    // // 这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
-
-    // BinaryInstruction * addInst = new BinaryInstruction(module->getCurrentFunction(),
-    //                                                     IRInstOperator::IRINST_OP_ADD_I,
-    //                                                     left->val,
-    //                                                     right->val,
-    //
-    // IntegerType::getTypeInt());
-    //
-    /// 检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // TODO 数组还需要改
     if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
         lhs = LoadInst;
         lhs->setType(module->findVarValue(left->name)->getType());
@@ -621,7 +607,6 @@ bool IRGenerator::ir_add(ast_node * node)
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
     if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // printf("yes,right\n");
         LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
@@ -654,8 +639,6 @@ bool IRGenerator::ir_add(ast_node * node)
         IRInstOperator::IRINST_OP_ADD_F);
 
     // 创建临时变量保存IR的值，以及线性IR指令
-    // node->blockInsts.addInst(left->blockInsts);
-    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(addInst);
 
     node->val = addInst;
@@ -974,8 +957,8 @@ bool IRGenerator::ir_mod(ast_node * node)
     if (isFloat) {
         return false;
     }
-    // TODO ,数组检查不了
-    if (((int) right->node_type) == 0 && !right->integer_val) {
+
+    if ((right->node_type) == ast_operator_type::AST_OP_LEAF_LITERAL_UINT && !right->integer_val) {
         //为整数0时报mod 0错误
         return false;
     }
@@ -1117,9 +1100,7 @@ bool IRGenerator::ir_and(ast_node * node)
     LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
     LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
     node->blockInsts.addInst(LoadInst3);
-    // TODO 逻辑运算是否需要区别int和float型
-
-    // TODO,对float是否作检查，检查代码参考取余部分，
+    // TODO 逻辑运算是否需要区别int和float型,对float是否作检查，检查代码参考取余部分，
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -1250,9 +1231,7 @@ bool IRGenerator::ir_or(ast_node * node)
     LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
     LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
     node->blockInsts.addInst(LoadInst3);
-    // TODO 逻辑运算是否需要区别int和float型
-
-    // TODO,对float是否作检查，检查代码参考取余部分，
+    // TODO 逻辑运算是否需要区别int和float型,对float是否作检查，检查代码参考取余部分，
 
     // 创建临时变量保存IR的值，以及线性IR指令
     // node->blockInsts.addInst(left->blockInsts);
@@ -2155,28 +2134,13 @@ bool IRGenerator::ir_assign(ast_node * node)
         printf("Assign: some variables have no values.\n");
         return false;
     }
-    // printf("yes.");
-    //  TODO:这里只处理整型的数据，如需支持实数，则需要针对类型进行处理
 
-    // printf("yes222\n");
     Value * temp = module->findVarValue(left->name);
 
     if (temp->getValueCategory() != ValueCategory::VARIABLE) {
         minic_log(LOG_ERROR, "第%lld行的(%s)为常量，不允许赋值", (long long) node->line_no, left->name.c_str());
         return false;
     }
-
-    // printf("yes333\n");
-    // if (nullptr == temp) {
-    //     // 变量不存在，语义错误
-    //     minic_log(LOG_ERROR, "第%lld行的变量(%s)未定义或声明", (long long) node->line_no, left->name.c_str());
-    //     return false;
-    // }
-    // if (right->type->isFloatType()) {
-    //     temp->setVal(right->float_val);
-    // } else {
-    //     temp->setVal(right->integer_val);
-    // }
 
     node->blockInsts.addInst(right->blockInsts);
 
@@ -3028,7 +2992,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
     }
     return true;
 }
-
+// FIXME：实现计算功能（等待实现常量访问的方法）
 int evaluateConstExpr(ast_node * node)
 {
     switch (node->node_type) {
@@ -3059,7 +3023,7 @@ int evaluateConstExpr(ast_node * node)
     }
     return 1;
 }
-
+// FIXME： 存放常量数组的初值
 bool IRGenerator::init_array_flattened(
     Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts)
 {
@@ -3071,17 +3035,6 @@ bool IRGenerator::init_array_flattened(
     // 2. 拉平成一维值数组
     std::vector<ast_node *> flat_list;
     flatten_init_node(initNode, dims, 0, flat_list);
-
-    std::cout << "Flat init list: ";
-    for (size_t i = 0; i < flat_list.size(); ++i) {
-        ast_node * node = flat_list[i];
-        if (node) {
-            std::cout << node->integer_val << " ";
-        } else {
-            std::cout << "null ";
-        }
-    }
-    std::cout << std::endl;
 
     // 3. 填充 IR
     for (int i = 0; i < total_elems; ++i) {

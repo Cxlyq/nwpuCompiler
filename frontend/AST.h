@@ -379,8 +379,6 @@ ast_node * create_var_param(type_attr dataType, var_id_attr idAttr);
 /// @brief 创建数组形参节点
 ast_node * create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node *> & dimensions);
 
-/// @brief 创建参数列表节点
-ast_node * create_param_list(const std::vector<ast_node *> & params);
 
 /// @brief 将基本类型转换为 Type
 /// @param bt 基本类型
