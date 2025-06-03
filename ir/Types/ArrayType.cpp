@@ -13,17 +13,17 @@
 ArrayType::ArrayType(Type * elemType, const std::vector<int> & dims)
 {
     assert(dims.size() > 0);
-
     ID = ArrayTyID;
-
-    // 从最内层维度开始向外包裹
-    elementType = elemType;
-    for (int i = dims.size() - 1; i >= 1; --i) {
-        elementType = new ArrayType(elementType, {dims[i]});
+    dimensions = dims;
+    if (dims.size() == 1) {
+        elementType = elemType;
+        thisdimensionSize = dims[0];
+    } else {
+        std::vector<int> sub_dims(dims.begin() + 1, dims.end());
+        elementType = new ArrayType(elemType, sub_dims);
+        thisdimensionSize = dims[0];
     }
 
-    // 最外层的维度
-    dimensions = {dims[0]};
     sizeInBytes = calculateSize();
 }
 
