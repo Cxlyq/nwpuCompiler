@@ -12,7 +12,7 @@ GetElementPtrInst::GetElementPtrInst(
     // 设置操作数：第一个是 base，后面是 indices
     addOperand(base);
     //: 这里应该继续添加一个value，不过输出的结果仍然是一个类型，所以就偷懒了
-    addOperand(base);
+    // addOperand(base);
     for (auto * idx: indices) {
         addOperand(idx);
     }
@@ -26,7 +26,7 @@ GetElementPtrInst::GetElementPtrInst(
             break;
         }
     }
-    this->type = const_cast<PointerType *>(PointerType::get(current));
+    this->type = current;
 }
 
 /// toString 实现
@@ -39,7 +39,7 @@ void GetElementPtrInst::toString(std::string & str)
         << getOperand(0)->getIRName();
 
     for (size_t i = 1; i < getOperands().size(); ++i) {
-        oss << ", i64 " << getOperand(i)->getIRName();
+        oss << ", i32 " << getOperand(i)->getIRName();
     }
 
     str = oss.str();

@@ -2651,6 +2651,57 @@ bool IRGenerator::ir_leaf_node_float(ast_node * node)
 
 
 ///@brief 这个版本为zjl版本的LLVm
+// bool IRGenerator::ir_array_access(ast_node * node)
+// {
+//     std::string             array_name;
+//     std::vector<ast_node *> array_dims;
+//     extract_array_info(node, array_name, array_dims);
+
+//     node->name = array_name;
+
+//     Value * tempVal = module->findVarValue(array_name);
+//     Type *  type = tempVal->getType();
+//     if (!type->isArrayType()) {
+//         std::cerr << "Array access: Error: Expected an array type." << std::endl;
+//         return false;
+//     }
+
+//     // auto * arrayType = static_cast<ArrayType *>(type);
+//     // int    totalDims = arrayType->getDimensions().size();
+//     int accessDims = array_dims.size();
+
+//     // 构造 gep 索引：{i64 0, i64 idx1, i64 idx2, ...}
+//     std::vector<Value *> indices;
+//     indices.push_back(module->newConstInt(0)); // 第一个是0，表示起始
+
+//     Type * currType = type;
+//     for (int i = 0; i < accessDims; ++i) {
+//         ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
+//         Value *    indexVal = idxNode->val;
+
+//         node->blockInsts.addInst(idxNode->blockInsts);
+//         indices.push_back(indexVal);
+
+//         // 更新类型为当前维度的元素类型
+//         if (currType->isArrayType())
+//             currType = static_cast<ArrayType *>(currType)->getElementType();
+//     }
+
+//     // 构造 getelementptr 指令
+//     auto gepInst = new GetElementPtrInst(
+//         module->getCurrentFunction(),
+//         tempVal,  // 数组变量
+//         type,     // 原始数组类型（如 [5 x [6 x i32]]）
+//         indices); // 多级索引
+
+//     node->blockInsts.addInst(gepInst);
+//     node->val = gepInst;
+//     node->val->setType(currType); // 设置为最终指向类型（如 i32*）
+
+//     return true;
+// }
+
+///@brief 这个版本为标准版本的LLVm
 bool IRGenerator::ir_array_access(ast_node * node)
 {
     std::string             array_name;
@@ -2666,37 +2717,45 @@ bool IRGenerator::ir_array_access(ast_node * node)
         return false;
     }
 
-    // auto * arrayType = static_cast<ArrayType *>(type);
-    // int    totalDims = arrayType->getDimensions().size();
-    int accessDims = array_dims.size();
 
-    // 构造 gep 索引：{i64 0, i64 idx1, i64 idx2, ...}
-    std::vector<Value *> indices;
-    indices.push_back(module->newConstInt(0)); // 第一个是0，表示起始
+    int    accessDims = array_dims.size();
 
-    Type * currType = type;
+    // 起始指针
+    Value * gepPtr = tempVal;
+    Type *  gepType = type;
+
+    // 逐层调用getelementptr
     for (int i = 0; i < accessDims; ++i) {
+        // 先处理索引表达式，转换成Value*
         ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
         Value *    indexVal = idxNode->val;
-
         node->blockInsts.addInst(idxNode->blockInsts);
-        indices.push_back(indexVal);
 
-        // 更新类型为当前维度的元素类型
-        if (currType->isArrayType())
-            currType = static_cast<ArrayType *>(currType)->getElementType();
+        // getelementptr第一个索引固定为0
+        Value * zero = module->newConstInt(0);
+
+        // 生成getelementptr指令：
+        // 类型：gepType是当前的数组类型，如 [5 x [6 x i32]] 或 [6 x i32]
+        // 返回的类型是当前维度元素的指针类型，比如 [6 x i32]* 的元素是 i32
+        auto gepInst =
+            new GetElementPtrInst(module->getCurrentFunction(), gepPtr, gepType, std::vector<Value *>{zero, indexVal});
+
+        node->blockInsts.addInst(gepInst);
+
+        gepPtr = gepInst;
+
+        // 更新类型为下一维
+        if (gepType->isArrayType()) {
+            auto * arrTy = static_cast<ArrayType *>(gepType);
+            gepType = arrTy->getElementType();
+        } else {
+            // 非数组，取元素类型
+            // 这里不做进一步，gepType保持当前
+        }
     }
 
-    // 构造 getelementptr 指令
-    auto gepInst = new GetElementPtrInst(
-        module->getCurrentFunction(),
-        tempVal,  // 数组变量
-        type,     // 原始数组类型（如 [5 x [6 x i32]]）
-        indices); // 多级索引
-
-    node->blockInsts.addInst(gepInst);
-    node->val = gepInst;
-    node->val->setType(currType); // 设置为最终指向类型（如 i32*）
+    node->val = gepPtr;
+    node->val->setType(gepType); // 设置最后的类型，应该是元素指针类型
 
     return true;
 }

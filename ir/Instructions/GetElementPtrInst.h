@@ -20,4 +20,8 @@ public:
     /// @brief 转换为 LLVM IR 字符串
     /// @param str 输出字符串
     void toString(std::string & str) override;
+
+    // private:
+    //     /// 存储原始类型，用于输出 GEP 的类型描述
+    //     Type * rawType;
 };
