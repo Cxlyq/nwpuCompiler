@@ -83,12 +83,14 @@ public:
         this->loadRegNo = regId;
     }
 
-    //TODO
-   bool isZeroValue() const override {
+    // TODO
+    bool isZeroValue() const override
+    {
         // 简单返回 false，或根据需要自定义
         return false;
     }
-    
+
+    // FIXME: 全局变量的赋初值指令生成，注意区分常量和变量，常量直接做替换
     ///
     /// @brief Declare指令IR显示
     /// @param str
@@ -96,31 +98,35 @@ public:
     void toDeclareString(std::string & str)
     {
         str = "declare " + getType()->toString() + " " + getIRName();
-        if(isInited){
-            str +=  "\n" + getIRName() + " = " + getInitValStr();
+        if (isInited) {
+            str += "\n" + getIRName() + " = " + getInitValStr();
         }
     }
 
-     /// 设置初始值（支持 ConstantInt、ConstantFP、ConstantArray 等）
-     void setInitializer(Constant* init) {
+    /// 设置初始值（支持 ConstantInt、ConstantFP、ConstantArray 等）
+    void setInitializer(Constant * init)
+    {
         this->initializer = init;
         if (init != nullptr && !init->isZeroValue()) {
             inBSSSection = false;
         }
-     }
+    }
 
-     /// 获取初始值
-    [[nodiscard]] Constant* getInitializer() const {
+    /// 获取初始值
+    [[nodiscard]] Constant * getInitializer() const
+    {
         return initializer;
     }
 
     /// 判断是否是数组
-    [[nodiscard]] bool isArray() const {
+    [[nodiscard]] bool isArray() const
+    {
         return getType()->isArrayType();
     }
 
     /// 判断是否是浮点型
-    [[nodiscard]] bool isFloat() const {
+    [[nodiscard]] bool isFloat() const
+    {
         return getType()->isFloatType();
     }
 
@@ -139,5 +145,5 @@ private:
     /// @brief 变量的初始值
     /// @note 该值在BSS段中是无效的
     /// @note 该值在数据段中是有效的
-    Constant* initializer = nullptr; // 新增：记录初始值
+    Constant * initializer = nullptr; // 新增：记录初始值
 };

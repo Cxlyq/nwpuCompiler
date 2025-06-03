@@ -239,15 +239,6 @@ protected:
 
     /// @brief AST节点运算符与动作函数关联的映射表
     std::unordered_map<ast_operator_type, ast2ir_handler_t> ast2ir_handlers;
-    ////TODO
-    /// @brief 递归初始化数组
-    // bool init_array_recursive(
-    //     Value *                  array,
-    //     const std::vector<int> & dims,      // 维度信息，如 [2, 3]
-    //     ast_node *               init_node, // 当前 InitVal 节点
-    //     int                      depth,     // 当前深度（从 0 开始）
-    //     std::vector<int> &       indices    // 当前维度下标路径
-    // );
 
     bool init_array_recursive(
         Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, int depth, std::vector<int> & indices,
