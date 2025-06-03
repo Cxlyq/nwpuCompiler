@@ -331,7 +331,7 @@ std::any MiniCCSTVisitor::visitVarDecl(MiniCParser::VarDeclContext * ctx)
 
         // 构造 decl 节点，顺序是：类型 → 名称 → 初值
         ast_node * decl_node = new ast_node(ast_operator_type::AST_OP_VAR_DECL);
-        decl_node->insert_son_node(type_node->deep_copy());
+        decl_node->insert_son_node(type_node->deep_copy()); // 深拷贝类型节点，避免多次使用同一节点
         decl_node->insert_son_node(id_node);
         if (initValNode) {
             decl_node->insert_son_node(initValNode);

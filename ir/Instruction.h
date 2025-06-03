@@ -139,6 +139,9 @@ enum class IRInstOperator : std::int8_t {
     ///@brief Cast指令，类型转换
     IRINST_OP_CAST,
 
+    /// @brief GEP指令，获取元素指针，通常用于数组或结构体
+    IRINST_OP_GEP,
+
     /* 后续可追加其他的IR指令 */
 
     /// @brief 最大指令码，也是无效指令

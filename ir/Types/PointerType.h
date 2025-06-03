@@ -115,6 +115,7 @@ public:
         static StorageSet<PointerType, PointerTypeHasher, PointerTypeEqual> storageSet;
         return storageSet.get(pointee);
     }
+    
 
     ///
     /// @brief 获取类型的IR标识符

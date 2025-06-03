@@ -83,7 +83,7 @@ public:
         this->loadRegNo = regId;
     }
 
-    // TODO
+    // TODO:对于全局变量，是否有初值
     bool isZeroValue() const override
     {
         // 简单返回 false，或根据需要自定义
