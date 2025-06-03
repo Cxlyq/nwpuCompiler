@@ -41,6 +41,7 @@
 #include "BinaryInstruction.h"
 #include "MoveInstruction.h"
 #include "GotoInstruction.h"
+#include "StoreInstruction.h"
 #include "UnaryInstruction.h"
 #include "ConditionalBranchInstruction.h"
 #include "Value.h"
@@ -2921,11 +2922,12 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 return false;
             }
 
-            MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
+            // MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
+            StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, right->val);
             // 创建临时变量保存IR的值，以及线性IR指令
             node->blockInsts.addInst(right->blockInsts);
             node->blockInsts.addInst(left->blockInsts);
-            node->blockInsts.addInst(movInst);
+            node->blockInsts.addInst(storeInst);
 
         } else {
             node->val = module->newVarValue(var_type, var_name);
