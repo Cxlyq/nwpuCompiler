@@ -24,6 +24,7 @@
 
 #include "AST.h"
 #include "ArrayType.h"
+#include "AttrType.h"
 #include "Common.h"
 #include "ConstFloat.h"
 #include "ConstInt.h"
@@ -2647,7 +2648,6 @@ bool IRGenerator::ir_leaf_node_float(ast_node * node)
 //     return true;
 // }
 
-
 ///@brief 这个版本为zjl版本的LLVm
 // bool IRGenerator::ir_array_access(ast_node * node)
 // {
@@ -2715,8 +2715,7 @@ bool IRGenerator::ir_array_access(ast_node * node)
         return false;
     }
 
-
-    int    accessDims = array_dims.size();
+    int accessDims = array_dims.size();
 
     // 起始指针
     Value * gepPtr = tempVal;
@@ -3031,7 +3030,6 @@ bool IRGenerator::ir_const_declare(ast_node * node)
     ast_node * init_val_node = (node->sons.size() > 2) ? node->sons[2] : nullptr; //初始值节点(常量必须有初始值)
 
     Type * var_type = type_node->type;
-    // TODO 增加类型转化指令
     if (id_node->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // 是数组变量，提取数组名和维度表达式
         std::string             array_name;
@@ -3061,7 +3059,11 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                     if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
                         float_init_list->push_back(init_num->float_val);
                     } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
-                        std::cerr << "Warning: Auto transform type \"int\" to \"float\"." << std::endl;
+                        if (init_num->integer_val != 0) {
+                            std::cerr << "Warning: Auto transform type \"int\" to \"float\" at \"" << array_name
+                                      << "\"." << std::endl;
+                        }
+                        // TODO 增加类型转化指令
                         float_init_list->push_back((float) init_num->integer_val);
                     } else {
                         std::cerr << "ERROR(const declare): No match type for const float array " << array_name << "."
@@ -3076,7 +3078,9 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                 for (auto init_num: init_list) {
                     if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
                         int_init_list->push_back(init_num->float_val);
-                        std::cerr << "Warning: Auto transform type \"float\" to \"int\"." << std::endl;
+                        std::cerr << "Warning: Auto transform type \"float\" to \"int\" at \"" << array_name << "\"."
+                                  << std::endl;
+                        // TODO 增加类型转化指令
                     } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
                         int_init_list->push_back((float) init_num->integer_val);
                     } else {
@@ -3100,14 +3104,18 @@ bool IRGenerator::ir_const_declare(ast_node * node)
         if (init_val_node) {
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
-                if (init_val_node->sons[0]->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                if (init_val_node->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
                     node->val = module->newVarValueWithFloat(
                         var_type,
                         var_name,
                         (float) init_val_node->integer_val,
                         ValueCategory::CONSTANT);
-                    std::cerr << "Warning: Auto transform type \"int\" to \"float\"." << std::endl;
-                } else if (init_val_node->sons[0]->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                    if (init_val_node->integer_val != 0) {
+                        std::cerr << "Warning: Auto transform type \"int\" to \"float\" at variable \"" << var_name
+                                  << "\"." << std::endl;
+                        // TODO 增加类型转化指令
+                    }
+                } else if (init_val_node->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
                     node->val = module->newVarValueWithFloat(
                         var_type,
                         var_name,
@@ -3125,19 +3133,21 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                 }
             } else {
                 // 整数类型
-                if (init_val_node->sons[0]->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                if (init_val_node->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
                     node->val = module->newVarValueWithInt(
                         var_type,
                         var_name,
                         init_val_node->integer_val,
                         ValueCategory::CONSTANT);
-                } else if (init_val_node->sons[0]->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                } else if (init_val_node->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
                     node->val = module->newVarValueWithFloat(
                         var_type,
                         var_name,
                         (int) init_val_node->float_val,
                         ValueCategory::CONSTANT);
-                    std::cerr << "Warning: Auto transform type \"float\" to \"int\"." << std::endl;
+                    std::cerr << "Warning: Auto transform type \"float\" to \"int\" at variable \"" << var_name << "\"."
+                              << std::endl;
+                    // TODO 增加类型转化指令
                 } else {
                     std::cerr << "ERROR(const declare): No match type for const int variable " << var_name << "."
                               << std::endl;
@@ -3220,12 +3230,12 @@ bool IRGenerator::init_array_flattened(
         total_elems *= d;
 
     // 2. 拉平成一维值数组
-    std::vector<ast_node *> flat_list;
-    flatten_init_node(initNode, dims, 0, flat_list);
-    init_list = flat_list;
+    std::vector<ast_node *> * flat_list = new std::vector<ast_node *>;
+    flatten_init_node(initNode, dims, 0, *flat_list);
+
     // 3. 填充 IR
     for (int i = 0; i < total_elems; ++i) {
-        ast_node * val_node = (i < flat_list.size()) ? flat_list[i] : nullptr;
+        ast_node * val_node = (i < flat_list->size()) ? (*flat_list)[i] : nullptr;
 
         Value * val = nullptr;
         if (val_node) {
@@ -3238,6 +3248,9 @@ bool IRGenerator::init_array_flattened(
                 return false;
             }
         } else {
+            // TODO：有待检查此处补0在多维数组情况下是否逻辑正确
+            auto tempNode = new ast_node(digit_int_attr{0, 0});
+            flat_list->push_back(tempNode);
             val = module->newConstInt(0); // 默认补零
         }
 
@@ -3263,7 +3276,7 @@ bool IRGenerator::init_array_flattened(
         // addr->setIRName(std::to_string(addr->getIntVal()));
         Insts.push_back(storeInst);
     }
-
+    init_list = *flat_list;
     return true;
 }
 
