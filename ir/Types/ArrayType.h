@@ -33,17 +33,27 @@ public:
     /// @brief 静态方法，获取数组类型
     static ArrayType * getArrayType(Type * elemType, const std::vector<int> & dims);
 
+    // std::string toString() const override
+    // {
+    //     std::string result = "ArrayType(";
+    //     result += elementType->toString() + ", [";
+    //     for (size_t i = 0; i < dimensions.size(); ++i) {
+    //         result += std::to_string(dimensions[i]);
+    //         if (i < dimensions.size() - 1) {
+    //             result += ", ";
+    //         }
+    //     }
+    //     result += "])";
+    //     return result;
+    // }
+
     std::string toString() const override
     {
-        std::string result = "ArrayType(";
-        result += elementType->toString() + ", [";
-        for (size_t i = 0; i < dimensions.size(); ++i) {
-            result += std::to_string(dimensions[i]);
-            if (i < dimensions.size() - 1) {
-                result += ", ";
-            }
+        std::string result = elementType->toString();
+        // 从最后一维往前包裹
+        for (auto it = dimensions.rbegin(); it != dimensions.rend(); ++it) {
+            result = "[" + std::to_string(*it) + " x " + result + "]";
         }
-        result += "])";
         return result;
     }
 

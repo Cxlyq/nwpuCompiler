@@ -49,6 +49,7 @@
 #include "CastInstruction.h"
 #include "IcmpInstruction.h"
 #include "FcmpInstruction.h"
+#include "GetElementPtrInst.h"
 
 /// @brief 构造函数
 /// @param _root AST的根
@@ -2583,104 +2584,156 @@ bool IRGenerator::ir_leaf_node_float(ast_node * node)
     return true;
 }
 
+// bool IRGenerator::ir_array_access(ast_node * node)
+// {
+
+//     // 是数组变量，提取数组名和维度表达式
+//     std::string             array_name;
+//     std::vector<ast_node *> array_dims;
+//     extract_array_info(node, array_name, array_dims);
+
+//     ///设置name，否则作为左值会报错
+//     node->name = array_name;
+//     // 解析维度表达式为实际的常数
+//     // std::vector<int> dims;
+//     // for (auto * expr_node: array_dims) {
+//     //     int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
+//     //     dims.push_back(dim_size);
+//     // }
+
+//     ///使用tempVal获取之前生成的节点
+//     Value * tempVal = module->findVarValue(array_name);
+//     ///获取定义的时候，声明数组各维度
+//     Type * type = tempVal->getType();
+//     if (type->isArrayType()) {
+//         auto *           arrayType = static_cast<ArrayType *>(type);
+//         std::vector<int> ori_dims = arrayType->getDimensions();
+//         // int              offset_size = calcOffset(ori_dims, dims);
+//         //  int              offset = offset_size * 4;
+//         int d = ori_dims.size();
+//         int m = array_dims.size();
+
+//         // 从后往前构造偏移表达式
+//         Value * offset = nullptr;
+//         Value * stride = module->newConstInt(1); // 初始stride=1
+
+//         for (int i = d - 1; i >= d - m; --i) {
+//             ast_node * expr_node = ir_visit_ast_node(array_dims[i - (d - m)]);
+
+//             // 生成子表达式的 IR
+//             Value * indexVal = expr_node->val;
+//             node->blockInsts.addInst(expr_node->blockInsts);
+//             //  tmp = indexVal * stride
+//             auto term = new BinaryInstruction(
+//                 module->getCurrentFunction(),
+//                 IRInstOperator::IRINST_OP_MUL_I,
+//                 indexVal,
+//                 stride,
+//                 IntegerType::getTypeInt());
+//             node->blockInsts.addInst(term);
+
+//             // offset = offset + term
+//             if (offset == nullptr) {
+//                 offset = term;
+//             } else {
+//                 auto sum = new BinaryInstruction(
+//                     module->getCurrentFunction(),
+//                     IRInstOperator::IRINST_OP_ADD_I,
+//                     offset,
+//                     term,
+//                     IntegerType::getTypeInt());
+//                 node->blockInsts.addInst(sum);
+//                 offset = sum;
+//             }
+//             if (i - 1 >= d - m) {
+//                 // 更新stride *= ori_dims[i]
+//                 auto new_stride = new BinaryInstruction(
+//                     module->getCurrentFunction(),
+//                     IRInstOperator::IRINST_OP_MUL_I,
+//                     stride,
+//                     module->newConstInt(ori_dims[i]),
+//                     IntegerType::getTypeInt());
+//                 stride = new_stride;
+//                 node->blockInsts.addInst(new_stride);
+//             }
+//         }
+//         auto offest_size = new BinaryInstruction(
+//             module->getCurrentFunction(),
+//             IRInstOperator::IRINST_OP_MUL_I,
+//             offset,
+//             module->newConstInt(4),
+//             IntegerType::getTypeInt());
+//         node->blockInsts.addInst(offest_size);
+
+//         auto addr = new BinaryInstruction(
+//             module->getCurrentFunction(),
+//             IRInstOperator::IRINST_OP_ADD_I,
+//             tempVal,
+//             offest_size,
+//             IntegerType::getTypeInt());
+//         node->val = addr;
+//         // ///需要手动设置Type，否则addr默认是int类型的value
+//         // node->val->setType(type);
+//         // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
+//         node->blockInsts.addInst(addr);
+
+//     } else {
+//         // 处理错误情况
+//         std::cerr << "Array access: Error: Expected an array type." << std::endl;
+//         return false;
+//     }
+
+//     return true;
+// }
+
+
+///@brief 这个版本为zjl版本的LLVm
 bool IRGenerator::ir_array_access(ast_node * node)
 {
-
-    // 是数组变量，提取数组名和维度表达式
     std::string             array_name;
     std::vector<ast_node *> array_dims;
     extract_array_info(node, array_name, array_dims);
 
-    ///设置name，否则作为左值会报错
     node->name = array_name;
-    // 解析维度表达式为实际的常数
-    // std::vector<int> dims;
-    // for (auto * expr_node: array_dims) {
-    //     int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
-    //     dims.push_back(dim_size);
-    // }
 
-    ///使用tempVal获取之前生成的节点
     Value * tempVal = module->findVarValue(array_name);
-    ///获取定义的时候，声明数组各维度
-    Type * type = tempVal->getType();
-    if (type->isArrayType()) {
-        auto *           arrayType = static_cast<ArrayType *>(type);
-        std::vector<int> ori_dims = arrayType->getDimensions();
-        // int              offset_size = calcOffset(ori_dims, dims);
-        //  int              offset = offset_size * 4;
-        int d = ori_dims.size();
-        int m = array_dims.size();
-
-        // 从后往前构造偏移表达式
-        Value * offset = nullptr;
-        Value * stride = module->newConstInt(1); // 初始stride=1
-
-        for (int i = d - 1; i >= d - m; --i) {
-            ast_node * expr_node = ir_visit_ast_node(array_dims[i - (d - m)]);
-
-            // 生成子表达式的 IR
-            Value * indexVal = expr_node->val;
-            node->blockInsts.addInst(expr_node->blockInsts);
-            //  tmp = indexVal * stride
-            auto term = new BinaryInstruction(
-                module->getCurrentFunction(),
-                IRInstOperator::IRINST_OP_MUL_I,
-                indexVal,
-                stride,
-                IntegerType::getTypeInt());
-            node->blockInsts.addInst(term);
-
-            // offset = offset + term
-            if (offset == nullptr) {
-                offset = term;
-            } else {
-                auto sum = new BinaryInstruction(
-                    module->getCurrentFunction(),
-                    IRInstOperator::IRINST_OP_ADD_I,
-                    offset,
-                    term,
-                    IntegerType::getTypeInt());
-                node->blockInsts.addInst(sum);
-                offset = sum;
-            }
-            if (i - 1 >= d - m) {
-                // 更新stride *= ori_dims[i]
-                auto new_stride = new BinaryInstruction(
-                    module->getCurrentFunction(),
-                    IRInstOperator::IRINST_OP_MUL_I,
-                    stride,
-                    module->newConstInt(ori_dims[i]),
-                    IntegerType::getTypeInt());
-                stride = new_stride;
-                node->blockInsts.addInst(new_stride);
-            }
-        }
-        auto offest_size = new BinaryInstruction(
-            module->getCurrentFunction(),
-            IRInstOperator::IRINST_OP_MUL_I,
-            offset,
-            module->newConstInt(4),
-            IntegerType::getTypeInt());
-        node->blockInsts.addInst(offest_size);
-
-        auto addr = new BinaryInstruction(
-            module->getCurrentFunction(),
-            IRInstOperator::IRINST_OP_ADD_I,
-            tempVal,
-            offest_size,
-            IntegerType::getTypeInt());
-        node->val = addr;
-        // ///需要手动设置Type，否则addr默认是int类型的value
-        // node->val->setType(type);
-        // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
-        node->blockInsts.addInst(addr);
-
-    } else {
-        // 处理错误情况
+    Type *  type = tempVal->getType();
+    if (!type->isArrayType()) {
         std::cerr << "Array access: Error: Expected an array type." << std::endl;
         return false;
     }
+
+    // auto * arrayType = static_cast<ArrayType *>(type);
+    // int    totalDims = arrayType->getDimensions().size();
+    int accessDims = array_dims.size();
+
+    // 构造 gep 索引：{i64 0, i64 idx1, i64 idx2, ...}
+    std::vector<Value *> indices;
+    indices.push_back(module->newConstInt(0)); // 第一个是0，表示起始
+
+    Type * currType = type;
+    for (int i = 0; i < accessDims; ++i) {
+        ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
+        Value *    indexVal = idxNode->val;
+
+        node->blockInsts.addInst(idxNode->blockInsts);
+        indices.push_back(indexVal);
+
+        // 更新类型为当前维度的元素类型
+        if (currType->isArrayType())
+            currType = static_cast<ArrayType *>(currType)->getElementType();
+    }
+
+    // 构造 getelementptr 指令
+    auto gepInst = new GetElementPtrInst(
+        module->getCurrentFunction(),
+        tempVal,  // 数组变量
+        type,     // 原始数组类型（如 [5 x [6 x i32]]）
+        indices); // 多级索引
+
+    node->blockInsts.addInst(gepInst);
+    node->val = gepInst;
+    node->val->setType(currType); // 设置为最终指向类型（如 i32*）
 
     return true;
 }

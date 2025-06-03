@@ -7,8 +7,6 @@
 LoadInstruction::LoadInstruction(Function * _func, Value * addr)
     : Instruction(_func, IRInstOperator::IRINST_OP_LOAD, addr->getType()) // LOAD 操作，返回类型取决于目标变量类型
 {
-    // TODO暂时不要result，默认寄存器
-    //  addOperand(result); // 保存加载的结果（类似于左值）
     addOperand(addr); // 加载的地址（类似于右值）
 }
 
