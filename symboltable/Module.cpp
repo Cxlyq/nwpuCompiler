@@ -217,7 +217,6 @@ ConstFloat * Module::findConstFloat(float val)
     return temp;
 }
 
-
 /// @brief 在当前的作用域中查找，若没有查找到则创建数组变量
 /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
 /// @param type 变量类型
@@ -280,8 +279,6 @@ GlobalVariable * Module::newGlobalArrayVariable(Type * type, std::string array_n
     // 在全局作用域中将该数组添加进去
     return newArrayVar;
 }
-
-
 
 /// @brief 在当前的作用域中查找，若没有查找到则创建局部变量或者全局变量。请注意不能创建临时变量
 /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
@@ -364,12 +361,15 @@ Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVa
 
     } else {
         retVal = newGlobalVariable(type, name);
+        retVal->setInitVal(initVal); // 设置初值
     }
-
+    // 仅在全局变量或者常量中设置初值
     // 增加做作用域中
     scopeStack->insertValue(retVal);
 
-    retVal->setInitVal(initVal); // 设置初值
+    if (valueCategory == ValueCategory::CONSTANT) {
+        retVal->setInitVal(initVal); // 设置初值
+    }
     retVal->setCategory(valueCategory);
     return retVal;
 }
@@ -408,11 +408,14 @@ Value * Module::newVarValueWithInt(Type * type, std::string name, uint32_t initV
 
     } else {
         retVal = newGlobalVariable(type, name);
+        retVal->setInitVal(initVal); // 设置初值
     }
 
     // 增加做作用域中
     scopeStack->insertValue(retVal);
-    retVal->setInitVal(initVal); // 设置初值
+    if (valueCategory == ValueCategory::CONSTANT) {
+        retVal->setInitVal(initVal); // 设置初值
+    }
     retVal->setCategory(valueCategory);
     return retVal;
 }

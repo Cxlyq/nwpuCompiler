@@ -181,10 +181,10 @@ void Value::setCategory(ValueCategory cat)
 
 bool Value::setInitVal(float val)
 {
-    if (valueCategory != ValueCategory::CONSTANT) {
-        std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
-        return false;
-    }
+    // if (valueCategory != ValueCategory::CONSTANT) {
+    //     std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
+    //     return false;
+    // }
     initVal.floatVal = val;
     this->valueType = ValueType::FLOAT;
     isInited = true;
@@ -193,10 +193,10 @@ bool Value::setInitVal(float val)
 }
 bool Value::setInitVal(uint32_t val)
 {
-    if (valueCategory != ValueCategory::CONSTANT) {
-        std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
-        return false;
-    }
+    // if (valueCategory != ValueCategory::CONSTANT) {
+    //     std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
+    //     return false;
+    // }
     initVal.intVal = val;
     this->valueType = ValueType::INT;
     isInited = true;

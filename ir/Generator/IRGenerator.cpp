@@ -227,7 +227,6 @@ bool IRGenerator::ir_compile_unit(ast_node * node)
 bool IRGenerator::ir_function_define(ast_node * node)
 {
     bool result;
-    std::cout << "here0" << std::endl;
     // 创建一个函数，用于当前函数处理
     if (module->getCurrentFunction()) {
         // 函数中嵌套定义函数，这是不允许的，错误退出
@@ -290,7 +289,6 @@ bool IRGenerator::ir_function_define(ast_node * node)
         // 保存函数返回值变量到函数信息中，在return语句翻译时需要设置值到这个变量中
         retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type, "ret"));
     }
-    std::cout << "here" << std::endl;
     newFunc->setReturnValue(retValue);
 
     // TODO: 这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
@@ -2919,7 +2917,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
     ast_node * init_val_node = (node->sons.size() > 2) ? node->sons[2] : nullptr; //初始值节点(常量必须有初始值)
 
     Type * var_type = type_node->type;
-    // TODO 数组变量还未改
+    // TODO 增加类型转化指令
     if (id_node->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
         // 是数组变量，提取数组名和维度表达式
         std::string             array_name;
@@ -2938,8 +2936,42 @@ bool IRGenerator::ir_const_declare(ast_node * node)
             std::vector<ast_node *>      init_list;
             std::vector<Instruction *> * insts = new std::vector<Instruction *>;
             if (!init_array_flattened(node->val, dims, init_val_node, *insts, init_list)) {
-                printf("数组初始化失败\n");
+                std::cerr << "Const declare: Failed to init const array!" << std::endl;
                 return false;
+            }
+            // 存储初值
+            if (type_node->type->isFloatType()) {
+                // 浮点数类型
+                auto float_init_list = new std::vector<float>;
+                for (auto init_num: init_list) {
+                    if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                        float_init_list->push_back(init_num->float_val);
+                    } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                        std::cerr << "Warning: Auto transform type \"int\" to \"float\"." << std::endl;
+                        float_init_list->push_back((float) init_num->integer_val);
+                    } else {
+                        std::cerr << "ERROR(const declare): No match type for const float array " << array_name << "."
+                                  << std::endl;
+                        return false;
+                    }
+                }
+                node->val->setInitVal(float_init_list);
+            } else {
+                // 整数类型
+                auto int_init_list = new std::vector<int>;
+                for (auto init_num: init_list) {
+                    if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                        int_init_list->push_back(init_num->float_val);
+                        std::cerr << "Warning: Auto transform type \"float\" to \"int\"." << std::endl;
+                    } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                        int_init_list->push_back((float) init_num->integer_val);
+                    } else {
+                        std::cerr << "ERROR(const declare): No matched type for const float array " << array_name << "."
+                                  << std::endl;
+                        return false;
+                    }
+                }
+                node->val->setInitVal(int_init_list);
             }
             for (auto inst: *insts) {
                 node->blockInsts.addInst(inst);
@@ -2954,13 +2986,54 @@ bool IRGenerator::ir_const_declare(ast_node * node)
         if (init_val_node) {
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
-
-                node->val =
-                    module->newVarValueWithFloat(var_type, var_name, init_val_node->float_val, ValueCategory::CONSTANT);
+                if (init_val_node->sons[0]->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                    node->val = module->newVarValueWithFloat(
+                        var_type,
+                        var_name,
+                        (float) init_val_node->integer_val,
+                        ValueCategory::CONSTANT);
+                    std::cerr << "Warning: Auto transform type \"int\" to \"float\"." << std::endl;
+                } else if (init_val_node->sons[0]->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                    node->val = module->newVarValueWithFloat(
+                        var_type,
+                        var_name,
+                        init_val_node->float_val,
+                        ValueCategory::CONSTANT);
+                } else {
+                    std::cerr << "ERROR(const declare): No match type for const float variable " << var_name << "."
+                              << std::endl;
+                    return false;
+                }
+                // 检查是否成功创建常量变量
+                if (!node->val) {
+                    std::cerr << "Error: Failed to create constant variable with float value." << std::endl;
+                    return false;
+                }
             } else {
                 // 整数类型
-                node->val =
-                    module->newVarValueWithFloat(var_type, var_name, init_val_node->float_val, ValueCategory::CONSTANT);
+                if (init_val_node->sons[0]->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                    node->val = module->newVarValueWithInt(
+                        var_type,
+                        var_name,
+                        init_val_node->integer_val,
+                        ValueCategory::CONSTANT);
+                } else if (init_val_node->sons[0]->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                    node->val = module->newVarValueWithFloat(
+                        var_type,
+                        var_name,
+                        (int) init_val_node->float_val,
+                        ValueCategory::CONSTANT);
+                    std::cerr << "Warning: Auto transform type \"float\" to \"int\"." << std::endl;
+                } else {
+                    std::cerr << "ERROR(const declare): No match type for const int variable " << var_name << "."
+                              << std::endl;
+                    return false;
+                }
+                // 检查是否成功创建常量变量
+                if (!node->val) {
+                    std::cerr << "Error: Failed to create constant variable with int value." << std::endl;
+                    return false;
+                }
             }
             // 赋值运算符的左侧操作数
             ast_node * left = ir_visit_ast_node(id_node);
