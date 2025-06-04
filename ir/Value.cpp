@@ -179,19 +179,29 @@ void Value::setCategory(ValueCategory cat)
     valueCategory = cat;
 }
 
-void Value::setInitVal(float val)
+bool Value::setInitVal(float val)
 {
+    // if (valueCategory != ValueCategory::CONSTANT) {
+    //     std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
+    //     return false;
+    // }
     initVal.floatVal = val;
     this->valueType = ValueType::FLOAT;
     isInited = true;
     this->val.floatVal = val;
+    return true;
 }
-void Value::setInitVal(uint32_t val)
+bool Value::setInitVal(uint32_t val)
 {
+    // if (valueCategory != ValueCategory::CONSTANT) {
+    //     std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
+    //     return false;
+    // }
     initVal.intVal = val;
     this->valueType = ValueType::INT;
     isInited = true;
     this->val.intVal = val;
+    return true;
 }
 
 std::string Value::getInitValStr()
@@ -218,4 +228,35 @@ void Value::setVal(uint32_t val)
 void Value::setVal(float val)
 {
     this->val.floatVal = val;
+}
+bool Value::setInitVal(std::vector<int> * arrayVal)
+{
+    if (valueCategory != ValueCategory::CONSTANT) {
+        std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
+        return false;
+    }
+    valueType = ARRAY_INT;
+    initVal.array_int_init_list = arrayVal;
+    isInited = true;
+    return true;
+}
+bool Value::setInitVal(std::vector<float> * arrayVal)
+{
+    if (valueCategory != ValueCategory::CONSTANT) {
+        std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
+        return false;
+    }
+    valueType = ARRAY_FLOAT;
+    initVal.array_float_init_list = arrayVal;
+    isInited = true;
+    return true;
+}
+// TODO:完成访问数组初值的功能
+int Value::getArrayValByIndex(std::vector<int> & indexs)
+{
+    return -1;
+}
+float Value::getArrayValByIndex(std::vector<float> & indexs)
+{
+    return -1.0f;
 }

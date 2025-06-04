@@ -54,12 +54,13 @@ protected:
     ///
     std::vector<Use *> uses;
 
-    enum ValueType { NONE, INT, FLOAT, ARRAY };
+    enum ValueType { NONE, INT, FLOAT, ARRAY_INT, ARRAY_FLOAT };
 
     union InitVal {
-        uint32_t           intVal;
-        float              floatVal;
-        std::vector<int> * arrayVal;
+        uint32_t             intVal;
+        float                floatVal;
+        std::vector<int> *   array_int_init_list;
+        std::vector<float> * array_float_init_list;
     };
 
     union Val {
@@ -161,11 +162,15 @@ public:
     ValueType     getValueType();
     ValueCategory getValueCategory();             //获取值的类别（常量或变量）
     void          setCategory(ValueCategory cat); //设置值的类别（常量或变量）
-    void          setInitVal(float val);
-    void          setInitVal(uint32_t val);
+    bool          setInitVal(float val);
+    bool          setInitVal(uint32_t val);
+    bool          setInitVal(std::vector<int> * arrayVal);
+    bool          setInitVal(std::vector<float> * arrayVal);
     std::string   getInitValStr();
     uint32_t      getIntVal();
     float         getFloatVal();
     void          setVal(uint32_t val);
     void          setVal(float val);
+    int           getArrayValByIndex(std::vector<int> & indexs);
+    float         getArrayValByIndex(std::vector<float> & indexs);
 };

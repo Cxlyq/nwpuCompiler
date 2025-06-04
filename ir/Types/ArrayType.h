@@ -33,24 +33,46 @@ public:
     /// @brief 静态方法，获取数组类型
     static ArrayType * getArrayType(Type * elemType, const std::vector<int> & dims);
 
+    // std::string toString() const override
+    // {
+    //     std::string result = "ArrayType(";
+    //     result += elementType->toString() + ", [";
+    //     for (size_t i = 0; i < dimensions.size(); ++i) {
+    //         result += std::to_string(dimensions[i]);
+    //         if (i < dimensions.size() - 1) {
+    //             result += ", ";
+    //         }
+    //     }
+    //     result += "])";
+    //     return result;
+    // }
+
+    /// @brief 转换为字符串形式，适用于zlj格式
+    // std::string toString() const override
+    // {
+    //     std::string result = elementType->toString();
+    //     // 从最后一维往前包裹
+    //     for (auto it = dimensions.rbegin(); it != dimensions.rend(); ++it) {
+    //         result = "[" + std::to_string(*it) + " x " + result + "]";
+    //     }
+    //     return result;
+    // }
+
+    /// @brief 转换为字符串形式，适用于标准llvm格式
     std::string toString() const override
     {
-        std::string result = "ArrayType(";
-        result += elementType->toString() + ", [";
-        for (size_t i = 0; i < dimensions.size(); ++i) {
-            result += std::to_string(dimensions[i]);
-            if (i < dimensions.size() - 1) {
-                result += ", ";
-            }
+        std::string str = elementType->toString();
+        for (int i = dimensions.size() - 1; i >= 0; --i) {
+            str = "[" + std::to_string(dimensions[i]) + " x " + str + "]";
         }
-        result += "])";
-        return result;
+        return str;
     }
 
 private:
-    Type *           elementType; // 数组元素的类型
-    std::vector<int> dimensions;  // 数组的维度信息
-    int              sizeInBytes; // 数组的大小（字节）
+    Type *           elementType;   // 数组元素的类型
+    std::vector<int> dimensions;    // 数组的维度信息
+    int              sizeInBytes;   // 数组的大小（字节）
+    int              thisdimensionSize; // 当前维度的大小
 
     /// @brief 计算数组的总字节数
     int calculateSize() const;

@@ -282,30 +282,6 @@ GlobalVariable * Module::newGlobalArrayVariable(Type * type, std::string array_n
     return newArrayVar;
 }
 
-/// @brief 创建局部数组变量的辅助函数
-/// @param type 变量类型
-/// @param array_name 数组名称
-/// @param dims 数组的维度大小
-/// @param scope_level 数组所在作用域层级
-/// @return 新创建的局部数组变量
-LocalVariable *
-Function::newArrayLocalVarValue(Type * type, std::string array_name, std::vector<int> dims, int32_t scope_level)
-{
-    ArrayType *     arrayType = ArrayType::getArrayType(type, dims);
-    LocalVariable * newArrayVar = new LocalVariable(arrayType, array_name, scope_level);
-
-    // 分配栈空间（单位可能是字节，也可能是字长对齐）
-    int totalSize = arrayType->getSizeInBytes();
-    int offset = frameAllocator.allocate(totalSize); // 栈帧分配器维护当前偏移
-
-    newArrayVar->setMemoryAddr(FP_REG, offset); // 通常 FP_REG 是一个常量如 -1 表示 RBP
-
-    // 加入局部变量表
-    varsVector.push_back(newArrayVar);
-
-    return newArrayVar;
-}
-
 /// @brief 在当前的作用域中查找，若没有查找到则创建局部变量或者全局变量。请注意不能创建临时变量
 /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用
 /// @param type 变量类型
@@ -387,12 +363,15 @@ Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVa
 
     } else {
         retVal = newGlobalVariable(type, name);
+        retVal->setInitVal(initVal); // 设置初值
     }
-
+    // 仅在全局变量或者常量中设置初值
     // 增加做作用域中
     scopeStack->insertValue(retVal);
 
-    retVal->setInitVal(initVal); // 设置初值
+    if (valueCategory == ValueCategory::CONSTANT) {
+        retVal->setInitVal(initVal); // 设置初值
+    }
     retVal->setCategory(valueCategory);
     return retVal;
 }
@@ -431,11 +410,14 @@ Value * Module::newVarValueWithInt(Type * type, std::string name, uint32_t initV
 
     } else {
         retVal = newGlobalVariable(type, name);
+        retVal->setInitVal(initVal); // 设置初值
     }
 
     // 增加做作用域中
     scopeStack->insertValue(retVal);
-    retVal->setInitVal(initVal); // 设置初值
+    if (valueCategory == ValueCategory::CONSTANT) {
+        retVal->setInitVal(initVal); // 设置初值
+    }
     retVal->setCategory(valueCategory);
     return retVal;
 }

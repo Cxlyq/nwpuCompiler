@@ -1,14 +1,30 @@
 #include "ArrayType.h"
 
-// 构造函数
-ArrayType::ArrayType(Type * elemType, const std::vector<int> & dims) : elementType(elemType), dimensions(dims)
-{
-    // 验证至少有一个维度
-    assert(dims.size() > 0);
-    // 计算总大小
-    sizeInBytes = calculateSize();
+// // 构造函数
+// ArrayType::ArrayType(Type * elemType, const std::vector<int> & dims) : elementType(elemType), dimensions(dims)
+// {
+//     // 验证至少有一个维度
+//     assert(dims.size() > 0);
+//     // 计算总大小
+//     sizeInBytes = calculateSize();
 
-    ID = ArrayTyID; // 设置类型ID
+//     ID = ArrayTyID; // 设置类型ID
+// }
+ArrayType::ArrayType(Type * elemType, const std::vector<int> & dims)
+{
+    assert(dims.size() > 0);
+    ID = ArrayTyID;
+    dimensions = dims;
+    if (dims.size() == 1) {
+        elementType = elemType;
+        thisdimensionSize = dims[0];
+    } else {
+        std::vector<int> sub_dims(dims.begin() + 1, dims.end());
+        elementType = new ArrayType(elemType, sub_dims);
+        thisdimensionSize = dims[0];
+    }
+
+    sizeInBytes = calculateSize();
 }
 
 // 获取数组的元素类型

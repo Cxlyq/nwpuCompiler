@@ -134,6 +134,8 @@ set(IR_SRCS
 	ir/Instructions/IcmpInstruction.cpp
 	ir/Instructions/FcmpInstruction.h
 	ir/Instructions/FcmpInstruction.cpp
+	ir/Instructions/GetElementPtrInst.h
+	ir/Instructions/GetElementPtrInst.cpp
 
 	ir/Types/ArrayType.h
 	ir/Types/ArrayType.cpp
