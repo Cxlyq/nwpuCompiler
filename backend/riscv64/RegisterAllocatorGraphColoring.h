@@ -23,6 +23,7 @@
 #include "BitMap.h"
 #include "Value.h"
 #include "PlatformArm32.h"
+#include "LiveVariableAnalysis.h"
 
 class GraphColoringRegisterAllocator {
 public:
@@ -52,7 +53,7 @@ public:
     const std::vector<Value *> & getSpilled() const;
 
 private:
-    void buildGraph();
+    void buildGraph(const LiveVariableAnalysis & lva);
     bool simplify();
     void select();
     void assignColors();

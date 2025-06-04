@@ -1,3 +1,20 @@
+
+///
+/// @file LiveVariableAnalysis.h
+/// @brief 活跃性分析
+/// @author wangjq
+/// @version 1.0
+/// @date 2025-06-03
+///
+/// @copyright Copyright (c) 2025
+///
+/// @par 修改日志:
+/// <table>
+/// <tr><th>Date       <th>Version <th>Author  <th>Description
+/// <tr><td>2025-06-03 <td>1.0     <td>wangjq  <td>新建
+/// </table>
+///
+
 #pragma once
 
 #include "Instruction.h"
@@ -25,8 +42,8 @@ public:
     const std::unordered_set<Value *> & getLiveIn(const std::string & label) const;
 
     /// @brief 获取某个基本块的活跃出口变量集合
-    const std::unordered_set<Value *> &             getLiveOut(const std::string & label) const;
-    std::vector<LiveVariableAnalysis::BasicBlock *> getBasicBlocks() const;
+    const std::unordered_set<Value *> &                     getLiveOut(const std::string & label) const;
+    const std::vector<LiveVariableAnalysis::BasicBlock *> & getBasicBlocks() const;
 
 private:
     /// 所有基本块

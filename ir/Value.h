@@ -31,8 +31,9 @@
 
 enum class ValueCategory {
     UNKNOWN,
-    CONSTANT, //常量
-    VARIABLE  //变量
+    CONSTANT, // 常量
+    VARIABLE, // 变量
+    IMMEDIATE //立即数
 };
 class Value {
 
