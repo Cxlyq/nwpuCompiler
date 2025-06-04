@@ -21,7 +21,7 @@
 #include "VoidType.h"
 #include "Register.h"
 #include <sys/types.h>
-#include "/home/code/exp04-minic-expr/backend/riscv64/LiveVariableAnalysis.h"
+#include "LiveVariableAnalysis.h"
 
 Module::Module(std::string _name) : name(_name)
 {
