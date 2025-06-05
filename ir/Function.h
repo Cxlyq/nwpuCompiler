@@ -25,6 +25,7 @@
 #include "MemVariable.h"
 #include "IRCode.h"
 #include "FrameAllocator.h"
+#include "Value.h"
 
 ///
 /// @brief 描述函数信息的类，是全局静态存储，其Value的类型为FunctionType
@@ -76,12 +77,12 @@ public:
     Instruction * getExitLabel();
 
     /// @brief 设置函数返回值变量
-    /// @param val 返回值变量，要求必须是局部变量，不能是临时变量
-    void setReturnValue(LocalVariable * val);
+    /// @param val 返回值变量，
+    void setReturnValue(Value * val);
 
     /// @brief 获取函数返回值变量
     /// @return 返回值变量
-    LocalVariable * getReturnValue();
+    Value * getReturnValue();
 
     /// @brief 获取函数内变量清单
     /// @return 函数内变量清单
@@ -237,7 +238,7 @@ private:
     ///
     /// @brief 函数返回值变量，不能是临时变量，必须是局部变量
     ///
-    LocalVariable * returnValue = nullptr;
+    Value * returnValue = nullptr;
 
     ///
     /// @brief 由于局部变量、前4个形参需站内空间分配而导致的栈帧大小

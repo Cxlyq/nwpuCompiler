@@ -8,11 +8,14 @@
 ///
 ConditionalInstruction::ConditionalInstruction(
     Function * _func, Value * _cond_val, LabelInstruction * _true_branch_label, LabelInstruction * _false_branch_target)
-    : Instruction(_func, IRInstOperator::IRINST_OP_LABEL, VoidType::getType())
+    : Instruction(_func, IRInstOperator::IRINST_OP_BR_COND, VoidType::getType())
 {
     cond_val = _cond_val;
     true_branch_label = _true_branch_label;
     false_branch_target = _false_branch_target;
+    addOperand(cond_val);
+    addOperand(true_branch_label);
+    addOperand(false_branch_target);
 }
 
 /// @brief 转换成字符串

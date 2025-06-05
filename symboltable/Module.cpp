@@ -21,6 +21,7 @@
 #include "VoidType.h"
 #include "Register.h"
 #include <sys/types.h>
+#include "LiveVariableAnalysis.h"
 
 Module::Module(std::string _name) : name(_name)
 {
@@ -162,7 +163,7 @@ ConstInt * Module::newConstInt(int32_t intVal)
 
         // 不存在，则创建整数常量Value
         val = new ConstInt(intVal);
-
+        val->setCategory(ValueCategory ::IMMEDIATE);
         insertConstIntDirectly(val);
     }
 
@@ -195,6 +196,7 @@ ConstFloat * Module::newConstFloat(float floatVal)
     if (!val) {
         // 不存在则新建
         val = new ConstFloat(floatVal);
+        val->setCategory(ValueCategory ::IMMEDIATE);
         insertConstFloatDirectly(val);
     }
 
@@ -526,6 +528,35 @@ void Module::outputIR(const std::string & filePath)
         std::string instStr;
         func->toString(instStr);
         fprintf(fp, "%s", instStr.c_str());
+        // 活跃变量分析
+        fprintf(fp, "\n; ---------- Live Variable Analysis ----------\n");
+
+        LiveVariableAnalysis lva;
+        // printf("LVA addr = %p\n", &lva); // 看是否是 0x50 或其他非法值
+        lva.run(func);
+
+        // 获取基本块
+        const auto & blocks = lva.getBasicBlocks();
+
+        for (auto * block: blocks) {
+            fprintf(fp, "BasicBlock: %s\n", block->label.c_str());
+
+            const auto & liveIn = lva.getLiveIn(block->label);
+            fprintf(fp, "  LiveIn: ");
+            for (auto * val: liveIn) {
+                fprintf(fp, "%s ", val->getIRName().c_str());
+            }
+            fprintf(fp, "\n");
+
+            const auto & liveOut = lva.getLiveOut(block->label);
+            fprintf(fp, "  LiveOut: ");
+            for (auto * val: liveOut) {
+                fprintf(fp, "%s ", val->getIRName().c_str());
+            }
+            fprintf(fp, "\n\n");
+        }
+
+        fprintf(fp, "; -------------------------------------------\n\n");
     }
 
     fclose(fp);
