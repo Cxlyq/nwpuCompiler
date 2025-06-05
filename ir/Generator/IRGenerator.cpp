@@ -2203,9 +2203,20 @@ bool IRGenerator::ir_return(ast_node * node)
         node->blockInsts.addInst(right->blockInsts);
 
         // 返回值赋值到函数返回值变量上，然后跳转到函数的尾部
-        node->blockInsts.addInst(new MoveInstruction(currentFunc, currentFunc->getReturnValue(), right->val));
+        // node->blockInsts.addInst(new MoveInstruction(currentFunc, currentFunc->getReturnValue(), right->val));
+        node->blockInsts.addInst(new StoreInstruction(
+            currentFunc,
+            currentFunc->getReturnValue(),
+            right->val)); // 将返回值存储到函数的返回值变量中
 
-        node->val = right->val;
+		LoadInstruction * loadInst = new LoadInstruction(
+			currentFunc,
+			currentFunc->getReturnValue()); // 加载返回值变量的值到当前节点
+        node->blockInsts.addInst(loadInst); // 加载返回值变量的值到当前节点
+
+        // node->val = right->val;
+        node->val = loadInst; // 设置当前节点的值为函数返回值变量
+        //currentFunc->setReturnValue(loadInst); // 更新函数的返回值为加载后的值
     } else {
         // 没有返回值
         node->val = nullptr;
