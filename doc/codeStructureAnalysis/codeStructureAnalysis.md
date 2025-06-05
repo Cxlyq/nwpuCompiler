@@ -18,7 +18,7 @@
   [`CodeGenerator->setShowLinearIR()`],根据需要将线性IR作为注释加注到汇编代码中
 ---
 # frontend/:
-### 关键数据结构：`ast_node`
+### 关键数据结构：`ast_node`,`Type_attr`
 ### 整体功能逻辑：
 - MiniC.g4 生成->MiniCLexer&amp;MiniCParser&amp;MiniCBaseVisitor;
 - Antlr4Executor 调用->Antlr4CSTVisitor:MiniCBaseVisitor 遍历具体语法树生成抽象语法树;
