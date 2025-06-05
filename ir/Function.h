@@ -24,7 +24,7 @@
 #include "LocalVariable.h"
 #include "MemVariable.h"
 #include "IRCode.h"
-#include "FrameAllocator.h" 
+#include "FrameAllocator.h"
 
 ///
 /// @brief 描述函数信息的类，是全局静态存储，其Value的类型为FunctionType
@@ -54,7 +54,7 @@ public:
 
     /// @brief 添加函数的形参列表
     void addParams(FormalParam * param);
-    
+
     /// @brief 获取函数内的IR指令代码
     /// @return IR指令代码
     InterCode & getInterCode();
@@ -89,7 +89,20 @@ public:
     {
         return varsVector;
     }
-
+    ///
+    /// @brief Get the Local Var Value object
+    /// @param name
+    /// @return LocalVariable*
+    ///
+    LocalVariable * getLocalVariable(std::string name)
+    {
+        for (auto & var: varsVector) {
+            if (var->getName() == name) {
+                return var;
+            }
+        }
+        return nullptr;
+    }
     ///
     /// @brief  检查是否是函数
     /// @return true 是函数
@@ -150,9 +163,8 @@ public:
     /// \return 临时变量Value
     MemVariable * newMemVariable(Type * type);
 
-    LocalVariable* newArrayLocalVarValue(Type* type, std::string array_name, std::vector<int> dims, int32_t scope_level);
-
-
+    LocalVariable *
+    newArrayLocalVarValue(Type * type, std::string array_name, std::vector<int> dims, int32_t scope_level);
 
     /// @brief 清理函数内申请的资源
     void Delete();
@@ -178,8 +190,9 @@ public:
     ///
     void realArgCountReset();
 
-    bool isZeroValue() const override{
-        //TODO: 判断变量是否为0
+    bool isZeroValue() const override
+    {
+        // TODO: 判断变量是否为0
         return false;
     }
 
@@ -266,5 +279,5 @@ private:
     ///
     int32_t realArgCount = 0;
 
-    FrameAllocator frameAllocator;  // 每个函数一个栈帧分配器
+    FrameAllocator frameAllocator; // 每个函数一个栈帧分配器
 };

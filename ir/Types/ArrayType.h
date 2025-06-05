@@ -67,12 +67,14 @@ public:
         }
         return str;
     }
+    Type * getBaseElementType() const override;
 
 private:
-    Type *           elementType;   // 数组元素的类型
-    std::vector<int> dimensions;    // 数组的维度信息
-    int              sizeInBytes;   // 数组的大小（字节）
+    Type *           elementType;       // 数组元素的类型
+    std::vector<int> dimensions;        // 数组的维度信息
+    int              sizeInBytes;       // 数组的大小（字节）
     int              thisdimensionSize; // 当前维度的大小
+    Type *           baseElementType;
 
     /// @brief 计算数组的总字节数
     int calculateSize() const;
