@@ -544,14 +544,14 @@ void Module::outputIR(const std::string & filePath)
             const auto & liveIn = lva.getLiveIn(block->label);
             fprintf(fp, "  LiveIn: ");
             for (auto * val: liveIn) {
-                fprintf(fp, "%s ", val->getName().c_str());
+                fprintf(fp, "%s ", val->getIRName().c_str());
             }
             fprintf(fp, "\n");
 
             const auto & liveOut = lva.getLiveOut(block->label);
             fprintf(fp, "  LiveOut: ");
             for (auto * val: liveOut) {
-                fprintf(fp, "%s ", val->getName().c_str());
+                fprintf(fp, "%s ", val->getIRName().c_str());
             }
             fprintf(fp, "\n\n");
         }

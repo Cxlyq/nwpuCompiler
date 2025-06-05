@@ -2203,7 +2203,7 @@ bool IRGenerator::ir_return(ast_node * node)
         node->blockInsts.addInst(right->blockInsts);
 
         // 返回值赋值到函数返回值变量上，然后跳转到函数的尾部
-        node->blockInsts.addInst(new MoveInstruction(currentFunc, currentFunc->getReturnValue(), right->val));
+        node->blockInsts.addInst(new StoreInstruction(currentFunc, currentFunc->getReturnValue(), right->val));
 
         node->val = right->val;
     } else {

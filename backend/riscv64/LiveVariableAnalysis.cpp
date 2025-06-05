@@ -112,13 +112,22 @@ void LiveVariableAnalysis::computeUseDef()
 
         for (Instruction * inst: block->instructions) {
             // 遍历指令的所有操作数
-            for (Use * u: inst->getOperands()) {
-                Value * operand = u->getUsee();
-                // TODO 如何去除操作数中的常数
-                if (operand->getValueCategory() == ValueCategory ::IMMEDIATE)
+            for (size_t i = 0; i < inst->getOperands().size(); ++i) {
+                Value * operand = inst->getOperands()[i]->getUsee();
+
+                // 跳过立即数
+                if (operand->getValueCategory() == ValueCategory::IMMEDIATE)
                     continue;
 
-                // 如果该操作数还没在 def 集中出现，则放入 use 集
+                // 跳过void类型
+                if (operand->getType()->isVoidType())
+                    continue;
+
+                // 跳过 store 的目标地址（第2个操作数，即 index == 1）
+                if (inst->getOp() == IRInstOperator::IRINST_OP_STORE && i == 0)
+                    continue;
+
+                // 非DEF中的才加入USE
                 if (defSet.find(operand) == defSet.end()) {
                     useSet.insert(operand);
                 }
@@ -129,6 +138,20 @@ void LiveVariableAnalysis::computeUseDef()
                 defSet.insert(inst);
             }
         }
+        // 🔍 输出调试信息
+        std::cout << "[BasicBlock] " << block->label << "\n";
+
+        std::cout << "  USE: { ";
+        for (auto * v: useSet) {
+            std::cout << v->getIRName() << " ";
+        }
+        std::cout << "}\n";
+
+        std::cout << "  DEF: { ";
+        for (auto * v: defSet) {
+            std::cout << v->getIRName() << " ";
+        }
+        std::cout << "}\n";
     }
 }
 
