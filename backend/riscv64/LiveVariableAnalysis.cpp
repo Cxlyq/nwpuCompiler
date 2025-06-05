@@ -138,21 +138,21 @@ void LiveVariableAnalysis::computeUseDef()
                 defSet.insert(inst);
             }
         }
-    //     // 🔍 输出调试信息
-    //     std::cout << "[BasicBlock] " << block->label << "\n";
+        // // 🔍 输出调试信息
+        // std::cout << "[BasicBlock] " << block->label << "\n";
 
-    //     std::cout << "  USE: { ";
-    //     for (auto * v: useSet) {
-    //         std::cout << v->getIRName() << " ";
-    //     }
-    //     std::cout << "}\n";
+        // std::cout << "  USE: { ";
+        // for (auto * v: useSet) {
+        //     std::cout << v->getIRName() << " ";
+        // }
+        // std::cout << "}\n";
 
-    //     std::cout << "  DEF: { ";
-    //     for (auto * v: defSet) {
-    //         std::cout << v->getIRName() << " ";
-    //     }
-    //     std::cout << "}\n";
-    // }
+        // std::cout << "  DEF: { ";
+        // for (auto * v: defSet) {
+        //     std::cout << v->getIRName() << " ";
+        // }
+        // std::cout << "}\n";
+    }
 }
 
 /// @brief 迭代计算每个基本块的 liveIn 和 liveOut 集合，直到不再变化
