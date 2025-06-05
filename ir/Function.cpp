@@ -20,6 +20,7 @@
 #include "IRConstant.h"
 #include "Function.h"
 #include "ArrayType.h"
+#include "Value.h"
 
 /// @brief 指定函数名字、函数类型的构造函数
 /// @param _name 函数名称
@@ -179,14 +180,14 @@ Instruction * Function::getExitLabel()
 
 /// @brief 设置函数返回值变量
 /// @param val 返回值变量，要求必须是局部变量，不能是临时变量
-void Function::setReturnValue(LocalVariable * val)
+void Function::setReturnValue(Value* val)
 {
     returnValue = val;
 }
 
 /// @brief 获取函数返回值变量
 /// @return 返回值变量
-LocalVariable * Function::getReturnValue()
+Value * Function::getReturnValue()
 {
     return returnValue;
 }

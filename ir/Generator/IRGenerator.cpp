@@ -34,6 +34,7 @@
 #include "IRGenerator.h"
 #include "Instruction.h"
 #include "IntegerType.h"
+#include "LocalVariable.h"
 #include "Module.h"
 #include "EntryInstruction.h"
 #include "LabelInstruction.h"
@@ -287,14 +288,15 @@ bool IRGenerator::ir_function_define(ast_node * node)
     node->blockInsts.addInst(param_node->blockInsts);
 
     // 新建一个Value，用于保存函数的返回值，如果没有返回值可不用申请
-    LocalVariable * retValue = nullptr;
+    Value * retValue = nullptr;
+
     if (!type_node->type->isVoidType()) {
         // 保存函数返回值变量到函数信息中，在return语句翻译时需要设置值到这个变量中
         retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type, "ret"));
+        // XXX: 初步完成：这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
+        node->blockInsts.addInst(new StoreInstruction(newFunc, retValue, module->newConstInt(0)));
     }
     newFunc->setReturnValue(retValue);
-
-    // TODO: 这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
 
     // 函数内已经进入作用域，内部不再需要做变量的作用域管理
     block_node->needScope = false;
@@ -315,11 +317,12 @@ bool IRGenerator::ir_function_define(ast_node * node)
     // node节点的指令移动到函数的IR指令列表中
     irCode.addInst(node->blockInsts);
 
-    // 添加函数出口Label指令，主要用于return语句跳转到这里进行函数的退出
-    irCode.addInst(exitLabelInst);
+    // XXX:取消了出口指令，但上述似乎有一处添加了
+    //  添加函数出口Label指令，主要用于return语句跳转到这里进行函数的退出
+    // irCode.addInst(exitLabelInst);
 
     // 函数出口指令
-    irCode.addInst(new ExitInstruction(newFunc, retValue));
+    irCode.addInst(new ExitInstruction(newFunc, newFunc->getReturnValue()));
 
     // 恢复成外部函数
     module->setCurrentFunction(nullptr);
@@ -2204,26 +2207,30 @@ bool IRGenerator::ir_return(ast_node * node)
 
         // 返回值赋值到函数返回值变量上，然后跳转到函数的尾部
         // node->blockInsts.addInst(new MoveInstruction(currentFunc, currentFunc->getReturnValue(), right->val));
-        node->blockInsts.addInst(new StoreInstruction(
-            currentFunc,
-            currentFunc->getReturnValue(),
-            right->val)); // 将返回值存储到函数的返回值变量中
+        // node->blockInsts.addInst(new StoreInstruction(
+        //     currentFunc,
+        //     currentFunc->getReturnValue(),
+        //     right->val)); // 将返回值存储到函数的返回值变量中
 
-		LoadInstruction * loadInst = new LoadInstruction(
-			currentFunc,
-			currentFunc->getReturnValue()); // 加载返回值变量的值到当前节点
-        node->blockInsts.addInst(loadInst); // 加载返回值变量的值到当前节点
+        // auto * loadInst = new LoadInstruction(currentFunc,
+        //                                       right->val); // 加载返回值变量的值到当前节点
+        // node->blockInsts.addInst(loadInst);                // 加载返回值变量的值到当前节点
 
-        // node->val = right->val;
-        node->val = loadInst; // 设置当前节点的值为函数返回值变量
-        //currentFunc->setReturnValue(loadInst); // 更新函数的返回值为加载后的值
+        // auto * returnvar = new LoadInstruction(currentFunc, currentFunc->getReturnValue());
+        //  node->val = right->val;
+        node->val = right->val;                  // 设置当前节点的值为函数返回值变量
+        currentFunc->setReturnValue(right->val); // 更新函数的返回值为加载后的值
+
+        // TODO:返回值类型检查
+
     } else {
         // 没有返回值
         node->val = nullptr;
+        // node->blockInsts.addInst(new ExitInstruction(currentFunc, nullptr)); // 添加返回指令
     }
 
     // 跳转到函数的尾部出口指令上
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, currentFunc->getExitLabel()));
+    // node->blockInsts.addInst(new GotoInstruction(currentFunc, currentFunc->getExitLabel()));
 
     return true;
 }

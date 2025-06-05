@@ -33,9 +33,9 @@ ExitInstruction::ExitInstruction(Function * _func, Value * _result)
 void ExitInstruction::toString(std::string & str)
 {
     if (getOperandsNum() == 0) {
-        str = "ret void";
+        str = "ret void"; // 对于void类型
     } else {
         Value * src1 = getOperand(0);
-        str = "ret " + src1->getIRName();
+        str = "ret " + src1->getType()->toString() + " " + src1->getIRName();
     }
 }
