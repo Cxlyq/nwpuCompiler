@@ -171,6 +171,5 @@ public:
     float         getFloatVal();
     void          setVal(uint32_t val);
     void          setVal(float val);
-    int           getArrayValByIndex(std::vector<int> & indexs);
-    float         getArrayValByIndex(std::vector<float> & indexs);
+    bool          getArrayValByIndex(std::vector<int> & indexs, float * val);
 };

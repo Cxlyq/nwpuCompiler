@@ -90,7 +90,20 @@ public:
     {
         return varsVector;
     }
-
+    ///
+    /// @brief Get the Local Var Value object
+    /// @param name
+    /// @return LocalVariable*
+    ///
+    LocalVariable * getLocalVariable(std::string name)
+    {
+        for (auto & var: varsVector) {
+            if (var->getName() == name) {
+                return var;
+            }
+        }
+        return nullptr;
+    }
     ///
     /// @brief  检查是否是函数
     /// @return true 是函数

@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 #include "AST.h"
 #include "ArrayType.h"
@@ -30,6 +31,7 @@
 #include "ConstInt.h"
 #include "FloatType.h"
 #include "Function.h"
+#include "GlobalVariable.h"
 #include "IRCode.h"
 #include "IRGenerator.h"
 #include "Instruction.h"
@@ -2791,13 +2793,17 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
     // 解析维度表达式为实际的常数
     std::vector<int> dims;
     for (auto * expr_node: array_dims) {
-        int temp_size = evaluateConstExpr(expr_node); // 尝试计算数组维度，如果失败则返回负数
-        int dim_size;
+        float temp_size;
+        int   dim_size;
+        if (!evaluateConstExpr(expr_node, &temp_size)) {
+            std::cerr << "Const declare: Failed to evaluate constant expression for array dimension." << std::endl;
+            return nullptr;
+        }
         if (temp_size < 0) {
             dim_size = -1;
             dims.push_back(dim_size);
         } else {
-            dim_size = temp_size;
+            dim_size = (int) temp_size;
             dims.push_back(dim_size);
         }
     }
@@ -3056,8 +3062,12 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         // 解析维度表达式为实际的常数
         std::vector<int> dims;
         for (auto * expr_node: array_dims) {
-            int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
-            dims.push_back(dim_size);
+            float dim_size;
+            if (!evaluateConstExpr(expr_node, &dim_size)) {
+                std::cerr << "Const declare: Failed to evaluate constant expression for array dimension." << std::endl;
+                return false;
+            }
+            dims.push_back((int) dim_size);
         }
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims, ValueCategory::VARIABLE);
@@ -3147,8 +3157,12 @@ bool IRGenerator::ir_const_declare(ast_node * node)
         // 解析维度表达式为实际的常数
         std::vector<int> dims;
         for (auto * expr_node: array_dims) {
-            int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
-            dims.push_back(dim_size);
+            float dim_size;
+            if (!evaluateConstExpr(expr_node, &dim_size)) {
+                std::cerr << "Const declare: Failed to evaluate constant expression for array dimension." << std::endl;
+                return false;
+            }
+            dims.push_back((int) dim_size);
         }
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims, ValueCategory::CONSTANT);
@@ -3230,6 +3244,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                         init_val_node->float_val,
                         ValueCategory::CONSTANT);
                 } else {
+                    // FIXME: 调用evaluateConstExpr()函数来计算该节点
                     std::cerr << "ERROR(const declare): No match type for const float variable " << var_name << "."
                               << std::endl;
                     return false;
@@ -3296,38 +3311,130 @@ bool IRGenerator::ir_const_declare(ast_node * node)
     }
     return true;
 }
-// FIXME：实现计算功能（等待实现常量访问的方法）
-int evaluateConstExpr(ast_node * node)
+// TODO：验证计算功能（等待实现常量访问的方法）
+
+bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
 {
-    switch (node->node_type) {
+    if (!root || !result)
+        return false;
+
+    switch (root->node_type) {
         case ast_operator_type::AST_OP_LEAF_LITERAL_UINT:
-            return node->integer_val;
+            *result = static_cast<float>(root->integer_val);
+            return true;
 
-        case ast_operator_type::AST_OP_ADD:
-            return evaluateConstExpr(node->sons[0]) + evaluateConstExpr(node->sons[1]);
+        case ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT:
+            *result = root->float_val;
+            return true;
 
-        case ast_operator_type::AST_OP_SUB:
-            return evaluateConstExpr(node->sons[0]) - evaluateConstExpr(node->sons[1]);
+        case ast_operator_type::AST_OP_LEAF_VAR_ID:
+            return getConstVal(root->name, result);
 
-        case ast_operator_type::AST_OP_MUL:
-            return evaluateConstExpr(node->sons[0]) * evaluateConstExpr(node->sons[1]);
+        case ast_operator_type::AST_OP_ARRAY_ACCESS: {
+            if (root->sons.empty())
+                return false;
+            ast_node * name_node = root->sons[0];
+            if (name_node->node_type != ast_operator_type::AST_OP_LEAF_VAR_ID)
+                return false;
 
-        case ast_operator_type::AST_OP_DIV: {
-            int divisor = evaluateConstExpr(node->sons[1]);
-            if (divisor == 0) {
-                std::cerr << "除以零错误 in evaluateConstExpr" << std::endl;
-                std::abort();
+            std::vector<int> dims;
+            for (size_t i = 1; i < root->sons.size(); ++i) {
+                float val;
+                if (!evaluateConstExpr(root->sons[i], &val))
+                    return false;
+                dims.push_back(static_cast<int>(val));
             }
-            return evaluateConstExpr(node->sons[0]) / divisor;
+            return getConstVal(name_node->name, dims, result);
         }
-        default:
-            // std::cerr << "evaluateConstExpr: 非法节点类型（不是常量表达式）" << std::endl;
-            // std::abort();
-            return -1; // 返回一个错误值，表示无法计算
+
+        // 一元运算
+        case ast_operator_type::AST_OP_POS:
+        case ast_operator_type::AST_OP_NEG:
+        case ast_operator_type::AST_OP_NOT: {
+            if (root->sons.size() != 1)
+                return false;
+            float operand;
+            if (!evaluateConstExpr(root->sons[0], &operand))
+                return false;
+
+            switch (root->node_type) {
+                case ast_operator_type::AST_OP_POS:
+                    *result = +operand;
+                    break;
+                case ast_operator_type::AST_OP_NEG:
+                    *result = -operand;
+                    break;
+                case ast_operator_type::AST_OP_NOT:
+                    *result = (!operand) ? 1.0f : 0.0f;
+                    break;
+                default:
+                    return false;
+            }
+            return true;
+        }
+
+        // 二元运算
+        default: {
+            if (root->sons.size() != 2)
+                return false;
+            float lhs, rhs;
+            if (!evaluateConstExpr(root->sons[0], &lhs))
+                return false;
+            if (!evaluateConstExpr(root->sons[1], &rhs))
+                return false;
+
+            switch (root->node_type) {
+                case ast_operator_type::AST_OP_ADD:
+                    *result = lhs + rhs;
+                    break;
+                case ast_operator_type::AST_OP_SUB:
+                    *result = lhs - rhs;
+                    break;
+                case ast_operator_type::AST_OP_MUL:
+                    *result = lhs * rhs;
+                    break;
+                case ast_operator_type::AST_OP_DIV:
+                    if (rhs == 0.0f)
+                        return false;
+                    *result = lhs / rhs;
+                    break;
+                case ast_operator_type::AST_OP_MOD:
+                    if (rhs == 0.0f)
+                        return false;
+                    *result = fmodf(lhs, rhs);
+                    break;
+                case ast_operator_type::AST_OP_AND:
+                    *result = (lhs && rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_OR:
+                    *result = (lhs || rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_EQ:
+                    *result = (lhs == rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_NEQ:
+                    *result = (lhs != rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_GE:
+                    *result = (lhs >= rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_LE:
+                    *result = (lhs <= rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_GNE:
+                    *result = (lhs > rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_LNE:
+                    *result = (lhs < rhs) ? 1.0f : 0.0f;
+                    break;
+                default:
+                    return false;
+            }
+            return true;
+        }
     }
-    return 1;
 }
-// FIXME： 存放常量数组的初值
+
 bool IRGenerator::init_array_flattened(
     Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts,
     std::vector<ast_node *> & init_list)
@@ -3388,6 +3495,7 @@ bool IRGenerator::init_array_flattened(
     return true;
 }
 
+// FIXME：@吴灿 调用evaluateConstExpr计算初始化节点的值
 void IRGenerator::flatten_init_node(
     ast_node * node, const std::vector<int> & dims, int depth, std::vector<ast_node *> & flat_list)
 {
@@ -3571,4 +3679,58 @@ bool IRGenerator::gen_condition_branch(
     current_block_insts.addInst(new ConditionalInstruction(currentFunc, branch_cond_val, true_target, false_target));
 
     return true; // Successfully generated IR for non-short-circuiting condition
+}
+
+// TODO:验证获取常量是否正常
+bool IRGenerator::getConstVal(std::string name, float * val)
+{
+    Value * var = module->findVarValue(name);
+    if (!var) {
+        std::cerr << "Error: Constant variable '" << name << "' not found." << std::endl;
+        return false;
+    }
+    if (var->getValueCategory() == ValueCategory::CONSTANT && var->isInited) {
+        if (var->getType()->isFloatType()) {
+            *val = var->getFloatInitVal();
+            return true;
+        } else if (var->getType()->isIntegerType()) {
+            *val = var->getIntInitVal();
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        std::cerr << "Error: Variable '" << name << "' is not a constant or not initialized." << std::endl;
+        return false;
+    }
+}
+bool IRGenerator::getConstVal(std::string name, std::vector<int> & dims, float * val)
+{
+    Value * var = module->findVarValue(name);
+    if (!var) {
+        std::cerr << "Error: Constant variable '" << name << "' not found." << std::endl;
+        return false;
+    }
+    if (var->getValueCategory() == ValueCategory::CONSTANT && var->isInited) {
+        if (var->getType()->getBaseElementType()) {
+            if (!var->getArrayValByIndex(dims, val)) {
+                std::cerr << "Error: Failed to get array value for variable '" << name << "' with dimensions [";
+                for (size_t i = 0; i < dims.size(); ++i) {
+                    std::cout << dims[i];
+                    if (i < dims.size() - 1) {
+                        std::cout << ", ";
+                    }
+                }
+                std::cout << "]." << std::endl;
+                return false;
+            }
+        } else {
+            std::cerr << "Error: Variable '" << name << "' is not an array." << std::endl;
+            return false;
+        }
+    } else {
+        std::cerr << "Error: Variable '" << name << "' is not a constant or not initialized." << std::endl;
+        return false;
+    }
+    return false;
 }

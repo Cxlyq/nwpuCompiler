@@ -252,11 +252,7 @@ bool Value::setInitVal(std::vector<float> * arrayVal)
     return true;
 }
 // TODO:完成访问数组初值的功能
-int Value::getArrayValByIndex(std::vector<int> & indexs)
+bool Value::getArrayValByIndex(std::vector<int> & indexs, float * val)
 {
-    return -1;
-}
-float Value::getArrayValByIndex(std::vector<float> & indexs)
-{
-    return -1.0f;
+    return false;
 }

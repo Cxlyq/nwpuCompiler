@@ -15,6 +15,7 @@ ArrayType::ArrayType(Type * elemType, const std::vector<int> & dims)
     assert(dims.size() > 0);
     ID = ArrayTyID;
     dimensions = dims;
+    baseElementType = elemType;
     if (dims.size() == 1) {
         elementType = elemType;
         thisdimensionSize = dims[0];
@@ -77,4 +78,9 @@ int ArrayType::calculateSize() const
         totalSize *= dim; // 累乘所有维度的大小
     }
     return totalSize * elementType->getSizeInBytes(); // 乘以元素类型的字节大小
+}
+
+Type * ArrayType::getBaseElementType() const
+{
+    return baseElementType;
 }
