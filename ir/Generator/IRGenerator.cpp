@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <vector>
 #include <iostream>
+#include <cmath>
 
 #include "AST.h"
 #include "ArrayType.h"
@@ -30,10 +31,12 @@
 #include "ConstInt.h"
 #include "FloatType.h"
 #include "Function.h"
+#include "GlobalVariable.h"
 #include "IRCode.h"
 #include "IRGenerator.h"
 #include "Instruction.h"
 #include "IntegerType.h"
+#include "LocalVariable.h"
 #include "Module.h"
 #include "EntryInstruction.h"
 #include "LabelInstruction.h"
@@ -287,14 +290,15 @@ bool IRGenerator::ir_function_define(ast_node * node)
     node->blockInsts.addInst(param_node->blockInsts);
 
     // 新建一个Value，用于保存函数的返回值，如果没有返回值可不用申请
-    LocalVariable * retValue = nullptr;
+    Value * retValue = nullptr;
+
     if (!type_node->type->isVoidType()) {
         // 保存函数返回值变量到函数信息中，在return语句翻译时需要设置值到这个变量中
         retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type, "ret"));
+        // XXX: 初步完成：这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
+        node->blockInsts.addInst(new StoreInstruction(newFunc, retValue, module->newConstInt(0)));
     }
     newFunc->setReturnValue(retValue);
-
-    // TODO: 这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
 
     // 函数内已经进入作用域，内部不再需要做变量的作用域管理
     block_node->needScope = false;
@@ -315,11 +319,12 @@ bool IRGenerator::ir_function_define(ast_node * node)
     // node节点的指令移动到函数的IR指令列表中
     irCode.addInst(node->blockInsts);
 
-    // 添加函数出口Label指令，主要用于return语句跳转到这里进行函数的退出
-    irCode.addInst(exitLabelInst);
+    // XXX:取消了出口指令，但上述似乎有一处添加了
+    //  添加函数出口Label指令，主要用于return语句跳转到这里进行函数的退出
+    // irCode.addInst(exitLabelInst);
 
     // 函数出口指令
-    irCode.addInst(new ExitInstruction(newFunc, retValue));
+    irCode.addInst(new ExitInstruction(newFunc, newFunc->getReturnValue()));
 
     // 恢复成外部函数
     module->setCurrentFunction(nullptr);
@@ -397,8 +402,9 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             currentFunc->addParams(fParam);
 
             // 生成 MoveInstruction 将传入实参值复制到局部形参变量
-            Instruction * move_inst = new MoveInstruction(currentFunc, param_value, fParam);
-            node->blockInsts.addInst(move_inst);
+            // Instruction * move_inst = new MoveInstruction(currentFunc, param_value, fParam);
+            StoreInstruction * store_inst = new StoreInstruction(currentFunc, param_value, fParam);
+            node->blockInsts.addInst(store_inst);
         } else {
             ast_node *  type_node = param_decl_node->sons[0];
             ast_node *  param_node = param_decl_node->sons[1];
@@ -426,8 +432,9 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             // 生成 MoveInstruction 将传入实参值复制到局部形参变量
             // 这条指令确保了传入的值被存储在作用域中的 LocalVariable 中，供函数体使用。
             // MoveInstruction(Function* func, Value* dest, Value* src)
-            Instruction * move_inst = new MoveInstruction(currentFunc, param_value, fParam);
-            node->blockInsts.addInst(move_inst);
+            // Instruction *      move_inst = new MoveInstruction(currentFunc, param_value, fParam);
+            StoreInstruction * store_inst = new StoreInstruction(currentFunc, param_value, fParam);
+            node->blockInsts.addInst(store_inst);
         }
     }
     // 所有形参处理成功
@@ -480,6 +487,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
         // 遍历参数列表，孩子是表达式
         // 这里自左往右计算表达式
         for (auto son: paramsNode->sons) {
+            
             if (son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
                 std::vector<Instruction *> insts;
                 Value *                    arrayRParam = funcall_array_access(son, insts);
@@ -2203,16 +2211,31 @@ bool IRGenerator::ir_return(ast_node * node)
         node->blockInsts.addInst(right->blockInsts);
 
         // 返回值赋值到函数返回值变量上，然后跳转到函数的尾部
-        node->blockInsts.addInst(new StoreInstruction(currentFunc, currentFunc->getReturnValue(), right->val));
+        // node->blockInsts.addInst(new MoveInstruction(currentFunc, currentFunc->getReturnValue(), right->val));
+        // node->blockInsts.addInst(new StoreInstruction(
+        //     currentFunc,
+        //     currentFunc->getReturnValue(),
+        //     right->val)); // 将返回值存储到函数的返回值变量中
 
-        node->val = right->val;
+        // auto * loadInst = new LoadInstruction(currentFunc,
+        //                                       right->val); // 加载返回值变量的值到当前节点
+        // node->blockInsts.addInst(loadInst);                // 加载返回值变量的值到当前节点
+
+        // auto * returnvar = new LoadInstruction(currentFunc, currentFunc->getReturnValue());
+        //  node->val = right->val;
+        node->val = right->val;                  // 设置当前节点的值为函数返回值变量
+        currentFunc->setReturnValue(right->val); // 更新函数的返回值为加载后的值
+
+        // TODO:返回值类型检查
+
     } else {
         // 没有返回值
         node->val = nullptr;
+        // node->blockInsts.addInst(new ExitInstruction(currentFunc, nullptr)); // 添加返回指令
     }
 
     // 跳转到函数的尾部出口指令上
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, currentFunc->getExitLabel()));
+    // node->blockInsts.addInst(new GotoInstruction(currentFunc, currentFunc->getExitLabel()));
 
     return true;
 }
@@ -2770,13 +2793,17 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
     // 解析维度表达式为实际的常数
     std::vector<int> dims;
     for (auto * expr_node: array_dims) {
-        int temp_size = evaluateConstExpr(expr_node); // 尝试计算数组维度，如果失败则返回负数
-        int dim_size;
+        float temp_size;
+        int   dim_size;
+        if (!evaluateConstExpr(expr_node, &temp_size)) {
+            std::cerr << "Const declare: Failed to evaluate constant expression for array dimension." << std::endl;
+            return nullptr;
+        }
         if (temp_size < 0) {
             dim_size = -1;
             dims.push_back(dim_size);
         } else {
-            dim_size = temp_size;
+            dim_size = (int) temp_size;
             dims.push_back(dim_size);
         }
     }
@@ -2795,103 +2822,48 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
     Type * type = tempVal->getType();
 
     if (type->isArrayType()) {
-        auto *           arrayType = static_cast<ArrayType *>(type);
-        std::vector<int> ori_dims = arrayType->getDimensions();
-        // int              offset_size = calcOffset(ori_dims, dims);
-        //  int              offset = offset_size * 4;
-        int d = ori_dims.size();
-        int m = array_dims.size();
+        int accessDims = array_dims.size();
 
-        // 从后往前构造偏移表达式
-        Value * offset = nullptr;
-        Value * stride = module->newConstInt(1); // 初始stride=1
+        // 起始指针
+        Value * gepPtr = tempVal;
+        Type *  gepType = type;
 
-        for (int j = d - 1; j > m - 1; j--) {
-            // 更新stride *= ori_dims[i]
-            auto new_stride = new BinaryInstruction(
+        // 逐层调用getelementptr
+        for (int i = 0; i < accessDims; ++i) {
+            // 先处理索引表达式，转换成Value*
+            ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
+            Value *    indexVal = idxNode->val;
+            node->blockInsts.addInst(idxNode->blockInsts);
+
+            // getelementptr第一个索引固定为0
+            Value * zero = module->newConstInt(0);
+
+            // 生成getelementptr指令：
+            // 类型：gepType是当前的数组类型，如 [5 x [6 x i32]] 或 [6 x i32]
+            // 返回的类型是当前维度元素的指针类型，比如 [6 x i32]* 的元素是 i32
+            auto gepInst = new GetElementPtrInst(
                 module->getCurrentFunction(),
-                IRInstOperator::IRINST_OP_MUL_I,
-                stride,
-                module->newConstInt(ori_dims[j]),
-                IntegerType::getTypeInt());
-            stride = new_stride;
-            // insts.push_back(new_stride);
-            node->blockInsts.addInst(new_stride);
-        }
+                gepPtr,
+                gepType,
+                std::vector<Value *>{zero, indexVal});
 
-        for (int i = m - 1; i >= 0; i--) {
-            // ast_node * expr_node = array_dims[i - (d - m)];
+            node->blockInsts.addInst(gepInst);
 
-            // // 生成子表达式的 IR
-            // ir_visit_ast_node(expr_node);
-            // Value * indexVal = expr_node->val;
-            ast_node * expr_node = ir_visit_ast_node(array_dims[i]);
+            gepPtr = gepInst;
 
-            // 生成子表达式的 IR
-            Value * indexVal = expr_node->val;
-            node->blockInsts.addInst(expr_node->blockInsts);
-            // insts.push_back(expr_node->blockInsts);/
-
-            // tmp = indexVal * stride
-            auto term = new BinaryInstruction(
-                module->getCurrentFunction(),
-                IRInstOperator::IRINST_OP_MUL_I,
-                indexVal,
-                stride,
-                IntegerType::getTypeInt());
-            // insts.push_back(term);
-            node->blockInsts.addInst(term);
-
-            // offset = offset + term
-            if (offset == nullptr) {
-                offset = term;
+            // 更新类型为下一维
+            if (gepType->isArrayType()) {
+                auto * arrTy = static_cast<ArrayType *>(gepType);
+                gepType = arrTy->getElementType();
             } else {
-                auto sum = new BinaryInstruction(
-                    module->getCurrentFunction(),
-                    IRInstOperator::IRINST_OP_ADD_I,
-                    offset,
-                    term,
-                    IntegerType::getTypeInt());
-                // insts.push_back(sum);
-                node->blockInsts.addInst(sum);
-                offset = sum;
+                // 非数组，取元素类型
+                // 这里不做进一步，gepType保持当前
             }
-
-            if (i - 1 >= 0) {
-                // 更新stride *= ori_dims[i]
-                auto new_stride = new BinaryInstruction(
-                    module->getCurrentFunction(),
-                    IRInstOperator::IRINST_OP_MUL_I,
-                    stride,
-                    module->newConstInt(ori_dims[i]),
-                    IntegerType::getTypeInt());
-                stride = new_stride;
-                // insts.push_back(new_stride);
-                node->blockInsts.addInst(new_stride);
-            }
+            arrayPRParam = gepInst;
         }
-        auto offest_size = new BinaryInstruction(
-            module->getCurrentFunction(),
-            IRInstOperator::IRINST_OP_MUL_I,
-            offset,
-            module->newConstInt(4),
-            IntegerType::getTypeInt());
-        // insts.push_back(offest_size);
-        node->blockInsts.addInst(offest_size);
 
-        auto addr = new BinaryInstruction(
-            module->getCurrentFunction(),
-            IRInstOperator::IRINST_OP_ADD_I,
-            tempVal,
-            offest_size,
-            IntegerType::getTypeInt());
-        node->val = addr;
-        // ///需要手动设置Type，否则addr默认是int类型的value
-        // node->val->setType(type);
-        // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
-        // insts.push_back(addr);
-        node->blockInsts.addInst(addr);
-        arrayPRParam = addr;
+        node->val = gepPtr;
+        node->val->setType(gepType);       // 设置最后的类型，应该是元素指针类型
         arrayPRParam->setType(arrayType1); // 设置类型
 
     } else {
@@ -2899,12 +2871,155 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
         std::cerr << "Error: Expected an array type." << std::endl;
         return nullptr;
     }
-    if (node) {
-        std::cout << "here" << std::endl;
-    }
 
     return arrayPRParam;
 }
+
+// Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instruction *> & insts)
+// {
+
+//     // 是数组变量，提取数组名和维度表达式
+//     std::string             array_name;
+//     std::vector<ast_node *> array_dims;
+//     extract_array_info(node, array_name, array_dims);
+
+//     ///设置name，否则作为左值会报错
+//     node->name = array_name;
+//     // 解析维度表达式为实际的常数
+//     std::vector<int> dims;
+//     for (auto * expr_node: array_dims) {
+//         int temp_size = evaluateConstExpr(expr_node); // 尝试计算数组维度，如果失败则返回负数
+//         int dim_size;
+//         if (temp_size < 0) {
+//             dim_size = -1;
+//             dims.push_back(dim_size);
+//         } else {
+//             dim_size = temp_size;
+//             dims.push_back(dim_size);
+//         }
+//     }
+
+//     /// 使用tempVal获取之前生成的节点
+//     Value * tempVal = module->findVarValue(array_name);
+//     if (!tempVal) {
+//         std::cerr << "Function call - array: Cannot find array!" << std::endl;
+//     }
+//     ArrayType * arrayType = new ArrayType(tempVal->getType()->getElementType(), dims);
+//     std::cout << "arrayType type: " << arrayType->toString() << std::endl;
+//     ArrayType * arrayType1 = new ArrayType(tempVal->getType()->getElementType(), dims);
+//     Value *     arrayPRParam = new Value(arrayType); // 设置实参表
+//     arrayPRParam->setName(array_name);               // a
+//     // std::cout << "arrayPRParam type: " << arrayPRParam->getType()->toString() << std::endl;
+//     Type * type = tempVal->getType();
+
+//     if (type->isArrayType()) {
+//         auto *           arrayType = static_cast<ArrayType *>(type);
+//         std::vector<int> ori_dims = arrayType->getDimensions();
+//         // int              offset_size = calcOffset(ori_dims, dims);
+//         //  int              offset = offset_size * 4;
+//         int d = ori_dims.size();
+//         int m = array_dims.size();
+
+//         // 从后往前构造偏移表达式
+//         Value * offset = nullptr;
+//         Value * stride = module->newConstInt(1); // 初始stride=1
+
+//         for (int j = d - 1; j > m - 1; j--) {
+//             // 更新stride *= ori_dims[i]
+//             auto new_stride = new BinaryInstruction(
+//                 module->getCurrentFunction(),
+//                 IRInstOperator::IRINST_OP_MUL_I,
+//                 stride,
+//                 module->newConstInt(ori_dims[j]),
+//                 IntegerType::getTypeInt());
+//             stride = new_stride;
+//             // insts.push_back(new_stride);
+//             node->blockInsts.addInst(new_stride);
+//         }
+
+//         for (int i = m - 1; i >= 0; i--) {
+//             // ast_node * expr_node = array_dims[i - (d - m)];
+
+//             // // 生成子表达式的 IR
+//             // ir_visit_ast_node(expr_node);
+//             // Value * indexVal = expr_node->val;
+//             ast_node * expr_node = ir_visit_ast_node(array_dims[i]);
+
+//             // 生成子表达式的 IR
+//             Value * indexVal = expr_node->val;
+//             node->blockInsts.addInst(expr_node->blockInsts);
+//             // insts.push_back(expr_node->blockInsts);/
+
+//             // tmp = indexVal * stride
+//             auto term = new BinaryInstruction(
+//                 module->getCurrentFunction(),
+//                 IRInstOperator::IRINST_OP_MUL_I,
+//                 indexVal,
+//                 stride,
+//                 IntegerType::getTypeInt());
+//             // insts.push_back(term);
+//             node->blockInsts.addInst(term);
+
+//             // offset = offset + term
+//             if (offset == nullptr) {
+//                 offset = term;
+//             } else {
+//                 auto sum = new BinaryInstruction(
+//                     module->getCurrentFunction(),
+//                     IRInstOperator::IRINST_OP_ADD_I,
+//                     offset,
+//                     term,
+//                     IntegerType::getTypeInt());
+//                 // insts.push_back(sum);
+//                 node->blockInsts.addInst(sum);
+//                 offset = sum;
+//             }
+
+//             if (i - 1 >= 0) {
+//                 // 更新stride *= ori_dims[i]
+//                 auto new_stride = new BinaryInstruction(
+//                     module->getCurrentFunction(),
+//                     IRInstOperator::IRINST_OP_MUL_I,
+//                     stride,
+//                     module->newConstInt(ori_dims[i]),
+//                     IntegerType::getTypeInt());
+//                 stride = new_stride;
+//                 // insts.push_back(new_stride);
+//                 node->blockInsts.addInst(new_stride);
+//             }
+//         }
+//         auto offest_size = new BinaryInstruction(
+//             module->getCurrentFunction(),
+//             IRInstOperator::IRINST_OP_MUL_I,
+//             offset,
+//             module->newConstInt(4),
+//             IntegerType::getTypeInt());
+//         // insts.push_back(offest_size);
+//         node->blockInsts.addInst(offest_size);
+
+//         auto addr = new BinaryInstruction(
+//             module->getCurrentFunction(),
+//             IRInstOperator::IRINST_OP_ADD_I,
+//             tempVal,
+//             offest_size,
+//             IntegerType::getTypeInt());
+//         node->val = addr;
+//         // ///需要手动设置Type，否则addr默认是int类型的value
+//         // node->val->setType(type);
+//         // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
+//         // insts.push_back(addr);
+//         node->blockInsts.addInst(addr);
+//         arrayPRParam = addr;
+//         arrayPRParam->setType(arrayType1); // 设置类型
+
+//     } else {
+//         // 处理错误情况
+//         std::cerr << "Error: Expected an array type." << std::endl;
+//         return nullptr;
+//     }
+
+//     return arrayPRParam;
+// }
 
 /// @brief 变量声明语句节点翻译成线性中间IR
 /// @param node AST节点
@@ -2947,8 +3062,12 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         // 解析维度表达式为实际的常数
         std::vector<int> dims;
         for (auto * expr_node: array_dims) {
-            int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
-            dims.push_back(dim_size);
+            float dim_size;
+            if (!evaluateConstExpr(expr_node, &dim_size)) {
+                std::cerr << "Const declare: Failed to evaluate constant expression for array dimension." << std::endl;
+                return false;
+            }
+            dims.push_back((int) dim_size);
         }
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims, ValueCategory::VARIABLE);
@@ -2994,7 +3113,6 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 return false;
             }
 
-            // MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
             StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, right->val);
             // 创建临时变量保存IR的值，以及线性IR指令
             node->blockInsts.addInst(right->blockInsts);
@@ -3039,8 +3157,12 @@ bool IRGenerator::ir_const_declare(ast_node * node)
         // 解析维度表达式为实际的常数
         std::vector<int> dims;
         for (auto * expr_node: array_dims) {
-            int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
-            dims.push_back(dim_size);
+            float dim_size;
+            if (!evaluateConstExpr(expr_node, &dim_size)) {
+                std::cerr << "Const declare: Failed to evaluate constant expression for array dimension." << std::endl;
+                return false;
+            }
+            dims.push_back((int) dim_size);
         }
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims, ValueCategory::CONSTANT);
@@ -3122,6 +3244,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                         init_val_node->float_val,
                         ValueCategory::CONSTANT);
                 } else {
+                    // FIXME: 调用evaluateConstExpr()函数来计算该节点
                     std::cerr << "ERROR(const declare): No match type for const float variable " << var_name << "."
                               << std::endl;
                     return false;
@@ -3175,11 +3298,11 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                 return false;
             }
 
-            MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
+            StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, right->val);
             // 创建临时变量保存IR的值，以及线性IR指令
             node->blockInsts.addInst(right->blockInsts);
             node->blockInsts.addInst(left->blockInsts);
-            node->blockInsts.addInst(movInst);
+            node->blockInsts.addInst(storeInst);
 
         } else {
             printf("Semantic error: constant variable must be initialized\n");
@@ -3188,38 +3311,130 @@ bool IRGenerator::ir_const_declare(ast_node * node)
     }
     return true;
 }
-// FIXME：实现计算功能（等待实现常量访问的方法）
-int evaluateConstExpr(ast_node * node)
+// TODO：验证计算功能（等待实现常量访问的方法）
+
+bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
 {
-    switch (node->node_type) {
+    if (!root || !result)
+        return false;
+
+    switch (root->node_type) {
         case ast_operator_type::AST_OP_LEAF_LITERAL_UINT:
-            return node->integer_val;
+            *result = static_cast<float>(root->integer_val);
+            return true;
 
-        case ast_operator_type::AST_OP_ADD:
-            return evaluateConstExpr(node->sons[0]) + evaluateConstExpr(node->sons[1]);
+        case ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT:
+            *result = root->float_val;
+            return true;
 
-        case ast_operator_type::AST_OP_SUB:
-            return evaluateConstExpr(node->sons[0]) - evaluateConstExpr(node->sons[1]);
+        case ast_operator_type::AST_OP_LEAF_VAR_ID:
+            return getConstVal(root->name, result);
 
-        case ast_operator_type::AST_OP_MUL:
-            return evaluateConstExpr(node->sons[0]) * evaluateConstExpr(node->sons[1]);
+        case ast_operator_type::AST_OP_ARRAY_ACCESS: {
+            if (root->sons.empty())
+                return false;
+            ast_node * name_node = root->sons[0];
+            if (name_node->node_type != ast_operator_type::AST_OP_LEAF_VAR_ID)
+                return false;
 
-        case ast_operator_type::AST_OP_DIV: {
-            int divisor = evaluateConstExpr(node->sons[1]);
-            if (divisor == 0) {
-                std::cerr << "除以零错误 in evaluateConstExpr" << std::endl;
-                std::abort();
+            std::vector<int> dims;
+            for (size_t i = 1; i < root->sons.size(); ++i) {
+                float val;
+                if (!evaluateConstExpr(root->sons[i], &val))
+                    return false;
+                dims.push_back(static_cast<int>(val));
             }
-            return evaluateConstExpr(node->sons[0]) / divisor;
+            return getConstVal(name_node->name, dims, result);
         }
-        default:
-            // std::cerr << "evaluateConstExpr: 非法节点类型（不是常量表达式）" << std::endl;
-            // std::abort();
-            return -1; // 返回一个错误值，表示无法计算
+
+        // 一元运算
+        case ast_operator_type::AST_OP_POS:
+        case ast_operator_type::AST_OP_NEG:
+        case ast_operator_type::AST_OP_NOT: {
+            if (root->sons.size() != 1)
+                return false;
+            float operand;
+            if (!evaluateConstExpr(root->sons[0], &operand))
+                return false;
+
+            switch (root->node_type) {
+                case ast_operator_type::AST_OP_POS:
+                    *result = +operand;
+                    break;
+                case ast_operator_type::AST_OP_NEG:
+                    *result = -operand;
+                    break;
+                case ast_operator_type::AST_OP_NOT:
+                    *result = (!operand) ? 1.0f : 0.0f;
+                    break;
+                default:
+                    return false;
+            }
+            return true;
+        }
+
+        // 二元运算
+        default: {
+            if (root->sons.size() != 2)
+                return false;
+            float lhs, rhs;
+            if (!evaluateConstExpr(root->sons[0], &lhs))
+                return false;
+            if (!evaluateConstExpr(root->sons[1], &rhs))
+                return false;
+
+            switch (root->node_type) {
+                case ast_operator_type::AST_OP_ADD:
+                    *result = lhs + rhs;
+                    break;
+                case ast_operator_type::AST_OP_SUB:
+                    *result = lhs - rhs;
+                    break;
+                case ast_operator_type::AST_OP_MUL:
+                    *result = lhs * rhs;
+                    break;
+                case ast_operator_type::AST_OP_DIV:
+                    if (rhs == 0.0f)
+                        return false;
+                    *result = lhs / rhs;
+                    break;
+                case ast_operator_type::AST_OP_MOD:
+                    if (rhs == 0.0f)
+                        return false;
+                    *result = fmodf(lhs, rhs);
+                    break;
+                case ast_operator_type::AST_OP_AND:
+                    *result = (lhs && rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_OR:
+                    *result = (lhs || rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_EQ:
+                    *result = (lhs == rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_NEQ:
+                    *result = (lhs != rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_GE:
+                    *result = (lhs >= rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_LE:
+                    *result = (lhs <= rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_GNE:
+                    *result = (lhs > rhs) ? 1.0f : 0.0f;
+                    break;
+                case ast_operator_type::AST_OP_LNE:
+                    *result = (lhs < rhs) ? 1.0f : 0.0f;
+                    break;
+                default:
+                    return false;
+            }
+            return true;
+        }
     }
-    return 1;
 }
-// FIXME： 存放常量数组的初值
+
 bool IRGenerator::init_array_flattened(
     Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts,
     std::vector<ast_node *> & init_list)
@@ -3280,6 +3495,7 @@ bool IRGenerator::init_array_flattened(
     return true;
 }
 
+// FIXME：@吴灿 调用evaluateConstExpr计算初始化节点的值
 void IRGenerator::flatten_init_node(
     ast_node * node, const std::vector<int> & dims, int depth, std::vector<ast_node *> & flat_list)
 {
@@ -3463,4 +3679,58 @@ bool IRGenerator::gen_condition_branch(
     current_block_insts.addInst(new ConditionalInstruction(currentFunc, branch_cond_val, true_target, false_target));
 
     return true; // Successfully generated IR for non-short-circuiting condition
+}
+
+// TODO:验证获取常量是否正常
+bool IRGenerator::getConstVal(std::string name, float * val)
+{
+    Value * var = module->findVarValue(name);
+    if (!var) {
+        std::cerr << "Error: Constant variable '" << name << "' not found." << std::endl;
+        return false;
+    }
+    if (var->getValueCategory() == ValueCategory::CONSTANT && var->isInited) {
+        if (var->getType()->isFloatType()) {
+            *val = var->getFloatInitVal();
+            return true;
+        } else if (var->getType()->isIntegerType()) {
+            *val = var->getIntInitVal();
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        std::cerr << "Error: Variable '" << name << "' is not a constant or not initialized." << std::endl;
+        return false;
+    }
+}
+bool IRGenerator::getConstVal(std::string name, std::vector<int> & dims, float * val)
+{
+    Value * var = module->findVarValue(name);
+    if (!var) {
+        std::cerr << "Error: Constant variable '" << name << "' not found." << std::endl;
+        return false;
+    }
+    if (var->getValueCategory() == ValueCategory::CONSTANT && var->isInited) {
+        if (var->getType()->getBaseElementType()) {
+            if (!var->getArrayValByIndex(dims, val)) {
+                std::cerr << "Error: Failed to get array value for variable '" << name << "' with dimensions [";
+                for (size_t i = 0; i < dims.size(); ++i) {
+                    std::cout << dims[i];
+                    if (i < dims.size() - 1) {
+                        std::cout << ", ";
+                    }
+                }
+                std::cout << "]." << std::endl;
+                return false;
+            }
+        } else {
+            std::cerr << "Error: Variable '" << name << "' is not an array." << std::endl;
+            return false;
+        }
+    } else {
+        std::cerr << "Error: Variable '" << name << "' is not a constant or not initialized." << std::endl;
+        return false;
+    }
+    return false;
 }

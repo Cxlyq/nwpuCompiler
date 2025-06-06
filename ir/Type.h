@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <string>
 
 #define Instanceof(res, type, var) auto res = dynamic_cast<type>(var)
@@ -179,6 +180,11 @@ public:
     {
         return nullptr;
     } // 默认实现为 nullptr
+
+    virtual Type * getBaseElementType() const
+    {
+        return nullptr;
+    }
 
 protected:
     ///

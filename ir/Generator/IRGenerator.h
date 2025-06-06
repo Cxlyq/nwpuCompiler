@@ -245,7 +245,8 @@ protected:
         std::vector<Instruction *> & Inst);
 
     bool init_array_flattened(
-        Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts, std::vector<ast_node *> & init_list);
+        Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts,
+        std::vector<ast_node *> & init_list);
     void
     flatten_init_node(ast_node * node, const std::vector<int> & dims, int depth, std::vector<ast_node *> & flat_list);
 
@@ -279,6 +280,9 @@ private:
     bool gen_condition_branch(
         ast_node * cond_node, LabelInstruction * true_target, LabelInstruction * false_target,
         InterCode & current_block_insts);
-};
 
-int evaluateConstExpr(ast_node * node);
+    bool getConstVal(std::string name, float * val);
+    bool getConstVal(std::string name, std::vector<int> & dims, float * val);
+
+    bool evaluateConstExpr(ast_node * root, float * result);
+};
