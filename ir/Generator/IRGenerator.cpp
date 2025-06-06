@@ -3604,7 +3604,7 @@ bool IRGenerator::getConstVal(std::string name, float * val)
             *val = var->getFloatInitVal();
             return true;
         } else if (var->getType()->isIntegerType()) {
-            *val = var->getIntInitVal();
+            *val = (float) var->getIntInitVal();
             return true;
         } else {
             return false;
@@ -3633,6 +3633,8 @@ bool IRGenerator::getConstVal(std::string name, std::vector<int> & dims, float *
                 }
                 std::cout << "]." << std::endl;
                 return false;
+            } else {
+                return true;
             }
         } else {
             std::cerr << "Error: Variable '" << name << "' is not an array." << std::endl;
