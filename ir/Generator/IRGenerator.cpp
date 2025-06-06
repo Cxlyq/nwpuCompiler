@@ -3133,6 +3133,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
     } else {
         // 普通变量
         std::string var_name = id_node->name;
+        // TODO 增加类型转化指令
         if (init_val_node) {
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
@@ -3145,7 +3146,6 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                     if (init_val_node->integer_val != 0) {
                         std::cerr << "Warning: Auto transform type \"int\" to \"float\" at variable \"" << var_name
                                   << "\"." << std::endl;
-                        // TODO 增加类型转化指令
                     }
                 } else if (init_val_node->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
                     node->val = module->newVarValueWithFloat(
@@ -3154,10 +3154,15 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                         init_val_node->float_val,
                         ValueCategory::CONSTANT);
                 } else {
-                    // FIXME: 调用evaluateConstExpr()函数来计算该节点
-                    std::cerr << "ERROR(const declare): No match type for const float variable " << var_name << "."
-                              << std::endl;
-                    return false;
+                    float init_num;
+                    if (!evaluateConstExpr(init_val_node, &init_num)) {
+                        std::cerr << "ERROR(const declare): Cannot evaluate a non-const expression!" << var_name << "."
+                                  << std::endl;
+                        return false;
+                    } else {
+                        std::cout << "Evaluate successful with return value: " << init_num << std::endl;
+                        node->val = module->newVarValueWithFloat(var_type, var_name, init_num, ValueCategory::CONSTANT);
+                    }
                 }
                 // 检查是否成功创建常量变量
                 if (!node->val) {
@@ -3182,9 +3187,16 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                               << std::endl;
                     // TODO 增加类型转化指令
                 } else {
-                    std::cerr << "ERROR(const declare): No match type for const int variable " << var_name << "."
-                              << std::endl;
-                    return false;
+                    float init_num;
+                    if (!evaluateConstExpr(init_val_node, &init_num)) {
+                        std::cerr << "ERROR(const declare): Cannot evaluate a non-const expression!" << var_name << "."
+                                  << std::endl;
+                        return false;
+                    } else {
+                        std::cout << "Evaluate successful with return value: " << init_num << std::endl;
+                        node->val =
+                            module->newVarValueWithInt(var_type, var_name, (int) init_num, ValueCategory::CONSTANT);
+                    }
                 }
                 // 检查是否成功创建常量变量
                 if (!node->val) {
@@ -3201,16 +3213,18 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                 return false;
             }
             // 赋值运算符的右侧操作数
-            ast_node * right = ir_visit_ast_node(init_val_node);
-            if (!right) {
-                // 某个变量没有定值
-                printf("Assign: some variables have no values.\n");
-                return false;
-            }
+            // ast_node * right = ir_visit_ast_node(init_val_node);
+            // if (!right) {
+            //     // 某个变量没有定值
+            //     printf("Assign: some variables have no values.\n");
+            //     return false;
+            // }
 
-            MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
+            MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, node->val);
+            std::cout << "r node val: " << node->val->getInitValStr() << std::endl;
+            std::cout << "l node val: " << node->val->getName() << std::endl;
             // 创建临时变量保存IR的值，以及线性IR指令
-            node->blockInsts.addInst(right->blockInsts);
+            node->blockInsts.addInst(node->blockInsts);
             node->blockInsts.addInst(left->blockInsts);
             node->blockInsts.addInst(movInst);
 
