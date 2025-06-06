@@ -171,7 +171,7 @@ public:
     /// @brief 深拷贝当前节点
     ast_node * deep_copy() const;
 
-    bool is_lvar = false; ///< 是否是局部变量
+    bool is_lvar = false; ///< 是否是左值变量
 
     /// @brief 节点类型
     ast_operator_type node_type;

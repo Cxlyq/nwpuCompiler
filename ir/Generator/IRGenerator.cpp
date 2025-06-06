@@ -2789,7 +2789,14 @@ bool IRGenerator::ir_array_access(ast_node * node)
         }
     }
 
-    node->val = gepPtr;
+    if (node->is_lvar) {
+        node->val = gepPtr;
+    } else {
+        auto loadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr);
+        node->blockInsts.addInst(loadInst);
+        node->val = loadInst; // 设置为加载后的值
+    }
+
     // node->val->setType(gepType); // 设置最后的类型，应该是元素指针类型
 
     return true;
