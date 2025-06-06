@@ -400,8 +400,9 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             currentFunc->addParams(fParam);
 
             // 生成 MoveInstruction 将传入实参值复制到局部形参变量
-            Instruction * move_inst = new MoveInstruction(currentFunc, param_value, fParam);
-            node->blockInsts.addInst(move_inst);
+            // Instruction * move_inst = new MoveInstruction(currentFunc, param_value, fParam);
+            StoreInstruction * store_inst = new StoreInstruction(currentFunc, param_value, fParam);
+            node->blockInsts.addInst(store_inst);
         } else {
             ast_node *  type_node = param_decl_node->sons[0];
             ast_node *  param_node = param_decl_node->sons[1];
@@ -429,8 +430,9 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             // 生成 MoveInstruction 将传入实参值复制到局部形参变量
             // 这条指令确保了传入的值被存储在作用域中的 LocalVariable 中，供函数体使用。
             // MoveInstruction(Function* func, Value* dest, Value* src)
-            Instruction * move_inst = new MoveInstruction(currentFunc, param_value, fParam);
-            node->blockInsts.addInst(move_inst);
+            // Instruction *      move_inst = new MoveInstruction(currentFunc, param_value, fParam);
+            StoreInstruction * store_inst = new StoreInstruction(currentFunc, param_value, fParam);
+            node->blockInsts.addInst(store_inst);
         }
     }
     // 所有形参处理成功
@@ -483,6 +485,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
         // 遍历参数列表，孩子是表达式
         // 这里自左往右计算表达式
         for (auto son: paramsNode->sons) {
+            
             if (son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
                 std::vector<Instruction *> insts;
                 Value *                    arrayRParam = funcall_array_access(son, insts);
@@ -2813,103 +2816,48 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
     Type * type = tempVal->getType();
 
     if (type->isArrayType()) {
-        auto *           arrayType = static_cast<ArrayType *>(type);
-        std::vector<int> ori_dims = arrayType->getDimensions();
-        // int              offset_size = calcOffset(ori_dims, dims);
-        //  int              offset = offset_size * 4;
-        int d = ori_dims.size();
-        int m = array_dims.size();
+        int accessDims = array_dims.size();
 
-        // 从后往前构造偏移表达式
-        Value * offset = nullptr;
-        Value * stride = module->newConstInt(1); // 初始stride=1
+        // 起始指针
+        Value * gepPtr = tempVal;
+        Type *  gepType = type;
 
-        for (int j = d - 1; j > m - 1; j--) {
-            // 更新stride *= ori_dims[i]
-            auto new_stride = new BinaryInstruction(
+        // 逐层调用getelementptr
+        for (int i = 0; i < accessDims; ++i) {
+            // 先处理索引表达式，转换成Value*
+            ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
+            Value *    indexVal = idxNode->val;
+            node->blockInsts.addInst(idxNode->blockInsts);
+
+            // getelementptr第一个索引固定为0
+            Value * zero = module->newConstInt(0);
+
+            // 生成getelementptr指令：
+            // 类型：gepType是当前的数组类型，如 [5 x [6 x i32]] 或 [6 x i32]
+            // 返回的类型是当前维度元素的指针类型，比如 [6 x i32]* 的元素是 i32
+            auto gepInst = new GetElementPtrInst(
                 module->getCurrentFunction(),
-                IRInstOperator::IRINST_OP_MUL_I,
-                stride,
-                module->newConstInt(ori_dims[j]),
-                IntegerType::getTypeInt());
-            stride = new_stride;
-            // insts.push_back(new_stride);
-            node->blockInsts.addInst(new_stride);
-        }
+                gepPtr,
+                gepType,
+                std::vector<Value *>{zero, indexVal});
 
-        for (int i = m - 1; i >= 0; i--) {
-            // ast_node * expr_node = array_dims[i - (d - m)];
+            node->blockInsts.addInst(gepInst);
 
-            // // 生成子表达式的 IR
-            // ir_visit_ast_node(expr_node);
-            // Value * indexVal = expr_node->val;
-            ast_node * expr_node = ir_visit_ast_node(array_dims[i]);
+            gepPtr = gepInst;
 
-            // 生成子表达式的 IR
-            Value * indexVal = expr_node->val;
-            node->blockInsts.addInst(expr_node->blockInsts);
-            // insts.push_back(expr_node->blockInsts);/
-
-            // tmp = indexVal * stride
-            auto term = new BinaryInstruction(
-                module->getCurrentFunction(),
-                IRInstOperator::IRINST_OP_MUL_I,
-                indexVal,
-                stride,
-                IntegerType::getTypeInt());
-            // insts.push_back(term);
-            node->blockInsts.addInst(term);
-
-            // offset = offset + term
-            if (offset == nullptr) {
-                offset = term;
+            // 更新类型为下一维
+            if (gepType->isArrayType()) {
+                auto * arrTy = static_cast<ArrayType *>(gepType);
+                gepType = arrTy->getElementType();
             } else {
-                auto sum = new BinaryInstruction(
-                    module->getCurrentFunction(),
-                    IRInstOperator::IRINST_OP_ADD_I,
-                    offset,
-                    term,
-                    IntegerType::getTypeInt());
-                // insts.push_back(sum);
-                node->blockInsts.addInst(sum);
-                offset = sum;
+                // 非数组，取元素类型
+                // 这里不做进一步，gepType保持当前
             }
-
-            if (i - 1 >= 0) {
-                // 更新stride *= ori_dims[i]
-                auto new_stride = new BinaryInstruction(
-                    module->getCurrentFunction(),
-                    IRInstOperator::IRINST_OP_MUL_I,
-                    stride,
-                    module->newConstInt(ori_dims[i]),
-                    IntegerType::getTypeInt());
-                stride = new_stride;
-                // insts.push_back(new_stride);
-                node->blockInsts.addInst(new_stride);
-            }
+            arrayPRParam = gepInst;
         }
-        auto offest_size = new BinaryInstruction(
-            module->getCurrentFunction(),
-            IRInstOperator::IRINST_OP_MUL_I,
-            offset,
-            module->newConstInt(4),
-            IntegerType::getTypeInt());
-        // insts.push_back(offest_size);
-        node->blockInsts.addInst(offest_size);
 
-        auto addr = new BinaryInstruction(
-            module->getCurrentFunction(),
-            IRInstOperator::IRINST_OP_ADD_I,
-            tempVal,
-            offest_size,
-            IntegerType::getTypeInt());
-        node->val = addr;
-        // ///需要手动设置Type，否则addr默认是int类型的value
-        // node->val->setType(type);
-        // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
-        // insts.push_back(addr);
-        node->blockInsts.addInst(addr);
-        arrayPRParam = addr;
+        node->val = gepPtr;
+        node->val->setType(gepType);       // 设置最后的类型，应该是元素指针类型
         arrayPRParam->setType(arrayType1); // 设置类型
 
     } else {
@@ -2917,12 +2865,155 @@ Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instructi
         std::cerr << "Error: Expected an array type." << std::endl;
         return nullptr;
     }
-    if (node) {
-        std::cout << "here" << std::endl;
-    }
 
     return arrayPRParam;
 }
+
+// Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instruction *> & insts)
+// {
+
+//     // 是数组变量，提取数组名和维度表达式
+//     std::string             array_name;
+//     std::vector<ast_node *> array_dims;
+//     extract_array_info(node, array_name, array_dims);
+
+//     ///设置name，否则作为左值会报错
+//     node->name = array_name;
+//     // 解析维度表达式为实际的常数
+//     std::vector<int> dims;
+//     for (auto * expr_node: array_dims) {
+//         int temp_size = evaluateConstExpr(expr_node); // 尝试计算数组维度，如果失败则返回负数
+//         int dim_size;
+//         if (temp_size < 0) {
+//             dim_size = -1;
+//             dims.push_back(dim_size);
+//         } else {
+//             dim_size = temp_size;
+//             dims.push_back(dim_size);
+//         }
+//     }
+
+//     /// 使用tempVal获取之前生成的节点
+//     Value * tempVal = module->findVarValue(array_name);
+//     if (!tempVal) {
+//         std::cerr << "Function call - array: Cannot find array!" << std::endl;
+//     }
+//     ArrayType * arrayType = new ArrayType(tempVal->getType()->getElementType(), dims);
+//     std::cout << "arrayType type: " << arrayType->toString() << std::endl;
+//     ArrayType * arrayType1 = new ArrayType(tempVal->getType()->getElementType(), dims);
+//     Value *     arrayPRParam = new Value(arrayType); // 设置实参表
+//     arrayPRParam->setName(array_name);               // a
+//     // std::cout << "arrayPRParam type: " << arrayPRParam->getType()->toString() << std::endl;
+//     Type * type = tempVal->getType();
+
+//     if (type->isArrayType()) {
+//         auto *           arrayType = static_cast<ArrayType *>(type);
+//         std::vector<int> ori_dims = arrayType->getDimensions();
+//         // int              offset_size = calcOffset(ori_dims, dims);
+//         //  int              offset = offset_size * 4;
+//         int d = ori_dims.size();
+//         int m = array_dims.size();
+
+//         // 从后往前构造偏移表达式
+//         Value * offset = nullptr;
+//         Value * stride = module->newConstInt(1); // 初始stride=1
+
+//         for (int j = d - 1; j > m - 1; j--) {
+//             // 更新stride *= ori_dims[i]
+//             auto new_stride = new BinaryInstruction(
+//                 module->getCurrentFunction(),
+//                 IRInstOperator::IRINST_OP_MUL_I,
+//                 stride,
+//                 module->newConstInt(ori_dims[j]),
+//                 IntegerType::getTypeInt());
+//             stride = new_stride;
+//             // insts.push_back(new_stride);
+//             node->blockInsts.addInst(new_stride);
+//         }
+
+//         for (int i = m - 1; i >= 0; i--) {
+//             // ast_node * expr_node = array_dims[i - (d - m)];
+
+//             // // 生成子表达式的 IR
+//             // ir_visit_ast_node(expr_node);
+//             // Value * indexVal = expr_node->val;
+//             ast_node * expr_node = ir_visit_ast_node(array_dims[i]);
+
+//             // 生成子表达式的 IR
+//             Value * indexVal = expr_node->val;
+//             node->blockInsts.addInst(expr_node->blockInsts);
+//             // insts.push_back(expr_node->blockInsts);/
+
+//             // tmp = indexVal * stride
+//             auto term = new BinaryInstruction(
+//                 module->getCurrentFunction(),
+//                 IRInstOperator::IRINST_OP_MUL_I,
+//                 indexVal,
+//                 stride,
+//                 IntegerType::getTypeInt());
+//             // insts.push_back(term);
+//             node->blockInsts.addInst(term);
+
+//             // offset = offset + term
+//             if (offset == nullptr) {
+//                 offset = term;
+//             } else {
+//                 auto sum = new BinaryInstruction(
+//                     module->getCurrentFunction(),
+//                     IRInstOperator::IRINST_OP_ADD_I,
+//                     offset,
+//                     term,
+//                     IntegerType::getTypeInt());
+//                 // insts.push_back(sum);
+//                 node->blockInsts.addInst(sum);
+//                 offset = sum;
+//             }
+
+//             if (i - 1 >= 0) {
+//                 // 更新stride *= ori_dims[i]
+//                 auto new_stride = new BinaryInstruction(
+//                     module->getCurrentFunction(),
+//                     IRInstOperator::IRINST_OP_MUL_I,
+//                     stride,
+//                     module->newConstInt(ori_dims[i]),
+//                     IntegerType::getTypeInt());
+//                 stride = new_stride;
+//                 // insts.push_back(new_stride);
+//                 node->blockInsts.addInst(new_stride);
+//             }
+//         }
+//         auto offest_size = new BinaryInstruction(
+//             module->getCurrentFunction(),
+//             IRInstOperator::IRINST_OP_MUL_I,
+//             offset,
+//             module->newConstInt(4),
+//             IntegerType::getTypeInt());
+//         // insts.push_back(offest_size);
+//         node->blockInsts.addInst(offest_size);
+
+//         auto addr = new BinaryInstruction(
+//             module->getCurrentFunction(),
+//             IRInstOperator::IRINST_OP_ADD_I,
+//             tempVal,
+//             offest_size,
+//             IntegerType::getTypeInt());
+//         node->val = addr;
+//         // ///需要手动设置Type，否则addr默认是int类型的value
+//         // node->val->setType(type);
+//         // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
+//         // insts.push_back(addr);
+//         node->blockInsts.addInst(addr);
+//         arrayPRParam = addr;
+//         arrayPRParam->setType(arrayType1); // 设置类型
+
+//     } else {
+//         // 处理错误情况
+//         std::cerr << "Error: Expected an array type." << std::endl;
+//         return nullptr;
+//     }
+
+//     return arrayPRParam;
+// }
 
 /// @brief 变量声明语句节点翻译成线性中间IR
 /// @param node AST节点
@@ -3012,7 +3103,6 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 return false;
             }
 
-            // MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
             StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, right->val);
             // 创建临时变量保存IR的值，以及线性IR指令
             node->blockInsts.addInst(right->blockInsts);
@@ -3193,11 +3283,11 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                 return false;
             }
 
-            MoveInstruction * movInst = new MoveInstruction(module->getCurrentFunction(), left->val, right->val);
+            StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, right->val);
             // 创建临时变量保存IR的值，以及线性IR指令
             node->blockInsts.addInst(right->blockInsts);
             node->blockInsts.addInst(left->blockInsts);
-            node->blockInsts.addInst(movInst);
+            node->blockInsts.addInst(storeInst);
 
         } else {
             printf("Semantic error: constant variable must be initialized\n");
