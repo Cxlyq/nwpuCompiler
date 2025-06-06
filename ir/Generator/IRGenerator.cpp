@@ -487,7 +487,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
         // 遍历参数列表，孩子是表达式
         // 这里自左往右计算表达式
         for (auto son: paramsNode->sons) {
-            
+
             if (son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
                 std::vector<Instruction *> insts;
                 Value *                    arrayRParam = funcall_array_access(son, insts);
@@ -3309,8 +3309,15 @@ bool IRGenerator::ir_const_declare(ast_node * node)
             //     printf("Assign: some variables have no values.\n");
             //     return false;
             // }
+            StoreInstruction * storeInst;
+            if (type_node->type->isFloatType()) {
+                ConstFloat * constf = new ConstFloat(node->val->getFloatInitVal());
+                storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, constf);
+            } else {
+                ConstInt * consti = new ConstInt(node->val->getIntInitVal());
+                storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, consti);
+            }
 
-            StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, right->val);
             // 创建临时变量保存IR的值，以及线性IR指令
             node->blockInsts.addInst(node->blockInsts);
             node->blockInsts.addInst(left->blockInsts);
