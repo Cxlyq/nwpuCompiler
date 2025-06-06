@@ -4,17 +4,17 @@
 
 #include "RegVariable.h"
 
-// 在操作过程中临时借助的寄存器为ARM32_TMP_REG_NO
-#define ARM32_TMP_REG_NO 10
+// 在操作过程中临时借助的寄存器为RISCV64_TMP_REG_NO
+#define RISCV64_TMP_REG_NO 5
 
 // 栈寄存器SP和FP
-#define ARM32_SP_REG_NO 13
-#define ARM32_FP_REG_NO 11
+#define RISCV64_SP_REG_NO 2
+#define RISCV64_FP_REG_NO 8
 
-// 函数跳转寄存器LX
-#define ARM32_LX_REG_NO 14
+// 函数跳转寄存器
+#define RISCV64_RA_REG_NO 1 // ra = x1
 
-/// @brief ARM32平台信息
+/// @brief RISCV64平台信息
 class PlatformRiscV64 {
 
     /// @brief 循环左移两位
@@ -45,8 +45,9 @@ public:
     /// @brief 最大寄存器数目
     static const int maxRegNum = 64;
 
-    /// @brief 可使用的通用寄存器的个数r0-r10
-    static const int maxUsableRegNum = 11;
+    /// @brief 可使用的通用寄存器的个数
+    // x5-x7, x10-x17, x28-x31
+    static const int maxUsableRegNum = 15;
 
     /// @brief 寄存器的名字，r0-r15
     static const std::string regName[maxRegNum];

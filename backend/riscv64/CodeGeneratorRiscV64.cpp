@@ -203,7 +203,7 @@ void CodeGeneratorRiscV64::registerAllocation(Function * func)
     protectedRegNo.push_back(RISCV64_TMP_REG_NO);
     protectedRegNo.push_back(RISCV64_FP_REG_NO);
     if (func->getExistFuncCall()) {
-        protectedRegNo.push_back(RISCV64_LX_REG_NO);
+        protectedRegNo.push_back(RISCV64_RA_REG_NO);
     }
 
     // 调整函数调用指令，主要是前四个寄存器传值，后面用栈传递

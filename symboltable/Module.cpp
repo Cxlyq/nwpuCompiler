@@ -22,6 +22,7 @@
 #include "Register.h"
 #include <sys/types.h>
 #include "LiveVariableAnalysis.h"
+#include "RegisterAllocatorGraphColoring.h"
 
 Module::Module(std::string _name) : name(_name)
 {
@@ -528,35 +529,49 @@ void Module::outputIR(const std::string & filePath)
         std::string instStr;
         func->toString(instStr);
         fprintf(fp, "%s", instStr.c_str());
-        // 活跃变量分析
-        fprintf(fp, "\n; ---------- Live Variable Analysis ----------\n");
+        // // 活跃变量分析
+        // fprintf(fp, "\n; ---------- Live Variable Analysis ----------\n");
 
-        LiveVariableAnalysis lva;
-        // printf("LVA addr = %p\n", &lva); // 看是否是 0x50 或其他非法值
-        lva.run(func);
+        // LiveVariableAnalysis lva;
+        // // printf("LVA addr = %p\n", &lva); // 看是否是 0x50 或其他非法值
+        // lva.run(func);
+        // GraphColoringRegisterAllocator allocator;
+        // allocator.buildGraph(lva); // 构建干涉图
+        // bool success = allocator.allocate();
+        // if (success) {
+        //     std::cout << "寄存器分配成功 ✅\n";
+        // } else {
+        //     std::cout << "部分变量需要溢出 ❌\n";
+        // }
 
-        // 获取基本块
-        const auto & blocks = lva.getBasicBlocks();
+        // // 打印所有变量的分配寄存器
+        // auto colorMap = allocator.getColorMap();
+        // for (const auto & [val, reg]: colorMap) {
+        //     std::cout << val->getIRName() << " -> r" << reg << "\n";
+        // }
 
-        for (auto * block: blocks) {
-            fprintf(fp, "BasicBlock: %s\n", block->label.c_str());
+        // // 获取基本块
+        // const auto & blocks = lva.getBasicBlocks();
 
-            const auto & liveIn = lva.getLiveIn(block->label);
-            fprintf(fp, "  LiveIn: ");
-            for (auto * val: liveIn) {
-                fprintf(fp, "%s ", val->getIRName().c_str());
-            }
-            fprintf(fp, "\n");
+        // for (auto * block: blocks) {
+        //     fprintf(fp, "BasicBlock: %s\n", block->label.c_str());
 
-            const auto & liveOut = lva.getLiveOut(block->label);
-            fprintf(fp, "  LiveOut: ");
-            for (auto * val: liveOut) {
-                fprintf(fp, "%s ", val->getIRName().c_str());
-            }
-            fprintf(fp, "\n\n");
-        }
+        //     const auto & liveIn = lva.getLiveIn(block->label);
+        //     fprintf(fp, "  LiveIn: ");
+        //     for (auto * val: liveIn) {
+        //         fprintf(fp, "%s ", val->getIRName().c_str());
+        //     }
+        //     fprintf(fp, "\n");
 
-        fprintf(fp, "; -------------------------------------------\n\n");
+        //     const auto & liveOut = lva.getLiveOut(block->label);
+        //     fprintf(fp, "  LiveOut: ");
+        //     for (auto * val: liveOut) {
+        //         fprintf(fp, "%s ", val->getIRName().c_str());
+        //     }
+        //     fprintf(fp, "\n\n");
+        // }
+
+        // fprintf(fp, "; -------------------------------------------\n\n");
     }
 
     fclose(fp);
