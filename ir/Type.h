@@ -19,6 +19,7 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
 
 #define Instanceof(res, type, var) auto res = dynamic_cast<type>(var)
 
@@ -188,6 +189,12 @@ public:
     virtual const Type * getPointeeType() const
     {
         return nullptr;
+    }
+
+    virtual const std::vector<int> & getDimensions() const
+    {
+        std::vector<int> * emptyDims = new std::vector<int>();
+        return *emptyDims;
     }
 
 protected:

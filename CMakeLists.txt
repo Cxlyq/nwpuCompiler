@@ -98,6 +98,8 @@ set(BACKEND_SRCS
 	# 后端产生RISCV64汇编指令
 	backend/riscv64/LiveVariableAnalysis.h
 	backend/riscv64/LiveVariableAnalysis.cpp
+	backend/riscv64/RegisterAllocatorGraphColoring.h
+	backend/riscv64/RegisterAllocatorGraphColoring.cpp
 )
 
 # 中间IR(ir)源代码集合

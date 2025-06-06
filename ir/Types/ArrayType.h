@@ -16,7 +16,7 @@ public:
     Type * getElementType() const override;
 
     /// @brief 获取数组的维度
-    const std::vector<int> & getDimensions() const;
+    const std::vector<int> & getDimensions() const override;
 
     /// @brief 获取数组的大小（字节数）
     int getSize() const override; // 声明覆盖
