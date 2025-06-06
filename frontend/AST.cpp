@@ -508,3 +508,12 @@ ast_node * ast_node::deep_copy() const
 
     return copy;
 }
+
+std::string ast_node::getNodeName() const
+{
+    if (!name.empty()) {
+        return this->name;
+    } else {
+        return "!no_name!";
+    }
+}
