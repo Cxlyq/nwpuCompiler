@@ -25,6 +25,7 @@
 #include "Instruction.h"
 #include "LabelInstruction.h"
 #include "Module.h"
+#include "Value.h"
 
 /// @brief AST遍历产生线性IR类
 class IRGenerator {
@@ -202,7 +203,7 @@ protected:
     /// @return 翻译是否成功，true：成功，false：失败
     bool ir_array_access(ast_node * node);
 
-    Value * funcall_array_access(ast_node * node, std::vector<Instruction *> & insts);
+    Value * funcall_array_access(ast_node * node);
 
     /// @brief 变量声明语句节点翻译成线性中间IR
     /// @param node AST节点

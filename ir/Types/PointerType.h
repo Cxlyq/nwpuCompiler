@@ -91,7 +91,7 @@ public:
     /// @brief 返回指针所指向的类型，只解引用一次
     /// @return const Type*
     ///
-    [[nodiscard]] const Type * getPointeeType() const
+    const Type * getPointeeType() const override
     {
         return pointeeType;
     }
@@ -115,7 +115,6 @@ public:
         static StorageSet<PointerType, PointerTypeHasher, PointerTypeEqual> storageSet;
         return storageSet.get(pointee);
     }
-    
 
     ///
     /// @brief 获取类型的IR标识符

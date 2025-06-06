@@ -185,6 +185,10 @@ public:
     {
         return nullptr;
     }
+    virtual const Type * getPointeeType() const
+    {
+        return nullptr;
+    }
 
 protected:
     ///

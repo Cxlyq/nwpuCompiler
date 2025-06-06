@@ -1,4 +1,5 @@
 #include "StoreInstruction.h"
+#include "CastInstruction.h"
 
 /// @brief 构造函数，初始化目标地址和存储的值
 /// @param _func 所属的函数
@@ -24,6 +25,10 @@ void StoreInstruction::toString(std::string & str)
             break;
         case Type::FloatTyID:
             str = "store float " + val->getIRName() + ", float* " + addr->getIRName() + ", align 4";
+            break;
+        case Type::PointerTyID:
+            str = "store " + val->getType()->toString() + " " + val->getIRName() + ", " + addr->getType()->toString() +
+                  " " + addr->getIRName() + ", align 4";
             break;
         default:
             str = "store  " + val->getIRName() + ",  " + addr->getIRName() + ", align 4";

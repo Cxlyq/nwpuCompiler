@@ -49,7 +49,11 @@ void CastInstruction::toString(std::string & str)
     } else if (srcType->getTypeID() == Type::FloatTyID && dstType->getTypeID() == Type::IntegerTyID) {
         // float -> i32
         str = getIRName() + " = fptosi float " + src->getIRName() + " to i32";
-    } else {
+    } else if (srcType->isPointerType()) {
+        str = getIRName() + " = bitcast " + srcType->toString() + " " + src->getIRName() + " to " + dstType->toString();
+    }
+
+    else {
         // fallback
         Instruction::toString(str);
     }

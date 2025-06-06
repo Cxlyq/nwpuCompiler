@@ -61,11 +61,7 @@ public:
     /// @brief 转换为字符串形式，适用于标准llvm格式
     std::string toString() const override
     {
-        std::string str = elementType->toString();
-        for (int i = dimensions.size() - 1; i >= 0; --i) {
-            str = "[" + std::to_string(dimensions[i]) + " x " + str + "]";
-        }
-        return str;
+        return "[" + std::to_string(thisdimensionSize) + " x " + elementType->toString() + "]";
     }
     Type * getBaseElementType() const override;
 
