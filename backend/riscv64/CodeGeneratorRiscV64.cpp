@@ -18,7 +18,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
-
+#include "Value.h"
+#include "cmath"
 #include "Function.h"
 #include "Module.h"
 #include "PlatformRiscV64.h"
@@ -61,22 +62,57 @@ void CodeGeneratorRiscV64::genDataSection()
 
     // 目前不支持全局变量和静态变量，以及字符串常量
     // 全局变量分两种情况：初始化的全局变量和未初始化的全局变量
-    // TODO 这里先处理未初始化的全局变量
+    // TODO 数组输出还有问题
     for (auto var: module->getGlobalVariables()) {
+        const std::string & name = var->getName();
+        int                 size = var->getType()->getSize();
+        int                 align = var->getAlignment();
 
         if (var->isInBSSSection()) {
-
-            // 在BSS段的全局变量，可以包含初值全是0的变量
-            fprintf(fp, ".comm %s, %d, %d\n", var->getName().c_str(), var->getType()->getSize(), var->getAlignment());
+            // 未初始化的全局变量，放sbss段
+            fprintf(fp, "\n\t.type\t%s,@object\n", name.c_str());
+            fprintf(fp, "\t.section\t.sbss,\"aw\",@nobits\n");
+            fprintf(fp, "\t.globl\t%s\n", name.c_str());
+            fprintf(fp, "\t.p2align\t%d\n", (int) std::log2(align));
+            fprintf(fp, "%s:\n", name.c_str());
+            if (var->getType()->isIntegerType()) {
+                fprintf(fp, "\t.word\t0\n");
+            } else if (var->getType()->isFloatType()) {
+                fprintf(fp, "\t.word\t0x00000000\n");
+            } else if (var->getType()->isArrayType()) {
+                fprintf(fp, "\t.zero\t%d\n", size);
+            }
+            fprintf(fp, "\t.size\t%s, %d\n", name.c_str(), size);
         } else {
+            // 初始化的全局变量，放rodata（只读）或data段，这里默认data
+            fprintf(fp, "\n\t.type\t%s,@object\n", name.c_str());
+            if (var->getValueCategory() == ValueCategory::CONSTANT) {
+                fprintf(fp, "\t.section\t.rodata,\"a\",@progbits\n");
 
-            // 有初值的全局变量
-            fprintf(fp, ".global %s\n", var->getName().c_str());
-            fprintf(fp, ".data\n");
-            fprintf(fp, ".align %d\n", var->getAlignment());
-            fprintf(fp, ".type %s, @object\n", var->getName().c_str());
-            fprintf(fp, "%s\n", var->getName().c_str());
-            // TODO 后面设置初始化的值，具体请参考RISC-V的汇编
+            } else {
+                fprintf(fp, "\t.section\t.data,\"aw\",@progbits\n");
+            }
+            fprintf(fp, "\t.globl\t%s\n", name.c_str());
+            fprintf(fp, "\t.p2align\t%d\n", (int) std::log2(align));
+            fprintf(fp, "%s:\n", name.c_str());
+
+            if (var->getType()->isIntegerType()) {
+                fprintf(fp, "\t.word\t%d\n", var->getIntVal()); // 你需要提供这个方法返回初始化值
+            } else if (var->getType()->isFloatType()) {
+                //使用union，输出float型变量的IEEE 754 二进制形式
+                float fval = var->getFloatVal();
+                union {
+                    float    f;
+                    uint32_t u;
+                } tmp = {fval};
+                fprintf(fp, "\t.word\t0x%x\n", tmp.u);
+            }
+            // 其他类型类似处理
+
+            fprintf(fp, "\t.size\t%s, %d\n", name.c_str(), size);
+            // 例如:
+            // fprintf(fp, "\t.word\t%d\n", init_int_val);
+            // fprintf(fp, "\t.double\t%f\n", init_double_val);
         }
     }
 }
