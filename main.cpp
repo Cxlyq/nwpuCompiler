@@ -22,6 +22,7 @@
 #include "Antlr4Executor.h"
 #include "CodeGenerator.h"
 #include "CodeGeneratorArm32.h"
+#include "CodeGeneratorRiscV64.h"
 #include "FrontEndExecutor.h"
 #include "Graph.h"
 #include "IRGenerator.h"
@@ -61,7 +62,7 @@ static bool gAsmAlsoShowIR = false;
 static int gOptLevel = 0;
 
 /// @brief 指定CPU目标架构，这里默认为ARM32
-static std::string gCPUTarget = "ARM32";
+static std::string gCPUTarget = "RISCV64";
 
 /// @brief 输入源文件
 static std::string gInputFile;
@@ -84,7 +85,8 @@ static struct option long_options[] = {
 /// @param exeName
 static void showHelp(const std::string & exeName)
 {
-    std::cout << exeName + " -S [--symbol] [-T | --ast | -I | --ir | -c | --asmir ] [-o output | --output=output] source\n";
+    std::cout << exeName +
+                     " -S [--symbol] [-T | --ast | -I | --ir | -c | --asmir ] [-o output | --output=output] source\n";
     std::cout << "Options:\n";
     std::cout << "  -h, --help                 Show this help message\n";
     std::cout << "  -o, --output=FILE          Specify output file\n";
@@ -321,7 +323,7 @@ static int compile(std::string inputFile, std::string outputFile)
                 generator->run(outputFile);
             } else if (gCPUTarget == "RISCV64") {
                 // TODO:[后端] 需补充输出面向RICSV64的CodeGenerator类
-                //  generator = new CodeGenerator(module);
+                generator = new CodeGeneratorRiscV64(module);
                 generator->setShowLinearIR(gAsmAlsoShowIR);
                 generator->run(outputFile);
             } else {

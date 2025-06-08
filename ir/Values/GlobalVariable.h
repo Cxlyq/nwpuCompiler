@@ -112,6 +112,11 @@ public:
         }
     }
 
+    void setFasle_inBSSSection()
+    {
+        inBSSSection = false;
+    }
+
     /// 获取初始值
     [[nodiscard]] Constant * getInitializer() const
     {

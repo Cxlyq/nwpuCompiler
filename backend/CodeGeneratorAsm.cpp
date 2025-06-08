@@ -51,7 +51,7 @@ bool CodeGeneratorAsm::run()
     genDataSection();
 
     // 产生代码段，即CPU指令，以函数为单位
-    genCodeSection();
+    // genCodeSection();
 
     return true;
 }

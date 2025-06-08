@@ -96,6 +96,14 @@ set(BACKEND_SRCS
 	backend/arm32/SimpleRegisterAllocator.h
 
 	# 后端产生RISCV64汇编指令
+	backend/riscv64/CodeGeneratorRiscV64.cpp
+	backend/riscv64/CodeGeneratorRiscV64.h
+	backend/riscv64/ILocRiscV64.cpp
+	backend/riscv64/ILocRiscV64.h
+	backend/riscv64/InstSelectorRiscV64.cpp
+	backend/riscv64/InstSelectorRiscV64.h
+	backend/riscv64/PlatformRiscV64.cpp
+	backend/riscv64/PlatformRiscV64.h
 	backend/riscv64/LiveVariableAnalysis.h
 	backend/riscv64/LiveVariableAnalysis.cpp
 	backend/riscv64/RegisterAllocatorGraphColoring.h

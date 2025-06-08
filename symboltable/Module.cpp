@@ -23,7 +23,7 @@
 #include <sys/types.h>
 #include "LiveVariableAnalysis.h"
 #include "RegisterAllocatorGraphColoring.h"
-
+#include "cmath"
 Module::Module(std::string _name) : name(_name)
 {
     // 创建作用域栈
@@ -363,9 +363,20 @@ Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVa
         retVal = currentFunc->newLocalVarValue(type, name, scope_level);
 
     } else {
+        // 直接赋值给外部定义的 retVal（类型是 Value*）
         retVal = newGlobalVariable(type, name);
-        retVal->setInitVal(initVal); // 设置初值
+
+        // 在这里使用 GlobalVariable* 临时变量来访问子类方法
+        GlobalVariable * gv = static_cast<GlobalVariable *>(retVal);
+
+        const float EPSILON = 1e-6f;
+        if (std::fabs(initVal) > EPSILON) {
+            gv->setFasle_inBSSSection();
+        }
+
+        gv->setInitVal(initVal); // 设置初值
     }
+
     // 仅在全局变量或者常量中设置初值
     // 增加做作用域中
     scopeStack->insertValue(retVal);
@@ -410,8 +421,16 @@ Value * Module::newVarValueWithInt(Type * type, std::string name, uint32_t initV
         retVal = currentFunc->newLocalVarValue(type, name, scope_level);
 
     } else {
+        // 直接赋值给外部定义的 retVal（类型是 Value*）
         retVal = newGlobalVariable(type, name);
-        retVal->setInitVal(initVal); // 设置初值
+
+        // 在这里使用 GlobalVariable* 临时变量来访问子类方法
+        GlobalVariable * gv = static_cast<GlobalVariable *>(retVal);
+
+        if (initVal != 0) {
+            gv->setFasle_inBSSSection();
+        }
+        gv->setInitVal(initVal); // 设置初值
     }
 
     // 增加做作用域中
