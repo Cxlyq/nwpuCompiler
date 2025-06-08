@@ -46,8 +46,8 @@
 
 ---
 # IR/:
-## 关键数据结构: `module`
-### `module`:
+## 关键数据结构: `Module`
+### `Module`:
 #### private:
     - name;模块名
     - types;类型向量
@@ -65,13 +65,37 @@
 	- newGlobalVariable(type,name);新建全局变量
 	- findGlobalVariable(name);获取对应名称的全局变量
 	- insertFunctionDirectly(func);插入函数到符号表
-	- insertGlobalValueDirectly(val);插入全局值到符号表
+	- insertGlobalValueDirectly(val);插入全局变量到符号表
     - insertConstIntDirectly(val);插入常值到符号表
     - insertConstFloatDirectly(val);插入常值到符号表
     - newGlobalArrayVariable(type,array_name,dims);新建全局数组变量
 #### public:
 	- toIRString();输出IR代码
-	- 
+	- getName();
+	- enterScope();
+	- leaveScope();进入/退出作用域
+	- getCurrentFunction();获取当前正在处理的函数
+	- setCurrentFunction();设置当前正在处理的函数指针
+    - newFunction(name,returnType,params,builtin);新建函数并放到函数列表中
+    - findFunction(name);根据函数名查找函数
+    - getGlobalVariables();获取全局变量表
+    - getFunctionList();返回函数表
+    - newConstInt(intVal);新建整形常数值
+    - newConstFloat(floatVal);新建浮点常数值
+    - newVarValue(type,name);新建变量型Value
+    - ArrayAccess(type, array_name);通过类型和变量名查找数组
+	[x]:看一下这样写的原因
+    - createAdd(lhs,rhs,Insts);新建加法指令（内置）
+    - newVarValueWithInt(Type,name,initVal,ValueCategory);
+    - newVarValueWithFloat(Type,name,initVal,ValueCategory);新建变量型Value
+    - findVarValue(name);查找全局/局部变量（根据作用域栈逐级查找）
+    - Delete();清理资源
+    - outputIR();输出线性IR到文件
+    - renameIR();对匿名IR全部命名
+    - newArrayVarValue(type, array_name, dims, valueCategory);创建数组变量（如果没有查找到）
+### `ScopeStack`:
+#### protected:
+	- valuestack;当前作用域内的值栈
 ## Generator/: 总生成器
 ### `IRGenerator.cpp`&amp;`IRGenerator.h`:
 
@@ -85,4 +109,5 @@
 ---
 # symboltable/:
 
-#
+# backend:
+## `CodeGeneratorAsm.cpp`&amp;`CodeGeneratorAsm.h`:
