@@ -77,7 +77,7 @@ int ArrayType::calculateSize() const
     for (int dim: dimensions) {
         totalSize *= dim; // 累乘所有维度的大小
     }
-    return totalSize * elementType->getSizeInBytes(); // 乘以元素类型的字节大小
+    return totalSize * baseElementType->getSizeInBytes(); // 乘以元素类型的字节大小
 }
 
 Type * ArrayType::getBaseElementType() const
