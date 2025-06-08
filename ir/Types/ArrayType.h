@@ -16,7 +16,7 @@ public:
     Type * getElementType() const override;
 
     /// @brief 获取数组的维度
-    const std::vector<int> & getDimensions() const;
+    const std::vector<int> & getDimensions() const override;
 
     /// @brief 获取数组的大小（字节数）
     int getSize() const override; // 声明覆盖
@@ -61,11 +61,7 @@ public:
     /// @brief 转换为字符串形式，适用于标准llvm格式
     std::string toString() const override
     {
-        std::string str = elementType->toString();
-        for (int i = dimensions.size() - 1; i >= 0; --i) {
-            str = "[" + std::to_string(dimensions[i]) + " x " + str + "]";
-        }
-        return str;
+        return "[" + std::to_string(thisdimensionSize) + " x " + elementType->toString() + "]";
     }
     Type * getBaseElementType() const override;
 

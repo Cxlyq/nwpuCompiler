@@ -254,5 +254,50 @@ bool Value::setInitVal(std::vector<float> * arrayVal)
 // TODO:完成访问数组初值的功能
 bool Value::getArrayValByIndex(std::vector<int> & indexs, float * val)
 {
+    const std::vector<int> origin_dims = this->getType()->getDimensions();
+    // 检查索引的大小是否超过数组维度
+    if (indexs.empty()) {
+        std::cerr << "Error: indexs cannot be empty." << std::endl;
+        return false;
+    }
+    if (origin_dims.empty()) {
+        std::cerr << "Error: origin_dims cannot be empty." << std::endl;
+        return false;
+    }
+    // 检查索引是否在有效范围内
+    if (indexs.size() != origin_dims.size()) {
+        std::cerr << "Error: index size exceeds array dimensions." << std::endl;
+        return false;
+    }
+    for (size_t i = 0; i < indexs.size(); ++i) {
+        if (indexs[i] < 0 || indexs[i] >= origin_dims[i]) {
+            std::cerr << "Error: index out of bounds for dimension " << i << "." << std::endl;
+            return false;
+        }
+    }
+    // 计算偏移
+    int linear_index = 0;
+    int stride = 1;
+    // 从后向前累乘
+    for (int i = origin_dims.size() - 1; i >= 0; --i) {
+        linear_index += indexs[i] * stride;
+        stride *= origin_dims[i];
+    }
+
+    if (this->valueCategory == ValueCategory::CONSTANT && this->isInited) {
+        if (this->valueType == ValueType::ARRAY_INT) {
+            *val = (float) (*(this->initVal.array_int_init_list))[linear_index];
+            return true;
+        } else if (this->valueType == ValueType::ARRAY_FLOAT) {
+            *val = (*(this->initVal.array_float_init_list))[linear_index];
+            return true;
+        } else {
+            std::cerr << "Error: Value is not an array type." << std::endl;
+            return false;
+        }
+    } else {
+        std::cerr << "Error: Value is not initialized or not a constant." << std::endl;
+        return false;
+    }
     return false;
 }

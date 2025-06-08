@@ -23,7 +23,7 @@
 #define Instanceof(res, type, var) auto res = dynamic_cast<type>(var)
 
 /// @brief 底层汇编指令：RISCV64
-struct ArmInst {
+struct RiscInst {
 
     /// @brief 操作码
     std::string opcode;
@@ -52,12 +52,9 @@ struct ArmInst {
     /// @param s1
     /// @param s2
     /// @param add
-    ArmInst(std::string op,
-            std::string rs = "",
-            std::string s1 = "",
-            std::string s2 = "",
-            std::string cond = "",
-            std::string extra = "");
+    RiscInst(
+        std::string op, std::string rs = "", std::string s1 = "", std::string s2 = "", std::string cond = "",
+        std::string extra = "");
 
     /// @brief 指令更新
     /// @param op
@@ -65,12 +62,9 @@ struct ArmInst {
     /// @param s1
     /// @param s2
     /// @param add
-    void replace(std::string op,
-                 std::string rs = "",
-                 std::string s1 = "",
-                 std::string s2 = "",
-                 std::string cond = "",
-                 std::string extra = "");
+    void replace(
+        std::string op, std::string rs = "", std::string s1 = "", std::string s2 = "", std::string cond = "",
+        std::string extra = "");
 
     /// @brief 设置死指令
     void setDead();
@@ -80,21 +74,21 @@ struct ArmInst {
     std::string outPut();
 };
 
-/// @brief 底层汇编序列-RISCV64
+/// @brief 底层汇编序列-RiscV64
 class ILocRiscV64 {
 
-    /// @brief ARM汇编序列
-    std::list<ArmInst *> code;
+    /// @brief Risc汇编序列
+    std::list<RiscInst *> code;
 
     /// @brief 符号表
     Module * module;
 
-    /// @brief 加载立即数 ldr r0,=#100
+    /// @brief 加载立即数 li r0,=#100
     /// @param rs_reg_no 结果寄存器号
     /// @param num 立即数
     void load_imm(int rs_reg_no, int num);
 
-    /// @brief 加载符号值 ldr r0,=g; ldr r0,[r0]
+    /// @brief 加载符号值 la xN, symbol; lw xN, 0(xN)
     /// @param rsReg 结果寄存器号
     /// @param name Label名字
     void load_symbol(int rs_reg_no, std::string name);
@@ -127,15 +121,15 @@ public:
 
     /// @brief 获取当前的代码序列
     /// @return 代码序列
-    std::list<ArmInst *> & getCode();
+    std::list<RiscInst *> & getCode();
 
-    /// @brief Load指令，基址寻址 ldr r0,[fp,#100]
+    /// @brief Load指令，基址寻址 lw xN, offset(base)
     /// @param rs_reg_no 结果寄存器
     /// @param base_reg_no 基址寄存器
     /// @param disp 偏移
     void load_base(int rs_reg_no, int base_reg_no, int disp);
 
-    /// @brief Store指令，基址寻址 str r0,[fp,#100]
+    /// @brief Store指令，基址寻址 sw xN, offset(base)
     /// @param src_reg_no 源寄存器
     /// @param base_reg_no 基址寄存器
     /// @param disp 偏移

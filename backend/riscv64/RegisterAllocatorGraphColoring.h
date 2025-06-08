@@ -22,12 +22,12 @@
 
 #include "BitMap.h"
 #include "Value.h"
-#include "PlatformArm32.h"
+#include "PlatformRiscV64.h"
 #include "LiveVariableAnalysis.h"
 
 class GraphColoringRegisterAllocator {
 public:
-    GraphColoringRegisterAllocator(int regCount = PlatformArm32::maxUsableRegNum);
+    GraphColoringRegisterAllocator(int regCount = PlatformRiscV64::maxUsableRegNum);
 
     ///
     /// @brief 添加变量之间的冲突（干涉）关系
@@ -51,9 +51,12 @@ public:
     /// @brief 被溢出的变量列表
     ///
     const std::vector<Value *> & getSpilled() const;
+    void                         buildGraph(const LiveVariableAnalysis & lva);
+
+    /// @brief 获取所有变量的寄存器分配映射
+    std::unordered_map<Value *, int> getColorMap() const;
 
 private:
-    void buildGraph(const LiveVariableAnalysis & lva);
     bool simplify();
     void select();
     void assignColors();

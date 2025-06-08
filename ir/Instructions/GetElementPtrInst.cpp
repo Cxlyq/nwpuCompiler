@@ -19,14 +19,17 @@ GetElementPtrInst::GetElementPtrInst(
 
     // 设置最终的结果类型为指向最后一个元素的指针
     Type * current = gepType;
-    for (size_t i = 1; i < indices.size(); ++i) { // 跳过第一个 i64 0（数组对象指针偏移）
-        if (current->isArrayType()) {
-            current = static_cast<ArrayType *>(current)->getElementType();
-        } else {
-            break;
-        }
+    if (current->isArrayType()) {
+        current = static_cast<ArrayType *>(current)->getElementType();
+        // for (size_t i = 1; i < indices.size(); ++i) { // 跳过第一个 i64 0（数组对象指针偏移）
+        //     if (current->isArrayType()) {
+        //         current = static_cast<ArrayType *>(current)->getElementType();
+        //     } else {
+        //         break;
+        //     }
     }
-    this->type = current;
+    PointerType * pointerType = new PointerType(current);
+    this->type = pointerType;
 }
 
 /// toString 实现
@@ -35,9 +38,13 @@ void GetElementPtrInst::toString(std::string & str)
     std::ostringstream oss;
     oss << getIRName() << " = getelementptr inbounds ";
 
-    oss << getOperand(0)->getType()->toString() << ", " << getOperand(0)->getType()->toString() << "* "
-        << getOperand(0)->getIRName();
-
+    if (getOperand(0)->getType()->isPointerType()) {
+        oss << getOperand(0)->getType()->getPointeeType()->toString() << ", "
+            << getOperand(0)->getType()->getPointeeType()->toString() << "* " << getOperand(0)->getIRName();
+    } else {
+        oss << getOperand(0)->getType()->toString() << ", " << getOperand(0)->getType()->toString() << "* "
+            << getOperand(0)->getIRName();
+    }
     for (size_t i = 1; i < getOperands().size(); ++i) {
         oss << ", i32 " << getOperand(i)->getIRName();
     }

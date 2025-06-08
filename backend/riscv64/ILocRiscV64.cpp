@@ -22,24 +22,18 @@
 #include "PlatformRiscV64.h"
 #include "Module.h"
 
-ArmInst::ArmInst(std::string _opcode,
-                 std::string _result,
-                 std::string _arg1,
-                 std::string _arg2,
-                 std::string _cond,
-                 std::string _addition)
+RiscInst::RiscInst(
+    std::string _opcode, std::string _result, std::string _arg1, std::string _arg2, std::string _cond,
+    std::string _addition)
     : opcode(_opcode), cond(_cond), result(_result), arg1(_arg1), arg2(_arg2), addition(_addition), dead(false)
 {}
 
 /*
     指令内容替换
 */
-void ArmInst::replace(std::string _opcode,
-                      std::string _result,
-                      std::string _arg1,
-                      std::string _arg2,
-                      std::string _cond,
-                      std::string _addition)
+void RiscInst::replace(
+    std::string _opcode, std::string _result, std::string _arg1, std::string _arg2, std::string _cond,
+    std::string _addition)
 {
     opcode = _opcode;
     result = _result;
@@ -59,7 +53,7 @@ void ArmInst::replace(std::string _opcode,
 /*
     设置为无效指令
 */
-void ArmInst::setDead()
+void RiscInst::setDead()
 {
     dead = true;
 }
@@ -67,7 +61,7 @@ void ArmInst::setDead()
 /*
     输出函数
 */
-std::string ArmInst::outPut()
+std::string RiscInst::outPut()
 {
     // 无用代码，什么都不输出
     if (dead) {
@@ -112,7 +106,7 @@ std::string ArmInst::outPut()
     return ret;
 }
 
-#define emit(...) code.push_back(new ArmInst(__VA_ARGS__))
+#define emit(...) code.push_back(new RiscInst(__VA_ARGS__))
 
 /// @brief 构造函数
 /// @param _module 符号表
@@ -124,7 +118,7 @@ ILocRiscV64::ILocRiscV64(Module * _module)
 /// @brief 析构函数
 ILocRiscV64::~ILocRiscV64()
 {
-    std::list<ArmInst *>::iterator pIter;
+    std::list<RiscInst *>::iterator pIter;
 
     for (pIter = code.begin(); pIter != code.end(); ++pIter) {
         delete (*pIter);
@@ -134,8 +128,8 @@ ILocRiscV64::~ILocRiscV64()
 /// @brief 删除无用的Label指令
 void ILocRiscV64::deleteUnusedLabel()
 {
-    std::list<ArmInst *> labelInsts;
-    for (ArmInst * arm: code) {
+    std::list<RiscInst *> labelInsts;
+    for (RiscInst * arm: code) {
         if ((!arm->dead) && (arm->opcode[0] == '.') && (arm->result == ":")) {
             labelInsts.push_back(arm);
         }
@@ -143,19 +137,19 @@ void ILocRiscV64::deleteUnusedLabel()
 
     // 检测Label指令是否在被使用，也就是是否有跳转到该Label的指令
     // 如果没有使用，则设置为dead
-    for (ArmInst * labelArm: labelInsts) {
+    for (RiscInst * labelRisc: labelInsts) {
         bool labelUsed = false;
 
-        for (ArmInst * arm: code) {
+        for (RiscInst * arm: code) {
             // TODO 转移语句的指令标识符根据定义修改判断
-            if ((!arm->dead) && (arm->opcode[0] == 'b') && (arm->result == labelArm->opcode)) {
+            if ((!arm->dead) && (arm->opcode[0] == 'b') && (arm->result == labelRisc->opcode)) {
                 labelUsed = true;
                 break;
             }
         }
 
         if (!labelUsed) {
-            labelArm->setDead();
+            labelRisc->setDead();
         }
     }
 }
@@ -185,7 +179,7 @@ void ILocRiscV64::outPut(FILE * file, bool outputEmpty)
 
 /// @brief 获取当前的代码序列
 /// @return 代码序列
-std::list<ArmInst *> & ILocRiscV64::getCode()
+std::list<RiscInst *> & ILocRiscV64::getCode()
 {
     return code;
 }
