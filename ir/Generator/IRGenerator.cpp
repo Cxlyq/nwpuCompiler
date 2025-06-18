@@ -268,13 +268,13 @@ bool IRGenerator::ir_function_define(ast_node * node)
 
     // 获取函数的IR代码列表，用于后面追加指令用，注意这里用的是引用传值
     InterCode & irCode = newFunc->getInterCode();
+    /// NOTE:不需要entry指令，多了反而报错
+    // // 这里也可增加一个函数入口Label指令，便于后续基本块划分
+    // LabelInstruction * entryLabelInst = new LabelInstruction(newFunc);
+    // irCode.addInst(entryLabelInst);
 
-    // 这里也可增加一个函数入口Label指令，便于后续基本块划分
-    LabelInstruction * entryLabelInst = new LabelInstruction(newFunc);
-    irCode.addInst(entryLabelInst);
-
-    // 创建并加入Entry入口指令
-    irCode.addInst(new EntryInstruction(newFunc));
+    // // 创建并加入Entry入口指令
+    // irCode.addInst(new EntryInstruction(newFunc));
 
     // 创建出口指令并不加入出口指令，等函数内的指令处理完毕后加入出口指令
     LabelInstruction * exitLabelInst = new LabelInstruction(newFunc);
@@ -2169,9 +2169,10 @@ bool IRGenerator::ir_assign(ast_node * node)
     ///检查右值是否是数组，若是需要load
     Value * Roperand = right->val;
 
-    /// 检查类型是否匹配，若不匹配，插入类型转换指令
-    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID() &&
-        left->val->getType()->getPointeeType()->getTypeID() != right->val->getType()->getTypeID()) {
+    /// 检查类型是否匹配，若不匹配，插入类型转换指令,
+    /// 指针和它的指向类型不匹配时，进行强制转换
+    if ((left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) &&
+        (left->val->getType()->getPointeeType()->getTypeID() != right->val->getType()->getTypeID())) {
         // int -> float 强制转换
         CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), Roperand, left->val->getType());
         node->blockInsts.addInst(castInst);
