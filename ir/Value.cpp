@@ -231,10 +231,7 @@ void Value::setVal(float val)
 }
 bool Value::setInitVal(std::vector<int> * arrayVal)
 {
-    if (valueCategory != ValueCategory::CONSTANT) {
-        std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
-        return false;
-    }
+
     valueType = ARRAY_INT;
     initVal.array_int_init_list = arrayVal;
     isInited = true;
@@ -242,10 +239,6 @@ bool Value::setInitVal(std::vector<int> * arrayVal)
 }
 bool Value::setInitVal(std::vector<float> * arrayVal)
 {
-    if (valueCategory != ValueCategory::CONSTANT) {
-        std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
-        return false;
-    }
     valueType = ARRAY_FLOAT;
     initVal.array_float_init_list = arrayVal;
     isInited = true;
@@ -300,4 +293,13 @@ bool Value::getArrayValByIndex(std::vector<int> & indexs, float * val)
         return false;
     }
     return false;
+}
+
+std::vector<int> * Value::getInitIntVal()
+{
+    return initVal.array_int_init_list;
+}
+std::vector<float> * Value::getInitFloatVal()
+{
+    return initVal.array_float_init_list;
 }
