@@ -168,30 +168,37 @@ const std::vector<Value *> & GraphColoringRegisterAllocator::getSpilled() const
 /// @param lva 活跃变量分析的结果对象
 void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva)
 {
+    const auto & stackVars = lva.getStackVars(); // <<< 获取栈变量集合
     for (auto * block: lva.getBasicBlocks()) {
-        std::unordered_set<Value *> live = lva.getLiveOut(block->label); // 初始化 live 集
+        std::unordered_set<Value *> live;
+        for (auto * v: lva.getLiveOut(block->label)) {
+            if (!stackVars.count(v)) // <<< 过滤掉栈变量
+                live.insert(v);
+        }
+        // 初始化 live 集
 
-        std::cout << ">>> BasicBlock: " << block->label << "\n";
-        std::cout << "Initial LiveOut: ";
-        for (auto * v: live)
-            std::cout << v->getIRName() << " ";
-        std::cout << "\n";
+        // std::cout << ">>> BasicBlock: " << block->label << "\n";
+        // std::cout << "Initial LiveOut: ";
+        // for (auto * v: live)
+        //     std::cout << v->getIRName() << " ";
+        // std::cout << "\n";
 
         for (auto it = block->instructions.rbegin(); it != block->instructions.rend(); ++it) {
             Instruction * inst = *it;
 
             if (inst->hasResultValue()) {
                 Value * def = inst;
-                std::cout << "  DEF: " << def->getIRName() << "\n";
+                if (!stackVars.count(def)) { // <<< 过滤掉栈变量
+                    // std::cout << "  DEF: " << def->getIRName() << "\n";
 
-                for (Value * val: live) {
-                    if (val != def) {
-                        addInterference(def, val);
-                        std::cout << "    Interfere: " << def->getIRName() << " <--> " << val->getIRName() << "\n";
+                    for (Value * val: live) {
+                        if (val != def) {
+                            addInterference(def, val);
+                            // std::cout << "    Interfere: " << def->getIRName() << " <--> " << val->getIRName() << "\n";
+                        }
                     }
                 }
-
-                live.erase(def);
+                live.erase(def); // 依然要 erase（不管是不是栈变量）
             }
 
             // 添加使用的变量到 live
@@ -201,30 +208,32 @@ void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva
                     continue;
                 if (operand->getType()->isVoidType())
                     continue;
+                if (stackVars.count(operand)) // <<< 过滤掉栈变量
+                    continue;
                 live.insert(operand);
-                std::cout << "  USE: " << operand->getIRName() << "\n";
+                // std::cout << "  USE: " << operand->getIRName() << "\n";
             }
 
-            std::cout << "  Updated live set: ";
-            for (auto * v: live)
-                std::cout << v->getIRName() << " ";
-            std::cout << "\n";
+            // std::cout << "  Updated live set: ";
+            // for (auto * v: live)
+            //     std::cout << v->getIRName() << " ";
+            // std::cout << "\n";
         }
 
-        std::cout << "Final Live for block " << block->label << ": ";
-        for (auto * v: live)
-            std::cout << v->getIRName() << " ";
-        std::cout << "\n\n";
+        // std::cout << "Final Live for block " << block->label << ": ";
+        // for (auto * v: live)
+        //     std::cout << v->getIRName() << " ";
+        // std::cout << "\n\n";
     }
 
     // 输出最终干涉图
-    std::cout << "=== Interference Graph ===\n";
-    for (auto & [v, neighbors]: interferenceGraph) {
-        std::cout << v->getIRName() << " : ";
-        for (auto * n: neighbors)
-            std::cout << n->getIRName() << " ";
-        std::cout << "\n";
-    }
+    // std::cout << "=== Interference Graph ===\n";
+    // for (auto & [v, neighbors]: interferenceGraph) {
+    //     std::cout << v->getIRName() << " : ";
+    //     for (auto * n: neighbors)
+    //         std::cout << n->getIRName() << " ";
+    //     std::cout << "\n";
+    // }
 }
 
 /// @brief 获取所有变量的寄存器分配映射

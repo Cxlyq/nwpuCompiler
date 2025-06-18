@@ -38,5 +38,5 @@ void ConditionalInstruction::toString(std::string & str)
     // 注意：条件值在 LLVM IR 中必须是 i1 类型，这里的 toString 直接写死了 i1。
     // 这意味着 ir_ifelse 在创建 ConditionalBranchInstruction 之前，
     // 必须确保 condition->val 已经是 i1 类型的值 (例如通过 icmp 或其他逻辑操作)。
-    str = "\tbr i1 " + cond_name + ", label %" + true_label_name + ", label %" + false_label_name;
+    str = "br i1 " + cond_name + ", label %" + true_label_name + ", label %" + false_label_name;
 }
