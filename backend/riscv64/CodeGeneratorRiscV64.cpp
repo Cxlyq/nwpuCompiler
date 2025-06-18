@@ -107,6 +107,93 @@ void CodeGeneratorRiscV64::genDataSection()
                 } tmp = {fval};
                 fprintf(fp, "\t.word\t0x%x\n", tmp.u);
             }
+            if (var->getType()->isArrayType()) {
+                auto                     arrayType = dynamic_cast<ArrayType *>(var->getType());
+                const std::vector<int> & dims = arrayType->getDimensions();
+                int                      totalElements = 1;
+                for (int d: dims)
+                    totalElements *= d;
+
+                int elemSize = arrayType->getBaseElementType()->getSize();
+
+                if (arrayType->getBaseElementType()->isIntegerType()) {
+                    auto initVals = var->getInitIntVal();
+                    int  initSize = initVals ? initVals->size() : 0;
+
+                    // 最高维度slice大小 = 剩余维度乘积
+                    int sliceSize = 1;
+                    for (int j = 1; j < dims.size(); ++j)
+                        sliceSize *= dims[j];
+
+                    for (int i = 0; i < dims[0]; ++i) {
+                        // 判断该slice是否全部为0
+                        bool allZero = true;
+                        for (int k = 0; k < sliceSize; ++k) {
+                            int idx = i * sliceSize + k;
+                            int val = (idx < initSize) ? (*initVals)[idx] : 0;
+                            if (val != 0) {
+                                allZero = false;
+                                break;
+                            }
+                        }
+
+                        if (allZero) {
+                            fprintf(fp, "\t.zero\t%d\n", sliceSize * elemSize);
+                        } else {
+                            for (int k = 0; k < sliceSize; ++k) {
+                                int idx = i * sliceSize + k;
+                                int val = (idx < initSize) ? (*initVals)[idx] : 0;
+                                fprintf(fp, "\t.word\t%d\n", val);
+                            }
+                        }
+                    }
+
+                    // 防御尾部未覆盖的情况，通常不会出现
+                    if (totalElements > initSize) {
+                        int remain = totalElements - initSize;
+                        fprintf(fp, "\t.zero\t%d\n", remain * elemSize);
+                    }
+                } else if (arrayType->getBaseElementType()->isFloatType()) {
+                    auto initVals = var->getInitFloatVal();
+                    int  initSize = initVals ? initVals->size() : 0;
+
+                    int sliceSize = 1;
+                    for (int j = 1; j < dims.size(); ++j)
+                        sliceSize *= dims[j];
+
+                    for (int i = 0; i < dims[0]; ++i) {
+                        bool allZero = true;
+                        for (int k = 0; k < sliceSize; ++k) {
+                            int   idx = i * sliceSize + k;
+                            float val = (idx < initSize) ? (*initVals)[idx] : 0.0f;
+                            if (val != 0.0f) {
+                                allZero = false;
+                                break;
+                            }
+                        }
+
+                        if (allZero) {
+                            fprintf(fp, "\t.zero\t%d\n", sliceSize * elemSize);
+                        } else {
+                            for (int k = 0; k < sliceSize; ++k) {
+                                int   idx = i * sliceSize + k;
+                                float val = (idx < initSize) ? (*initVals)[idx] : 0.0f;
+                                union {
+                                    float    f;
+                                    uint32_t u;
+                                } tmp = {val};
+                                fprintf(fp, "\t.word\t0x%08x\n", tmp.u);
+                            }
+                        }
+                    }
+
+                    if (totalElements > initSize) {
+                        int remain = totalElements - initSize;
+                        fprintf(fp, "\t.zero\t%d\n", remain * elemSize);
+                    }
+                }
+            }
+
             // 其他类型类似处理
 
             fprintf(fp, "\t.size\t%s, %d\n", name.c_str(), size);

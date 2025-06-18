@@ -97,10 +97,15 @@ public:
     ///
     void toDeclareString(std::string & str)
     {
-        str = "declare " + getType()->toString() + " " + getIRName();
+        // LLVM IR 中，全局变量必须以 `@` 开头
+        str = getIRName() + " = global " + getType()->toString() + " ";
+
         if (isInited) {
-            str += "\n" + getIRName() + " = " + getInitValStr();
+            str += getInitValStr(); // 初始化值，如 "0", "1", ...
+        } else {
+            str += "0"; // 未初始化
         }
+        str += ", align " + std::to_string(getAlignment());
     }
 
     /// 设置初始值（支持 ConstantInt、ConstantFP、ConstantArray 等）

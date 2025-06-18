@@ -188,7 +188,7 @@ public:
     }
     virtual const Type * getPointeeType() const
     {
-        return nullptr;
+        return this; // 默认实现为自身类型
     }
 
     virtual const std::vector<int> & getDimensions() const

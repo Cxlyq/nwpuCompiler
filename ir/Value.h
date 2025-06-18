@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 #include "Use.h"
 #include "Type.h"
 
@@ -157,19 +158,21 @@ public:
 
     // 为value赋初值
 
-    float         getFloatInitVal();
-    uint32_t      getIntInitVal();
-    ValueType     getValueType();
-    ValueCategory getValueCategory();             //获取值的类别（常量或变量）
-    void          setCategory(ValueCategory cat); //设置值的类别（常量或变量）
-    bool          setInitVal(float val);
-    bool          setInitVal(uint32_t val);
-    bool          setInitVal(std::vector<int> * arrayVal);
-    bool          setInitVal(std::vector<float> * arrayVal);
-    std::string   getInitValStr();
-    uint32_t      getIntVal();
-    float         getFloatVal();
-    void          setVal(uint32_t val);
-    void          setVal(float val);
-    bool          getArrayValByIndex(std::vector<int> & indexs, float * val);
+    float            getFloatInitVal();
+    uint32_t         getIntInitVal();
+    ValueType        getValueType();
+    ValueCategory    getValueCategory();             //获取值的类别（常量或变量）
+    void             setCategory(ValueCategory cat); //设置值的类别（常量或变量）
+    bool             setInitVal(float val);
+    bool             setInitVal(uint32_t val);
+    bool             setInitVal(std::vector<int> * arrayVal);
+    bool             setInitVal(std::vector<float> * arrayVal);
+    std::vector<int>* getInitIntVal();
+    std::vector<float>* getInitFloatVal();
+    std::string getInitValStr();
+    uint32_t    getIntVal();
+    float       getFloatVal();
+    void        setVal(uint32_t val);
+    void        setVal(float val);
+    bool        getArrayValByIndex(std::vector<int> & indexs, float * val);
 };

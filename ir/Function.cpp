@@ -112,36 +112,37 @@ void Function::toString(std::string & str)
 
         // 局部变量和临时变量需要输出declare语句
 
-        str += "\tdeclare " + var->getType()->toString() + " " + var->getIRName();
+        // str += "\tdeclare " + var->getType()->toString() + " " + var->getIRName();
 
-        std::string extraStr;
-        std::string realName = var->getName();
-        if (!realName.empty()) {
-            str += " ; " + std::to_string(var->getScopeLevel()) + ":" + realName;
-        }
+        // std::string extraStr;
+        // std::string realName = var->getName();
+        // if (!realName.empty()) {
+        //     str += " ; " + std::to_string(var->getScopeLevel()) + ":" + realName;
+        // }
 
-        str += "\n";
+        // str += "\n";
+        str += "\t" + var->getIRName() + " = alloca " + var->getType()->toString() + ", align 4\n";
     }
 
-    // 输出临时变量的declare形式
-    // 遍历所有的线性IR指令，文本输出
-    for (auto & inst: code.getInsts()) {
+    // // 输出临时变量的declare形式
+    // // 遍历所有的线性IR指令，文本输出
+    // for (auto & inst: code.getInsts()) {
 
-        if (inst->hasResultValue()) {
+    //     if (inst->hasResultValue()) {
 
-            //对于临时变量，没有数组，所以需要找到对应的元素类型
+    //         //对于临时变量，没有数组，所以需要找到对应的元素类型
 
-            if (inst->getType()->isArrayType()) {
-                // 执行对应操作
-                //临时变量改为输出对应元素的类型
-                str += "\tdeclare " + inst->getType()->getElementType()->toString() + " " + inst->getIRName() + '\n';
+    //         if (inst->getType()->isArrayType()) {
+    //             // 执行对应操作
+    //             //临时变量改为输出对应元素的类型
+    //             str += "\tdeclare " + inst->getType()->getElementType()->toString() + " " + inst->getIRName() + '\n';
 
-            } else {
-                str += "\tdeclare " + inst->getType()->toString() + " " + inst->getIRName() + "\n";
-            }
-            // 局部变量和临时变量需要输出declare语句
-        }
-    }
+    //         } else {
+    //             str += "\tdeclare " + inst->getType()->toString() + " " + inst->getIRName() + "\n";
+    //         }
+    //         // 局部变量和临时变量需要输出declare语句
+    //     }
+    // }
 
     // 遍历所有的线性IR指令，文本输出
     for (auto & inst: code.getInsts()) {
@@ -153,7 +154,7 @@ void Function::toString(std::string & str)
 
             // Label指令不加Tab键
             if (inst->getOp() == IRInstOperator::IRINST_OP_LABEL) {
-                str += instStr + "\n";
+                // str += instStr + "\n";  暂改为不输出label
             } else {
                 str += "\t" + instStr + "\n";
             }
@@ -180,7 +181,7 @@ Instruction * Function::getExitLabel()
 
 /// @brief 设置函数返回值变量
 /// @param val 返回值变量，要求必须是局部变量，不能是临时变量
-void Function::setReturnValue(Value* val)
+void Function::setReturnValue(Value * val)
 {
     returnValue = val;
 }
@@ -302,17 +303,20 @@ void Function::renameIR()
     if (isBuiltin()) {
         return;
     }
-    int32_t varnameIndex = 0;
+    int32_t varnameIndex = 0; // 从1开始，0是函数名
     int32_t labelIndex = 0;
     // 形式参数重命名
     for (auto & param: this->params) {
-        param->setIRName(IR_TEMP_VARNAME_PREFIX + std::to_string(varnameIndex++));
+        // param->setIRName(IR_TEMP_VARNAME_PREFIX + std::to_string(varnameIndex++));
+        param->setIRName('%' + std::to_string(varnameIndex++));
     }
 
+    varnameIndex++; // 需要显式+1
     // 局部变量重命名
     for (auto & var: this->varsVector) {
 
-        var->setIRName(IR_LOCAL_VARNAME_PREFIX + std::to_string(varnameIndex++));
+        // var->setIRName(IR_LOCAL_VARNAME_PREFIX + std::to_string(varnameIndex++));
+        var->setIRName('%' + std::to_string(varnameIndex++));
     }
 
     // 遍历所有的指令进行命名
@@ -320,7 +324,8 @@ void Function::renameIR()
         if (inst->getOp() == IRInstOperator::IRINST_OP_LABEL) {
             inst->setIRName(IR_LABEL_PREFIX + std::to_string(labelIndex++));
         } else if (inst->hasResultValue()) {
-            inst->setIRName(IR_TEMP_VARNAME_PREFIX + std::to_string(varnameIndex++));
+            // inst->setIRName(IR_TEMP_VARNAME_PREFIX + std::to_string(varnameIndex++));
+            inst->setIRName('%' + std::to_string(varnameIndex++));
         }
     }
 }

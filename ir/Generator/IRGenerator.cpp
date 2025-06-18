@@ -268,13 +268,13 @@ bool IRGenerator::ir_function_define(ast_node * node)
 
     // 获取函数的IR代码列表，用于后面追加指令用，注意这里用的是引用传值
     InterCode & irCode = newFunc->getInterCode();
+    /// NOTE:不需要entry指令，多了反而报错
+    // // 这里也可增加一个函数入口Label指令，便于后续基本块划分
+    // LabelInstruction * entryLabelInst = new LabelInstruction(newFunc);
+    // irCode.addInst(entryLabelInst);
 
-    // 这里也可增加一个函数入口Label指令，便于后续基本块划分
-    LabelInstruction * entryLabelInst = new LabelInstruction(newFunc);
-    irCode.addInst(entryLabelInst);
-
-    // 创建并加入Entry入口指令
-    irCode.addInst(new EntryInstruction(newFunc));
+    // // 创建并加入Entry入口指令
+    // irCode.addInst(new EntryInstruction(newFunc));
 
     // 创建出口指令并不加入出口指令，等函数内的指令处理完毕后加入出口指令
     LabelInstruction * exitLabelInst = new LabelInstruction(newFunc);
@@ -2169,9 +2169,10 @@ bool IRGenerator::ir_assign(ast_node * node)
     ///检查右值是否是数组，若是需要load
     Value * Roperand = right->val;
 
-    /// 检查类型是否匹配，若不匹配，插入类型转换指令
-    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID() &&
-        left->val->getType()->getPointeeType()->getTypeID() != right->val->getType()->getTypeID()) {
+    /// 检查类型是否匹配，若不匹配，插入类型转换指令,
+    /// 指针和它的指向类型不匹配时，进行强制转换
+    if ((left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) &&
+        (left->val->getType()->getPointeeType()->getTypeID() != right->val->getType()->getTypeID())) {
         // int -> float 强制转换
         CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), Roperand, left->val->getType());
         node->blockInsts.addInst(castInst);
@@ -3105,6 +3106,51 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 printf("数组初始化失败\n");
                 return false;
             }
+            // 在这里使用 GlobalVariable* 临时变量来访问子类方法
+            GlobalVariable * gv = static_cast<GlobalVariable *>(node->val);
+            gv->setFasle_inBSSSection();
+            // 数组初始化后，不属于ibss段，不论局部变量和全局变量
+            // 存储初值
+            if (type_node->type->isFloatType()) {
+                // 浮点数类型
+                auto float_init_list = new std::vector<float>;
+                for (auto init_num: init_list) {
+                    if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                        float_init_list->push_back(init_num->float_val);
+                    } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                        if (init_num->integer_val != 0) {
+                            std::cerr << "Warning: Auto transform type \"int\" to \"float\" at \"" << array_name
+                                      << "\"." << std::endl;
+                        }
+                        // TODO 增加类型转化指令
+                        float_init_list->push_back((float) init_num->integer_val);
+                    } else {
+                        std::cerr << "ERROR(const declare): No match type for  float array " << array_name << "."
+                                  << std::endl;
+                        return false;
+                    }
+                }
+
+                node->val->setInitVal(float_init_list);
+            } else {
+                // 整数类型
+                auto int_init_list = new std::vector<int>;
+                for (auto init_num: init_list) {
+                    if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                        int_init_list->push_back(init_num->float_val);
+                        std::cerr << "Warning: Auto transform type \"float\" to \"int\" at \"" << array_name << "\"."
+                                  << std::endl;
+                        // TODO 增加类型转化指令
+                    } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                        int_init_list->push_back((float) init_num->integer_val);
+                    } else {
+                        std::cerr << "ERROR(const declare): No matched type for const float array " << array_name << "."
+                                  << std::endl;
+                        return false;
+                    }
+                }
+                node->val->setInitVal(int_init_list);
+            }
             for (auto inst: *insts) {
                 node->blockInsts.addInst(inst);
             }
@@ -3191,6 +3237,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
             }
             dims.push_back((int) dim_size);
         }
+
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims, ValueCategory::CONSTANT);
         if (init_val_node) {
@@ -3200,6 +3247,9 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                 std::cerr << "Const declare: Failed to init const array!" << std::endl;
                 return false;
             }
+            // 在这里使用 GlobalVariable* 临时变量来访问子类方法
+            GlobalVariable * gv = static_cast<GlobalVariable *>(node->val);
+            gv->setFasle_inBSSSection();
             // 存储初值
             if (type_node->type->isFloatType()) {
                 // 浮点数类型

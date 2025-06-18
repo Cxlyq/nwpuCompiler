@@ -4,6 +4,7 @@
 #include <cstdint>
 #include "Type.h"
 
+
 class FloatType final : public Type {
 
 public:
