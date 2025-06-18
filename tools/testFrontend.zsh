@@ -2,6 +2,6 @@
 # 抽象语法树
 # ./build/minic -S -T -o ./tests/test1-1.png ./tests/test1-1.c
 # IR生成
-./build/minic -S -I -o ./tests/test1-4-0.ir ./tests/test1-4.c
-clang ./tests/test1-4.c -emit-llvm -S -c -o ./tests/test1-4-clang.ll
+./build/minic -S -I -o ./tests/test1-1-0.ir ./tests/test1-1.c
+clang ./tests/test1-1.c -emit-llvm -S -c -o ./tests/test1-1-clang.ll
 #./tools/IRCompiler_df -S -L -o ./tests/test1-1-zlj.ll ./tests/test1-1.c

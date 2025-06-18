@@ -102,9 +102,9 @@
 
 ## Instructions/: 指令生成与打印
 
-## Types/:
+## Types/:对于各种类型（Type）定义类
 
-## Values/:
+## Values/:对于各种值（常量值/变量值）
 
 ---
 # symboltable/:
