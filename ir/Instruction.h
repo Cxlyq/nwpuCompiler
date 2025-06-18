@@ -34,7 +34,7 @@ enum class IRInstOperator : std::int8_t {
     /// @brief 无条件分支指令
     IRINST_OP_GOTO,
 
-    /// @brief 无条件分支指令
+    /// @brief 有条件分支指令
     IRINST_OP_BR_COND,
 
     /// @brief 整数的加法指令，二元运算
@@ -61,58 +61,31 @@ enum class IRInstOperator : std::int8_t {
     /// @brief 整数相等指令，二元运算
     IRINST_OP_EQ_I,
 
-    /// @brief 浮点数相等指令，二元运算
-    IRINST_OP_EQ_F,
-
     /// @brief 整数不等指令，二元运算
     IRINST_OP_NEQ_I,
-
-    /// @brief 浮点数不等指令，二元运算
-    IRINST_OP_NEQ_F,
 
     /// @brief 整数大于等于指令，二元运算
     IRINST_OP_GE_I,
 
-    /// @brief 浮点数大于等于指令，二元运算
-    IRINST_OP_GE_F,
-
     /// @brief 整数小于等于指令，二元运算
     IRINST_OP_LE_I,
-
-    /// @brief 浮点数小于等于指令，二元运算
-    IRINST_OP_LE_F,
 
     /// @brief 整数大于指令，二元运算
     IRINST_OP_GNE_I,
 
-    /// @brief 浮点数大于指令，二元运算
-    IRINST_OP_GNE_F,
-
     /// @brief 整数小于指令，二元运算
     IRINST_OP_LNE_I,
-
-    /// @brief 浮点数小于指令，二元运算
-    IRINST_OP_LNE_F,
 
     /// @brief 整数单目正指令，一元运算
     IRINST_OP_POS_I,
 
-    /// @brief 浮点数单目正指令，一元运算
-    IRINST_OP_POS_F,
-
     /// @brief 整数单目负指令，一元运算
     IRINST_OP_NEG_I,
-
-    /// @brief 浮点数单目负指令，一元运算
-    IRINST_OP_NEG_F,
 
     /// @brief 整数逻辑非指令，一元运算
     IRINST_OP_NOT_I,
 
-    /// @brief 浮点数逻辑非指令，一元运算
-    IRINST_OP_NOT_F,
-
-    /// @brief 浮点数的乘法指令，二元运算·
+    /// @brief 浮点数的加法指令，二元运算·
     IRINST_OP_ADD_F,
 
     /// @brief 浮点数的减法指令，二元运算
@@ -123,6 +96,33 @@ enum class IRInstOperator : std::int8_t {
 
     /// @brief 浮点数的除法指令，二元运算
     IRINST_OP_DIV_F,
+
+    /// @brief 浮点数相等指令，二元运算
+    IRINST_OP_EQ_F,
+
+    /// @brief 浮点数不等指令，二元运算
+    IRINST_OP_NEQ_F,
+
+    /// @brief 浮点数大于等于指令，二元运算
+    IRINST_OP_GE_F,
+
+    /// @brief 浮点数小于等于指令，二元运算
+    IRINST_OP_LE_F,
+
+    /// @brief 浮点数大于指令，二元运算
+    IRINST_OP_GNE_F,
+
+    /// @brief 浮点数小于指令，二元运算
+    IRINST_OP_LNE_F,
+
+    /// @brief 浮点数单目正指令，一元运算
+    IRINST_OP_POS_F,
+
+    /// @brief 浮点数单目负指令，一元运算
+    IRINST_OP_NEG_F,
+
+    /// @brief 浮点数逻辑非指令，一元运算
+    IRINST_OP_NOT_F,
 
     /// @brief 赋值指令，一元运算
     IRINST_OP_ASSIGN,
