@@ -14,7 +14,7 @@
 /// </table>
 ///
 #include <algorithm>
-#include "SimpleRegisterAllocatorRicsV64.h"
+#include "SimpleRegisterAllocatorRiscV64.h"
 
 ///
 /// @brief Construct a new Simple Register Allocator object

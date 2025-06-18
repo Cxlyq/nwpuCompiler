@@ -22,7 +22,7 @@
 #include "ILocRiscV64.h"
 #include "Instruction.h"
 #include "PlatformRiscV64.h"
-#include "SimpleRegisterAllocatorRicsV64.h"
+#include "SimpleRegisterAllocatorRiscV64.h"
 #include "RegVariable.h"
 
 using namespace std;

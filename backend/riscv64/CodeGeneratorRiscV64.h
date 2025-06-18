@@ -17,7 +17,7 @@
 #pragma once
 
 #include "CodeGeneratorAsm.h"
-#include "SimpleRegisterAllocatorRicsV64.h"
+#include "SimpleRegisterAllocatorRiscV64.h"
 
 class CodeGeneratorRiscV64 : public CodeGeneratorAsm {
 
