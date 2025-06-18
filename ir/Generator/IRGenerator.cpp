@@ -3106,6 +3106,51 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 printf("数组初始化失败\n");
                 return false;
             }
+            // 在这里使用 GlobalVariable* 临时变量来访问子类方法
+            GlobalVariable * gv = static_cast<GlobalVariable *>(node->val);
+            gv->setFasle_inBSSSection();
+            // 数组初始化后，不属于ibss段，不论局部变量和全局变量
+            // 存储初值
+            if (type_node->type->isFloatType()) {
+                // 浮点数类型
+                auto float_init_list = new std::vector<float>;
+                for (auto init_num: init_list) {
+                    if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                        float_init_list->push_back(init_num->float_val);
+                    } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                        if (init_num->integer_val != 0) {
+                            std::cerr << "Warning: Auto transform type \"int\" to \"float\" at \"" << array_name
+                                      << "\"." << std::endl;
+                        }
+                        // TODO 增加类型转化指令
+                        float_init_list->push_back((float) init_num->integer_val);
+                    } else {
+                        std::cerr << "ERROR(const declare): No match type for  float array " << array_name << "."
+                                  << std::endl;
+                        return false;
+                    }
+                }
+
+                node->val->setInitVal(float_init_list);
+            } else {
+                // 整数类型
+                auto int_init_list = new std::vector<int>;
+                for (auto init_num: init_list) {
+                    if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                        int_init_list->push_back(init_num->float_val);
+                        std::cerr << "Warning: Auto transform type \"float\" to \"int\" at \"" << array_name << "\"."
+                                  << std::endl;
+                        // TODO 增加类型转化指令
+                    } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                        int_init_list->push_back((float) init_num->integer_val);
+                    } else {
+                        std::cerr << "ERROR(const declare): No matched type for const float array " << array_name << "."
+                                  << std::endl;
+                        return false;
+                    }
+                }
+                node->val->setInitVal(int_init_list);
+            }
             for (auto inst: *insts) {
                 node->blockInsts.addInst(inst);
             }
@@ -3192,6 +3237,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
             }
             dims.push_back((int) dim_size);
         }
+
         // 调用 module->newArrayVarValue 分配数组变量
         node->val = module->newArrayVarValue(var_type, array_name, dims, ValueCategory::CONSTANT);
         if (init_val_node) {
@@ -3201,6 +3247,9 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                 std::cerr << "Const declare: Failed to init const array!" << std::endl;
                 return false;
             }
+            // 在这里使用 GlobalVariable* 临时变量来访问子类方法
+            GlobalVariable * gv = static_cast<GlobalVariable *>(node->val);
+            gv->setFasle_inBSSSection();
             // 存储初值
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
