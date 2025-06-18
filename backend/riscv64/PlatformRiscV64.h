@@ -47,7 +47,11 @@ public:
 
     /// @brief 可使用的通用寄存器的个数
     // x5-x7, x10-x17, x28-x31
+    //使用x10-x17需要调用前保存/恢复
     static const int maxUsableRegNum = 15;
+    
+    /// @brief 可使用的通用寄存器的对应编号
+    static const int RISCV64_REGS[maxUsableRegNum];
 
     /// @brief 寄存器的名字，r0-r15
     static const std::string regName[maxRegNum];

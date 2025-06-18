@@ -140,6 +140,24 @@ RegVariable * PlatformRiscV64::floatRegVal[PlatformRiscV64::maxRegNum / 2] = {
     new RegVariable(FloatType::getType(), PlatformRiscV64::regName[62], 30),
     new RegVariable(FloatType::getType(), PlatformRiscV64::regName[63], 31)};
 
+const int PlatformRiscV64::RISCV64_REGS[PlatformRiscV64::maxUsableRegNum] = {
+    5,
+    6,
+    7, // t0-t2
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17, // a0-a7
+    28,
+    29,
+    30,
+    31 // t3-t6
+};
+
 /// @brief 循环左移两位
 /// @param num
 void PlatformRiscV64::roundLeftShiftTwoBit(unsigned int & num)
