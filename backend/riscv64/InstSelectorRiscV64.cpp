@@ -36,9 +36,9 @@
 /// @param _func 函数
 // TODO: @JEV055 [指令指派1]完善指令翻译表及处理函数
 InstSelectorRiscV64::InstSelectorRiscV64(
-    vector<Instruction *> & _irCode, ILocRiscV64 & _iloc, Function * _func, SimpleRegisterAllocator & allocator)
+    vector<Instruction *> & _irCode, ILocRiscV64 & _iloc, Function * _func, SimpleRegisterAllocatorRicsV64 & allocator)
     : ir(_irCode), iloc(_iloc), func(_func), simpleRegisterAllocator(allocator)
-      // TODO: @jev055 [指令指派] 在修改之后将simpleRegisterAllocator改为对应的寄存器分配算法文件
+// TODO: @jev055 [指令指派] 在修改之后将simpleRegisterAllocator改为对应的寄存器分配算法文件
 {
     translator_handlers[IRInstOperator::IRINST_OP_ENTRY] = &InstSelectorRiscV64::translate_entry;
     translator_handlers[IRInstOperator::IRINST_OP_EXIT] = &InstSelectorRiscV64::translate_exit;
@@ -59,7 +59,7 @@ InstSelectorRiscV64::InstSelectorRiscV64(
     // translator_handlers[IRInstOperator::IRINST_OP_OR] =
     //     &InstSelectorRiscV64::translate_or_int32; // FIXME: 需要实现逻辑或
     translator_handlers[IRInstOperator::IRINST_OP_EQ_I] =
-		&InstSelectorRiscV64::translate_eq_int32; // FIXME: 需要实现整数相等
+        &InstSelectorRiscV64::translate_eq_int32; // FIXME: 需要实现整数相等
     translator_handlers[IRInstOperator::IRINST_OP_NEQ_I] =
         &InstSelectorRiscV64::translate_neq_int32; // FIXME: 需要实现整数不等
     translator_handlers[IRInstOperator::IRINST_OP_LE_I] =
@@ -75,7 +75,7 @@ InstSelectorRiscV64::InstSelectorRiscV64(
     translator_handlers[IRInstOperator::IRINST_OP_NEG_I] =
         &InstSelectorRiscV64::translate_neg_int32; // FIXME: 需要实现整数取负
     translator_handlers[IRInstOperator::IRINST_OP_NOT_I] =
-		&InstSelectorRiscV64::translate_not_int32; // FIXME: 需要实现整数逻辑非
+        &InstSelectorRiscV64::translate_not_int32; // FIXME: 需要实现整数逻辑非
     translator_handlers[IRInstOperator::IRINST_OP_ADD_F] = &InstSelectorRiscV64::translate_add_float32;
     translator_handlers[IRInstOperator::IRINST_OP_SUB_F] = &InstSelectorRiscV64::translate_sub_float32;
     translator_handlers[IRInstOperator::IRINST_OP_MUL_F] = &InstSelectorRiscV64::translate_mul_float32;
@@ -83,7 +83,7 @@ InstSelectorRiscV64::InstSelectorRiscV64(
     translator_handlers[IRInstOperator::IRINST_OP_EQ_F] =
         &InstSelectorRiscV64::translate_eq_float32; // FIXME: 需要实现浮点数相等
     translator_handlers[IRInstOperator::IRINST_OP_NEQ_F] =
-		&InstSelectorRiscV64::translate_neq_float32; // FIXME: 需要实现浮点数不等
+        &InstSelectorRiscV64::translate_neq_float32; // FIXME: 需要实现浮点数不等
     translator_handlers[IRInstOperator::IRINST_OP_GE_F] =
         &InstSelectorRiscV64::translate_ge_float32; // FIXME: 需要实现浮点数大于等于
     translator_handlers[IRInstOperator::IRINST_OP_LE_F] =
@@ -97,7 +97,7 @@ InstSelectorRiscV64::InstSelectorRiscV64(
     translator_handlers[IRInstOperator::IRINST_OP_NEG_F] =
         &InstSelectorRiscV64::translate_neg_float32; // FIXME: 需要实现浮点数取负
     translator_handlers[IRInstOperator::IRINST_OP_NOT_F] =
-		&InstSelectorRiscV64::translate_not_float32; // FIXME: 需要实现浮点数逻辑非
+        &InstSelectorRiscV64::translate_not_float32; // FIXME: 需要实现浮点数逻辑非
 
     translator_handlers[IRInstOperator::IRINST_OP_ASSIGN] = &InstSelectorRiscV64::translate_assign;
 
@@ -105,7 +105,7 @@ InstSelectorRiscV64::InstSelectorRiscV64(
     translator_handlers[IRInstOperator::IRINST_OP_ARG] = &InstSelectorRiscV64::translate_arg;
 
     translator_handlers[IRInstOperator::IRINST_OP_STORE] = &InstSelectorRiscV64::translate_store; // FIXME: 需要实现存值
-    translator_handlers[IRInstOperator::IRINST_OP_LOAD] = &InstSelectorRiscV64::translate_load;   // FIXME: 需要实现加载
+    translator_handlers[IRInstOperator::IRINST_OP_LOAD] = &InstSelectorRiscV64::translate_load; // FIXME: 需要实现加载
     translator_handlers[IRInstOperator::IRINST_OP_CAST] =
         &InstSelectorRiscV64::translate_cast; // FIXME: 需要实现类型转换
     translator_handlers[IRInstOperator::IRINST_OP_GEP] = &InstSelectorRiscV64::translate_gep; // FIXME: 需要实现指针获取

@@ -92,8 +92,9 @@ set(BACKEND_SRCS
 	backend/arm32/PlatformArm32.h
 	backend/arm32/CodeGeneratorArm32.cpp
 	backend/arm32/CodeGeneratorArm32.h
-	backend/arm32/SimpleRegisterAllocator.cpp
-	backend/arm32/SimpleRegisterAllocator.h
+
+	backend/arm32/SimpleRegisterAllocatorArm32.cpp
+	backend/arm32/SimpleRegisterAllocatorArm32.h
 
 	# 后端产生RISCV64汇编指令
 	backend/riscv64/CodeGeneratorRiscV64.cpp
@@ -108,8 +109,8 @@ set(BACKEND_SRCS
 	backend/riscv64/LiveVariableAnalysis.cpp
 	backend/riscv64/RegisterAllocatorGraphColoring.h
 	backend/riscv64/RegisterAllocatorGraphColoring.cpp
-	backend/riscv64/SimpleRegisterAllocator.cpp
-	backend/riscv64/SimpleRegisterAllocator.h
+	backend/riscv64/SimpleRegisterAllocatorRicsV64.cpp
+	backend/riscv64/SimpleRegisterAllocatorRicsV64.h
 )
 
 # 中间IR(ir)源代码集合

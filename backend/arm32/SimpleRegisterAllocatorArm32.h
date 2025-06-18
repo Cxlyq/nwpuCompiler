@@ -1,5 +1,5 @@
 ///
-/// @file SimpleRegisterAllocator.h
+/// @file SimpleRegisterAllocatorArm32.h
 /// @brief 简单或朴素的寄存器分配器
 /// @author zenglj (zenglj@live.com)
 /// @version 1.0
@@ -19,15 +19,15 @@
 
 #include "BitMap.h"
 #include "Value.h"
-#include "PlatformRiscV64.h"
+#include "PlatformArm32.h"
 
-class SimpleRegisterAllocator {
+class SimpleRegisterAllocatorArm32 {
 
 public:
     ///
     /// @brief Construct a new Simple Register Allocator object
     ///
-    SimpleRegisterAllocator();
+    SimpleRegisterAllocatorArm32();
 
     ///
     /// @brief 尝试按指定的寄存器编号进行分配，若能分配，则直接分配，否则从小达到的次序分配一个寄存器。
@@ -67,7 +67,7 @@ protected:
     ///
     /// @brief 寄存器位图：1已被占用，0未被使用
     ///
-    BitMap<PlatformRiscV64::maxUsableRegNum> regBitmap;
+    BitMap<PlatformArm32::maxUsableRegNum> regBitmap;
 
     ///
     /// @brief 寄存器被那个Value占用。按照时间次序加入
@@ -77,5 +77,5 @@ protected:
     ///
     /// @brief 使用过的所有寄存器编号
     ///
-    BitMap<PlatformRiscV64::maxUsableRegNum> usedBitmap;
+    BitMap<PlatformArm32::maxUsableRegNum> usedBitmap;
 };

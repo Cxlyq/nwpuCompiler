@@ -22,7 +22,7 @@
 #include "ILocRiscV64.h"
 #include "Instruction.h"
 #include "PlatformRiscV64.h"
-#include "SimpleRegisterAllocator.h"
+#include "SimpleRegisterAllocatorRicsV64.h"
 #include "RegVariable.h"
 
 using namespace std;
@@ -124,7 +124,6 @@ protected:
     /// @param inst IR指令
     void translate_not_int32(Instruction * inst);
 
-
     /// @brief 浮点数加法指令翻译成RISCV64汇编
     /// @param inst IR指令
     void translate_add_float32(Instruction * inst);
@@ -224,7 +223,7 @@ protected:
     ///
     /// @brief 简单的朴素寄存器分配方法
     ///
-    SimpleRegisterAllocator & simpleRegisterAllocator;
+    SimpleRegisterAllocatorRicsV64 & simpleRegisterAllocator;
 
     ///
     /// @brief 函数实参累计
@@ -244,10 +243,9 @@ public:
     /// @param _irCode IR指令
     /// @param _func 函数
     /// @param _iloc 后端指令
-    InstSelectorRiscV64(std::vector<Instruction *> & _irCode,
-                      ILocRiscV64 & _iloc,
-                      Function * _func,
-                      SimpleRegisterAllocator & allocator);
+    InstSelectorRiscV64(
+        std::vector<Instruction *> & _irCode, ILocRiscV64 & _iloc, Function * _func,
+        SimpleRegisterAllocatorRicsV64 & allocator);
 
     ///
     /// @brief 析构函数
