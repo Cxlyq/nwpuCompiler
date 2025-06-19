@@ -631,13 +631,13 @@ bool IRGenerator::ir_add(ast_node * node)
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     // 操作数不同时进行类型转换
     if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
