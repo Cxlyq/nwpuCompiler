@@ -84,13 +84,13 @@ void UnaryInstruction::toString(std::string & str)
 
         case IRInstOperator::IRINST_OP_NOT_I:
             // 整数逻辑非指令，一元运算
-            str = getIRName() + " = xor i1 " + src->getIRName() + " true";
+            str = getIRName() + " = xor " + src->getType()->toString() + " " + src->getIRName() + ", true";
 
             break;
 
         case IRInstOperator::IRINST_OP_NOT_F:
             // 浮点逻辑非指令，一元运算
-            str = getIRName() + " = xor i1 " + src->getIRName() + " true";
+            str = getIRName() + " = xor " + src->getType()->toString() + " " + src->getIRName() + ", true";
 
             break;
 

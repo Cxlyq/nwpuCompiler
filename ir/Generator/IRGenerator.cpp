@@ -1903,7 +1903,7 @@ bool IRGenerator::ir_not(ast_node * node)
     // 生成IR指令：result = -expr->val
     auto notInst = UnaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        lhs,
+        cmpInst,
         IRInstOperator::IRINST_OP_NOT_I,
         IRInstOperator::IRINST_OP_NOT_F,
         true);
