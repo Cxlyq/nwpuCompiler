@@ -2051,6 +2051,17 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     ast_node * cond_node = node->sons[0];
     ast_node * if_node = node->sons[1];
     ast_node * else_node = (node->sons.size() > 2) ? node->sons[2] : nullptr;
+    bool       hasBreakContinueInIf = false;   // 防止if break continue标签与merge重复
+    bool       hasBreakContinueInElse = false; // 防止else break continue标签与merge重复
+
+    // 检测if子结点有没有break
+    for (auto node_in_if: if_node->sons) {
+        if (node_in_if->node_type == ast_operator_type::AST_OP_BREAK ||
+            node_in_if->node_type == ast_operator_type::AST_OP_CONTINUE) {
+            hasBreakContinueInIf = true;
+            break;
+        }
+    }
 
     // 获取当前函数，if块必须位于函数内
     Function * currentFunc = module->getCurrentFunction();
@@ -2097,6 +2108,14 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     if (else_node) {
         else_label = new LabelInstruction(currentFunc); // 创建 else 块的实际标签
         false_branch_target = else_label;
+        // 检测else中是否有break标签
+        for (auto node_in_else: else_node->sons) {
+            if (node_in_else->node_type == ast_operator_type::AST_OP_BREAK ||
+                node_in_else->node_type == ast_operator_type::AST_OP_CONTINUE) {
+                hasBreakContinueInElse = true;
+                break;
+            }
+        }
     } else {
         false_branch_target = merge_label;
     }
@@ -2129,7 +2148,9 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
     // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
     // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    if (!hasBreakContinueInIf) {
+        node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    }
 
     // 5. 生成 else 块的IR (如果存在)
     if (else_node) {
@@ -2149,7 +2170,9 @@ bool IRGenerator::ir_ifelse(ast_node * node)
 
         // 在 else 块的末尾添加一个无条件跳转到 merge 块的指令。
         // 同 then 块，即使 else 块的最后一条指令本身是终止指令，也添加一个跳转。
-        node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+        if (!hasBreakContinueInElse) {
+            node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+        }
     }
 
     // 6. 添加 merge 块的标签
@@ -2169,7 +2192,15 @@ bool IRGenerator::ir_while(ast_node * node)
 
     ast_node * cond_node = node->sons[0]; // 条件表达式AST节点
     ast_node * body_node = node->sons[1]; // 循环体AST节点
-
+    bool       hasBreakContinue = false;
+    // 防止break标签和while merge重复
+    for (auto nodeInWhile: body_node->sons) {
+        if (nodeInWhile->node_type == ast_operator_type::AST_OP_BREAK ||
+            nodeInWhile->node_type == ast_operator_type::AST_OP_CONTINUE) {
+            hasBreakContinue = true; // 检测循环体中是否有break语句
+            break;
+        }
+    }
     Function * currentFunc = module->getCurrentFunction(); // 获取当前函数
 
     // 1. 创建表示循环不同部分的标签
@@ -2189,6 +2220,7 @@ bool IRGenerator::ir_while(ast_node * node)
     // 或者，另一种结构是直接把 loop_header_label 作为当前 blockInsts 的第一个指令，
     // 表示当前的基本块就直接是循环头部块。这里采用先添加跳转，再添加标签的方式，
     // 这样 while 语句之前的指令和 while 语句的IR生成是分离的。
+
     node->blockInsts.addInst(new GotoInstruction(currentFunc, loop_header_label));
 
     // 3. 生成循环头部块 (条件求值和条件分支)
@@ -2251,7 +2283,9 @@ bool IRGenerator::ir_while(ast_node * node)
     // 在循环体块的末尾添加一个无条件跳转回循环头部标签的指令
     // 这是循环的关键，完成一次迭代后回到头部检查条件。
     // 使用你提供的 GotoInstruction 类。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, loop_header_label));
+    if (!hasBreakContinue) {
+        node->blockInsts.addInst(new GotoInstruction(currentFunc, loop_header_label));
+    }
 
     // 5. 生成循环出口块
     // 添加循环出口标签。这标志着循环结束后的基本块的开始。
