@@ -1548,6 +1548,7 @@ bool IRGenerator::ir_ge(ast_node * node)
         IRInstOperator::IRINST_OP_GE_I,
         IRInstOperator::IRINST_OP_GE_F,
         true);
+    node->blockInsts.addInst(geInst);
     node->val = geInst;
     return true;
 }
@@ -1787,7 +1788,7 @@ bool IRGenerator::ir_lne(ast_node * node)
         IRInstOperator::IRINST_OP_LNE_I,
         IRInstOperator::IRINST_OP_LNE_F,
         true);
-
+    node->blockInsts.addInst(lneInst);
     node->val = lneInst;
     return true;
 }
