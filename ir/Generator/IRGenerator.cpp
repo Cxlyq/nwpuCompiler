@@ -391,8 +391,10 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             if (!arrayType) {
                 std::cerr << "Function formal params: Failer to generate Array Type!" << std::endl;
             }
+            Type *        eletype = arrayType->getElementType();
+            PointerType * pointerType = new PointerType(eletype);
             // 创建一个数组局部变量
-            Value * param_value = module->newVarValue(arrayType, array_name);
+            Value * param_value = module->newVarValue(pointerType, array_name);
             if (!param_value) {
                 std::cerr << "Function formal params: Failed to create IR Value for parameter '" << array_name
                           << "' in function '" << currentFunc->getName() << "'" << std::endl;
@@ -400,7 +402,7 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             }
             param_decl_node->val = param_value;
 
-            auto fParam = new FormalParam(arrayType, array_name);
+            auto fParam = new FormalParam(pointerType, array_name);
             currentFunc->addParams(fParam);
 
             // 生成 MoveInstruction 将传入实参值复制到局部形参变量
@@ -2589,7 +2591,7 @@ bool IRGenerator::ir_array_access(ast_node * node)
 
     Value * tempVal = module->findVarValue(array_name);
     Type *  type = tempVal->getType();
-    if (!type->isArrayType()) {
+    if ((!type->isArrayType()) && (!type->isPointerType())) {
         std::cerr << "Array access: Error: Expected an array type." << std::endl;
         return false;
     }
