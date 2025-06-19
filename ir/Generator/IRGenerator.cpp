@@ -498,18 +498,18 @@ bool IRGenerator::ir_function_call(ast_node * node)
 
             if (son->node_type == ast_operator_type::AST_OP_LEAF_VAR_ID) {
                 // 叶子节点是变量ID
-                std::cout << "Function call(Real Param): son_node is " << son_node->name << std::endl;
+                // std::cout << "Function call(Real Param): son_node is " << son_node->name << std::endl;
                 son_type = module->findVarValue(son_node->name)->getType();
-            } else {
-                std::cout << "Function call(Real Param): son_node is not leaf node!" << std::endl;
-            }
+            } // else {
+            //     // std::cout << "Function call(Real Param): son_node is not leaf node!" << std::endl;
+            // }
+            // std::cout << "type " << son_type->toString() << std::endl;
 
-            std::cout << "type " << son_type->toString() << std::endl;
             ///如果是数组，就要走专门的函数
             if (son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS || son_type->isArrayType()) {
-                std::cout << "Function call(Real Param): arrayRParam is " << std::endl;
+                // std::cout << "Function call(Real Param): arrayRParam is " << std::endl;
                 Value * arrayRParam = funcall_array_access(son);
-                std::cout << "Function call(Real Param): arrayRParam is " << arrayRParam << std::endl;
+                // std::cout << "Function call(Real Param): arrayRParam is " << arrayRParam << std::endl;
                 // if (!arrayRParam) {
                 //     std::cerr << "Function call(Real Param):Failed to array access!" << std::endl;
                 //     return false;
@@ -2660,7 +2660,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
         std::cerr << "Function call - array: Cannot find array!" << std::endl;
     }
     Type * type = tempVal->getType();
-    std::cout << "array type  " << type->toString() << std::endl;
+    // std::cout << "array type  " << type->toString() << std::endl;
     if (type->isArrayType()) {
         int accessDims = array_dims.size();
 
@@ -2685,7 +2685,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
             return node->val; // 返回最终的 gep 指令 Value*
         } else {
             // 逐层调用getelementptr
-            std::cout << "there is a array in function call  " << node->getNodeName() << std::endl;
+            // std::cout << "there is a array in function call  " << node->getNodeName() << std::endl;
             for (int i = 0; i < accessDims; ++i) {
                 // 先处理索引表达式，转换成Value*
                 ast_node * idxNode = ir_visit_ast_node(array_dims[i]);

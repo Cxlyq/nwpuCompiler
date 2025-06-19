@@ -30,6 +30,10 @@ void StoreInstruction::toString(std::string & str)
             str = "store " + val->getType()->toString() + " " + val->getIRName() + ", " + addr->getType()->toString() +
                   " " + addr->getIRName() + ", align 4";
             break;
+        case Type::ArrayTyID:
+            str = "store " + val->getType()->toString() + " " + val->getIRName() + ", " + addr->getType()->toString() +
+                  " " + addr->getIRName() + ", align 4";
+            break;
         default:
             str = "store  " + val->getIRName() + ",  " + addr->getIRName() + ", align 4";
 
