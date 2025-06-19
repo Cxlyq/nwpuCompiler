@@ -110,7 +110,7 @@ void Function::toString(std::string & str)
     // 输出局部变量的名字与IR名字
     for (auto & var: this->varsVector) {
 
-        // 局部变量和临时变量需要输出declare语句
+        // // 局部变量和临时变量需要输出declare语句
 
         // str += "\tdeclare " + var->getType()->toString() + " " + var->getIRName();
 
@@ -124,8 +124,8 @@ void Function::toString(std::string & str)
         str += "\t" + var->getIRName() + " = alloca " + var->getType()->toString() + ", align 4\n";
     }
 
-    // // 输出临时变量的declare形式
-    // // 遍历所有的线性IR指令，文本输出
+    //  // 输出临时变量的declare形式
+    // // // 遍历所有的线性IR指令，文本输出
     // for (auto & inst: code.getInsts()) {
 
     //     if (inst->hasResultValue()) {

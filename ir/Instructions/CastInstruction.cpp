@@ -78,6 +78,9 @@ void CastInstruction::toString(std::string & str)
         str = getIRName() + " = fptosi float " + src->getIRName() + " to i32";
     } else if (srcType->isPointerType()) {
         str = getIRName() + " = bitcast " + srcType->toString() + " " + src->getIRName() + " to " + dstType->toString();
+    } else if (srcType->isInt32Type() && dstType->isInt1Byte()) {
+        // i32 -> i1
+        str = getIRName() + " = trunc i32 " + src->getIRName() + " to i1";
     }
 
     else {
