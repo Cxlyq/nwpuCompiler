@@ -112,13 +112,13 @@ void Function::toString(std::string & str)
 
         // 局部变量和临时变量需要输出declare语句
 
-        // str += "\tdeclare " + var->getType()->toString() + " " + var->getIRName();
+        str += "\tdeclare " + var->getType()->toString() + " " + var->getIRName();
 
-        // std::string extraStr;
-        // std::string realName = var->getName();
-        // if (!realName.empty()) {
-        //     str += " ; " + std::to_string(var->getScopeLevel()) + ":" + realName;
-        // }
+        std::string extraStr;
+        std::string realName = var->getName();
+        if (!realName.empty()) {
+            str += " ; " + std::to_string(var->getScopeLevel()) + ":" + realName;
+        }
 
         // str += "\n";
         str += "\t" + var->getIRName() + " = alloca " + var->getType()->toString() + ", align 4\n";
@@ -154,7 +154,8 @@ void Function::toString(std::string & str)
 
             // Label指令不加Tab键
             if (inst->getOp() == IRInstOperator::IRINST_OP_LABEL) {
-                // str += instStr + "\n";  暂改为不输出label
+                str += instStr + "\n";
+                //暂改为不输出label
             } else {
                 str += "\t" + instStr + "\n";
             }
@@ -304,8 +305,8 @@ void Function::renameIR()
         return;
     }
     int32_t varnameIndex = 0; // 从1开始，0是函数名
-    int32_t labelIndex = 0;
-    // 形式参数重命名
+    // int32_t labelIndex = 0;
+    //  形式参数重命名
     for (auto & param: this->params) {
         // param->setIRName(IR_TEMP_VARNAME_PREFIX + std::to_string(varnameIndex++));
         param->setIRName('%' + std::to_string(varnameIndex++));
@@ -322,7 +323,8 @@ void Function::renameIR()
     // 遍历所有的指令进行命名
     for (auto inst: this->getInterCode().getInsts()) {
         if (inst->getOp() == IRInstOperator::IRINST_OP_LABEL) {
-            inst->setIRName(IR_LABEL_PREFIX + std::to_string(labelIndex++));
+            // inst->setIRName(IR_LABEL_PREFIX + std::to_string(labelIndex++));
+            inst->setIRName(std::to_string(varnameIndex++));
         } else if (inst->hasResultValue()) {
             // inst->setIRName(IR_TEMP_VARNAME_PREFIX + std::to_string(varnameIndex++));
             inst->setIRName('%' + std::to_string(varnameIndex++));
