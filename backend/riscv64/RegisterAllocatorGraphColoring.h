@@ -55,6 +55,31 @@ public:
 
     /// @brief 获取所有变量的寄存器分配映射
     std::unordered_map<Value *, int> getColorMap() const;
+    ///
+    /// @brief 尝试按指定的寄存器编号进行分配，若能分配，则直接分配，否则按图着色分配
+    /// @param var 分配寄存器的变量
+    /// @param no 指定的寄存器编号
+    /// @return int 寄存器编号
+    ///
+    int Allocate(Value * var = nullptr, int32_t no = -1);
+
+    ///
+    /// @brief 强制占用一个指定的寄存器。如果寄存器被占用，则强制寄存器关联的变量溢出
+    /// @param no 要分配的寄存器编号
+    ///
+    void Allocate(int32_t no);
+
+    ///
+    /// @brief 将变量对应的load寄存器标记为空闲状态
+    /// @param var 变量
+    ///
+    void free(Value * var);
+
+    ///
+    /// @brief 将寄存器no标记为空闲状态
+    /// @param no 寄存器编号
+    ///
+    void free(int32_t no);
 
 private:
     bool simplify();
@@ -64,9 +89,38 @@ private:
 private:
     int regCount;
 
-    std::unordered_map<Value *, std::unordered_set<Value *>> interferenceGraph;
-    std::unordered_map<Value *, int>                         colorMap;
-    std::vector<Value *>                                     spilled;
+    std::unordered_map<Value *, std::unordered_set<Value *>> interferenceGraph; //干涉图
+    std::unordered_map<Value *, int>                         colorMap;          //寄存器分配表
+    std::vector<Value *>                                     spilled;           //溢出处理
 
     std::stack<Value *> simplifyStack;
+
+protected:
+    ///
+    /// @brief 寄存器位图：1已被占用，0未被使用
+    ///
+    BitMap<PlatformRiscV64::maxUsableRegNum> regBitmap;
+
+    ///
+    /// @brief 寄存器被那个Value占用。按照时间次序加入
+    ///
+    std::vector<Value *> regValues;
+
+    ///
+    /// @brief 使用过的所有寄存器编号
+    ///
+    BitMap<PlatformRiscV64::maxUsableRegNum> usedBitmap;
+
+protected:
+    ///
+    /// @brief 寄存器被置位，使用过的寄存器被置位
+    /// @param no
+    ///
+    void bitmapSet(int32_t no);
+
+    ///
+    /// @brief 由寄存器号查找编号
+    /// @param regno
+    ///
+    int regNoToIndex(int regNo);
 };

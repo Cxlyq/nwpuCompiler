@@ -25,7 +25,7 @@
 #include "PlatformRiscV64.h"
 #include "CodeGeneratorRiscV64.h"
 #include "InstSelectorRiscV64.h"
-#include "SimpleRegisterAllocator.h"
+#include "SimpleRegisterAllocatorRiscV64.h"
 #include "ILocRiscV64.h"
 #include "RegVariable.h"
 #include "FuncCallInstruction.h"

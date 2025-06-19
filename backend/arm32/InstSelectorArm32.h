@@ -22,7 +22,7 @@
 #include "ILocArm32.h"
 #include "Instruction.h"
 #include "PlatformArm32.h"
-#include "SimpleRegisterAllocator.h"
+#include "SimpleRegisterAllocatorArm32.h"
 #include "RegVariable.h"
 
 using namespace std;
@@ -105,7 +105,7 @@ protected:
     ///
     /// @brief 简单的朴素寄存器分配方法
     ///
-    SimpleRegisterAllocator & simpleRegisterAllocator;
+    SimpleRegisterAllocatorArm32 & simpleRegisterAllocator;
 
     ///
     /// @brief 函数实参累计
@@ -125,10 +125,9 @@ public:
     /// @param _irCode IR指令
     /// @param _func 函数
     /// @param _iloc 后端指令
-    InstSelectorArm32(std::vector<Instruction *> & _irCode,
-                      ILocArm32 & _iloc,
-                      Function * _func,
-                      SimpleRegisterAllocator & allocator);
+    InstSelectorArm32(
+        std::vector<Instruction *> & _irCode, ILocArm32 & _iloc, Function * _func,
+        SimpleRegisterAllocatorArm32 & allocator);
 
     ///
     /// @brief 析构函数

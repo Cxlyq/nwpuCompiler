@@ -68,7 +68,8 @@ std::string RiscInst::outPut()
         return "";
     }
 
-    // 占位指令,可能需要输出一个空操作，看是否支持 FIXME
+    // 占位指令,可能需要输出一个空操作，看是否支持
+    // FIXME
     if (opcode.empty()) {
         return "";
     }

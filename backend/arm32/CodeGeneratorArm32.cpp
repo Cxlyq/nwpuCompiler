@@ -24,7 +24,7 @@
 #include "PlatformArm32.h"
 #include "CodeGeneratorArm32.h"
 #include "InstSelectorArm32.h"
-#include "SimpleRegisterAllocator.h"
+#include "SimpleRegisterAllocatorArm32.h"
 #include "ILocArm32.h"
 #include "RegVariable.h"
 #include "FuncCallInstruction.h"
@@ -86,9 +86,9 @@ void CodeGeneratorArm32::getIRValueStr(Value * val, std::string & str)
 {
     std::string name = val->getName();
     std::string IRName = val->getIRName();
-    int32_t regId = val->getRegId();
-    int32_t baseRegId;
-    int64_t offset;
+    int32_t     regId = val->getRegId();
+    int32_t     baseRegId;
+    int64_t     offset;
     std::string showName;
 
     if (name.empty() && (!IRName.empty())) {

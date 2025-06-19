@@ -42,8 +42,11 @@ public:
     const std::unordered_set<Value *> & getLiveIn(const std::string & label) const;
 
     /// @brief 获取某个基本块的活跃出口变量集合
-    const std::unordered_set<Value *> &                     getLiveOut(const std::string & label) const;
+    const std::unordered_set<Value *> & getLiveOut(const std::string & label) const;
+    /// @brief 获取基本块
     const std::vector<LiveVariableAnalysis::BasicBlock *> & getBasicBlocks() const;
+    /// @brief 获取栈变量
+    const std::unordered_set<Value *> & getStackVars() const;
 
 private:
     /// 所有基本块
@@ -64,7 +67,13 @@ private:
     /// 每个基本块的 LIVE-OUT 集合
     std::unordered_map<BasicBlock *, std::unordered_set<Value *>> liveOut;
 
+    /// 记录所有栈变量（alloca产生的变量）
+    std::unordered_set<Value *> stackVars;
+
 private:
+    /// @brief 收集函数中所有栈变量（alloca产生的变量）
+    void collectStackVars(Function * func);
+
     /// @brief 构建基本块
     void buildBasicBlocks(Function * func);
 

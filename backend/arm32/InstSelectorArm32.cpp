@@ -33,10 +33,8 @@
 /// @param _irCode 指令
 /// @param _iloc ILoc
 /// @param _func 函数
-InstSelectorArm32::InstSelectorArm32(vector<Instruction *> & _irCode,
-                                     ILocArm32 & _iloc,
-                                     Function * _func,
-                                     SimpleRegisterAllocator & allocator)
+InstSelectorArm32::InstSelectorArm32(
+    vector<Instruction *> & _irCode, ILocArm32 & _iloc, Function * _func, SimpleRegisterAllocatorArm32 & allocator)
     : ir(_irCode), iloc(_iloc), func(_func), simpleRegisterAllocator(allocator)
 {
     translator_handlers[IRInstOperator::IRINST_OP_ENTRY] = &InstSelectorArm32::translate_entry;
@@ -269,10 +267,11 @@ void InstSelectorArm32::translate_two_operator(Instruction * inst, string operat
     }
 
     // r8 + r9 -> r10
-    iloc.inst(operator_name,
-              PlatformArm32::regName[load_result_reg_no],
-              PlatformArm32::regName[load_arg1_reg_no],
-              PlatformArm32::regName[load_arg2_reg_no]);
+    iloc.inst(
+        operator_name,
+        PlatformArm32::regName[load_result_reg_no],
+        PlatformArm32::regName[load_arg1_reg_no],
+        PlatformArm32::regName[load_arg2_reg_no]);
 
     // 结果不是寄存器，则需要把rs_reg_name保存到结果变量中
     if (result_reg_no == -1) {
@@ -414,7 +413,7 @@ void InstSelectorArm32::translate_arg(Instruction * inst)
     } else {
         // 必须是内存分配，若不是则出错
         int32_t baseRegId;
-        bool result = src->getMemoryAddr(&baseRegId);
+        bool    result = src->getMemoryAddr(&baseRegId);
         if ((!result) || (baseRegId != ARM32_SP_REG_NO)) {
 
             minic_log(LOG_ERROR, "第%d个ARG指令对象不是SP寄存器寻址", argCount + 1);

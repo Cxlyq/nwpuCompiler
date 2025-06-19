@@ -13,8 +13,11 @@
 /// <tr><td>2024-11-21 <td>1.0     <td>zenglj  <td>新做
 /// </table>
 ///
+
+#pragma once
+
 #include "CodeGeneratorAsm.h"
-#include "SimpleRegisterAllocator.h"
+#include "SimpleRegisterAllocatorRiscV64.h"
 
 class CodeGeneratorRiscV64 : public CodeGeneratorAsm {
 
@@ -63,5 +66,5 @@ private:
     ///
     /// @brief 简单的朴素寄存器分配方法
     ///
-    SimpleRegisterAllocator simpleRegisterAllocator;
+    SimpleRegisterAllocatorRicsV64 simpleRegisterAllocator;
 };

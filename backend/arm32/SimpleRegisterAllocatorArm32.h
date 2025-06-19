@@ -1,5 +1,5 @@
 ///
-/// @file SimpleRegisterAllocator.h
+/// @file SimpleRegisterAllocatorArm32.h
 /// @brief 简单或朴素的寄存器分配器
 /// @author zenglj (zenglj@live.com)
 /// @version 1.0
@@ -21,13 +21,13 @@
 #include "Value.h"
 #include "PlatformArm32.h"
 
-class SimpleRegisterAllocator {
+class SimpleRegisterAllocatorArm32 {
 
 public:
     ///
     /// @brief Construct a new Simple Register Allocator object
     ///
-    SimpleRegisterAllocator();
+    SimpleRegisterAllocatorArm32();
 
     ///
     /// @brief 尝试按指定的寄存器编号进行分配，若能分配，则直接分配，否则从小达到的次序分配一个寄存器。

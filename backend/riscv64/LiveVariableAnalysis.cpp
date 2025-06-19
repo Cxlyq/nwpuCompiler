@@ -26,10 +26,25 @@
 /// @param func 待分析的函数指针
 void LiveVariableAnalysis::run(Function * func)
 {
+    collectStackVars(func);
     buildBasicBlocks(func);
     buildCFG();
     computeUseDef();
     computeLiveInOut();
+}
+
+/// @brief 收集函数中所有栈变量（alloca产生的变量）
+/// @param func 当前函数指针
+void LiveVariableAnalysis::collectStackVars(Function * func)
+{
+    stackVars.clear();
+    for (auto & var: func->getVarValues()) {
+        stackVars.insert(var);
+    }
+    // std::cout << "Collected stack variables:\n";
+    // for (auto * v: stackVars) {
+    //     std::cout << "  " << v->getIRName() << "\n";
+    // }
 }
 
 /// @brief 构建基本块（Basic Blocks），并将其加入 basicBlocks 列表
@@ -123,8 +138,8 @@ void LiveVariableAnalysis::computeUseDef()
                 if (operand->getType()->isVoidType())
                     continue;
 
-                // 跳过 store 的目标地址（第2个操作数，即 index == 1）
-                if (inst->getOp() == IRInstOperator::IRINST_OP_STORE && i == 0)
+                // 跳过栈变量
+                if (stackVars.count(operand) > 0)
                     continue;
 
                 // 非DEF中的才加入USE
@@ -165,7 +180,11 @@ void LiveVariableAnalysis::computeLiveInOut()
             std::unordered_set<Value *> newOut;
             for (auto * succ: block->successors) {
                 const auto & succIn = liveIn[succ];
-                newOut.insert(succIn.begin(), succIn.end());
+                for (auto * v: succIn) {
+                    if (stackVars.count(v))
+                        continue; // 栈变量，跳过
+                    newOut.insert(v);
+                }
             }
 
             std::unordered_set<Value *> newIn = use[block];
@@ -180,7 +199,11 @@ void LiveVariableAnalysis::computeLiveInOut()
                 sortedDef.end(),
                 std::inserter(temp, temp.begin()));
 
-            newIn.insert(temp.begin(), temp.end());
+            for (auto * v: temp) {
+                if (stackVars.count(v))
+                    continue; // 栈变量，跳过
+                newIn.insert(v);
+            }
 
             if (newIn != liveIn[block] || newOut != liveOut[block]) {
                 liveIn[block] = std::move(newIn);
@@ -212,4 +235,11 @@ const std::unordered_set<Value *> & LiveVariableAnalysis::getLiveOut(const std::
 const std::vector<LiveVariableAnalysis::BasicBlock *> & LiveVariableAnalysis::getBasicBlocks() const
 {
     return basicBlocks;
+}
+
+/// @brief 获取函数中所有构建好的基本块列表
+/// @return 包含所有基本块的向量
+const std::unordered_set<Value *> & LiveVariableAnalysis::getStackVars() const
+{
+    return stackVars;
 }

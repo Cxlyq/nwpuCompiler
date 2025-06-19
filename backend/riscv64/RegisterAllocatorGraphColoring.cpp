@@ -15,6 +15,7 @@
 ///
 
 #include "RegisterAllocatorGraphColoring.h"
+#include "PlatformRiscV64.h"
 #include <algorithm>
 #include <iostream>
 
@@ -148,9 +149,12 @@ int GraphColoringRegisterAllocator::getRegister(Value * val) const
 {
     auto it = colorMap.find(val);
     if (it != colorMap.end()) {
-        return it->second;
+        int regIndex = it->second;
+        if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableRegNum) {
+            return PlatformRiscV64::RISCV64_REGS[regIndex];
+        }
     }
-    return -1; // -1 表示没有分配寄存器（可能溢出）
+    return -1;
 }
 
 /// @brief 获取所有溢出（未分配成功）变量
@@ -164,30 +168,37 @@ const std::vector<Value *> & GraphColoringRegisterAllocator::getSpilled() const
 /// @param lva 活跃变量分析的结果对象
 void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva)
 {
+    const auto & stackVars = lva.getStackVars(); // <<< 获取栈变量集合
     for (auto * block: lva.getBasicBlocks()) {
-        std::unordered_set<Value *> live = lva.getLiveOut(block->label); // 初始化 live 集
+        std::unordered_set<Value *> live;
+        for (auto * v: lva.getLiveOut(block->label)) {
+            if (!stackVars.count(v)) // <<< 过滤掉栈变量
+                live.insert(v);
+        }
+        // 初始化 live 集
 
-        std::cout << ">>> BasicBlock: " << block->label << "\n";
-        std::cout << "Initial LiveOut: ";
-        for (auto * v: live)
-            std::cout << v->getIRName() << " ";
-        std::cout << "\n";
+        // std::cout << ">>> BasicBlock: " << block->label << "\n";
+        // std::cout << "Initial LiveOut: ";
+        // for (auto * v: live)
+        //     std::cout << v->getIRName() << " ";
+        // std::cout << "\n";
 
         for (auto it = block->instructions.rbegin(); it != block->instructions.rend(); ++it) {
             Instruction * inst = *it;
 
             if (inst->hasResultValue()) {
                 Value * def = inst;
-                std::cout << "  DEF: " << def->getIRName() << "\n";
+                if (!stackVars.count(def)) { // <<< 过滤掉栈变量
+                    // std::cout << "  DEF: " << def->getIRName() << "\n";
 
-                for (Value * val: live) {
-                    if (val != def) {
-                        addInterference(def, val);
-                        std::cout << "    Interfere: " << def->getIRName() << " <--> " << val->getIRName() << "\n";
+                    for (Value * val: live) {
+                        if (val != def) {
+                            addInterference(def, val);
+                            // std::cout << "    Interfere: " << def->getIRName() << " <--> " << val->getIRName() << "\n";
+                        }
                     }
                 }
-
-                live.erase(def);
+                live.erase(def); // 依然要 erase（不管是不是栈变量）
             }
 
             // 添加使用的变量到 live
@@ -197,30 +208,32 @@ void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva
                     continue;
                 if (operand->getType()->isVoidType())
                     continue;
+                if (stackVars.count(operand)) // <<< 过滤掉栈变量
+                    continue;
                 live.insert(operand);
-                std::cout << "  USE: " << operand->getIRName() << "\n";
+                // std::cout << "  USE: " << operand->getIRName() << "\n";
             }
 
-            std::cout << "  Updated live set: ";
-            for (auto * v: live)
-                std::cout << v->getIRName() << " ";
-            std::cout << "\n";
+            // std::cout << "  Updated live set: ";
+            // for (auto * v: live)
+            //     std::cout << v->getIRName() << " ";
+            // std::cout << "\n";
         }
 
-        std::cout << "Final Live for block " << block->label << ": ";
-        for (auto * v: live)
-            std::cout << v->getIRName() << " ";
-        std::cout << "\n\n";
+        // std::cout << "Final Live for block " << block->label << ": ";
+        // for (auto * v: live)
+        //     std::cout << v->getIRName() << " ";
+        // std::cout << "\n\n";
     }
 
     // 输出最终干涉图
-    std::cout << "=== Interference Graph ===\n";
-    for (auto & [v, neighbors]: interferenceGraph) {
-        std::cout << v->getIRName() << " : ";
-        for (auto * n: neighbors)
-            std::cout << n->getIRName() << " ";
-        std::cout << "\n";
-    }
+    // std::cout << "=== Interference Graph ===\n";
+    // for (auto & [v, neighbors]: interferenceGraph) {
+    //     std::cout << v->getIRName() << " : ";
+    //     for (auto * n: neighbors)
+    //         std::cout << n->getIRName() << " ";
+    //     std::cout << "\n";
+    // }
 }
 
 /// @brief 获取所有变量的寄存器分配映射
@@ -228,4 +241,114 @@ void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva
 std::unordered_map<Value *, int> GraphColoringRegisterAllocator::getColorMap() const
 {
     return colorMap;
+}
+
+///
+/// @brief 分配一个寄存器。如果没有，则选取寄存器中最晚使用的寄存器，同时溢出寄存器到变量中
+/// @return int 寄存器编号
+// 新增以适配SimpleRegisterAllocatorRicsV64接口
+int GraphColoringRegisterAllocator::Allocate(Value * var, int32_t no)
+{
+    if (var && (var->getLoadRegId() != -1)) {
+        return var->getLoadRegId();
+    }
+
+    auto iter = colorMap.find(var);
+    if (iter != colorMap.end()) {
+        int regIndex = iter->second;
+        if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableRegNum) {
+            int regno = PlatformRiscV64::RISCV64_REGS[regIndex];
+            var->setLoadRegId(regno);
+            return regno;
+        }
+    }
+
+    if (std::find(spilled.begin(), spilled.end(), var) != spilled.end()) {
+        return -1;
+    }
+
+    return -1;
+}
+
+///
+/// @brief 由寄存器号查找编号
+/// @param regno
+///
+int GraphColoringRegisterAllocator::regNoToIndex(int regNo)
+{
+    for (int i = 0; i < PlatformRiscV64::maxUsableRegNum; ++i) {
+        if (PlatformRiscV64::RISCV64_REGS[i] == regNo) {
+            return i;
+        }
+    }
+    return -1; // 不在可用寄存器范围内
+}
+
+///
+/// @brief 强制占用一个指定的寄存器。如果寄存器被占用，则强制寄存器关联的变量溢出
+/// @param no 要分配的寄存器编号
+///
+void GraphColoringRegisterAllocator::Allocate(int32_t no)
+{
+    int regIndex = regNoToIndex(no);
+    if (regIndex == -1) {
+        // 传入寄存器号非法，忽略或报错
+        return;
+    }
+
+    if (regBitmap.test(regIndex)) {
+        free(no); // 这里调用 free(int32_t no) 是用真实寄存器号，保持不变
+    }
+    // 占用该寄存器索引
+    bitmapSet(regIndex);
+}
+
+///
+/// @brief 将变量对应的load寄存器标记为空闲状态
+/// @param var 变量
+///
+void GraphColoringRegisterAllocator::free(Value * var)
+{
+    if (var && var->getLoadRegId() != -1) {
+        int regIndex = regNoToIndex(var->getLoadRegId());
+        if (regIndex != -1) {
+            regBitmap.reset(regIndex);
+        }
+        auto it = std::find(regValues.begin(), regValues.end(), var);
+        if (it != regValues.end()) {
+            regValues.erase(it);
+        }
+        var->setLoadRegId(-1);
+    }
+}
+
+///
+/// @brief 将寄存器no标记为空闲状态
+/// @param no 寄存器编号
+///
+void GraphColoringRegisterAllocator::free(int32_t no)
+{
+    if (no == -1) {
+        return;
+    }
+
+    int regIndex = regNoToIndex(no);
+    if (regIndex == -1) {
+        return; // 非法寄存器号
+    }
+
+    regBitmap.reset(regIndex);
+
+    auto pIter = std::find_if(regValues.begin(), regValues.end(), [=](auto val) { return val->getLoadRegId() == no; });
+
+    if (pIter != regValues.end()) {
+        (*pIter)->setLoadRegId(-1);
+        regValues.erase(pIter);
+    }
+}
+
+void GraphColoringRegisterAllocator::bitmapSet(int32_t no)
+{
+    regBitmap.set(no);
+    usedBitmap.set(no);
 }
