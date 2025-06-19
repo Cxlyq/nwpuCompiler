@@ -250,15 +250,12 @@ void ILocRiscV64::comment(std::string str)
 */
 void ILocRiscV64::load_imm(int rs_reg_no, int constant)
 {
-    // movw:把 16 位立即数放到寄存器的低16位，高16位清0
-    // movt:把 16 位立即数放到寄存器的高16位，低 16位不影响
-    if (0 == ((constant >> 16) & 0xFFFF)) {
-        // 如果高16位本来就为0，直接movw
-        emit("movw", PlatformRiscV64::regName[rs_reg_no], "#:lower16:" + std::to_string(constant));
-    } else {
-        // 如果高16位不为0，先movw，然后movt
-        emit("movw", PlatformRiscV64::regName[rs_reg_no], "#:lower16:" + std::to_string(constant));
-        emit("movt", PlatformRiscV64::regName[rs_reg_no], "#:upper16:" + std::to_string(constant));
+    int upper = constant >> 12;
+    int lower = constant & 0xFFF;
+
+    emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(upper));
+    if (lower != 0) {
+        emit("addi", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[rs_reg_no], std::to_string(lower));
     }
 }
 
@@ -267,45 +264,30 @@ void ILocRiscV64::load_imm(int rs_reg_no, int constant)
 /// @param name 符号名
 void ILocRiscV64::load_symbol(int rs_reg_no, std::string name)
 {
-    // movw r10, #:lower16:a
-    // movt r10, #:upper16:a
-    emit("movw", PlatformRiscV64::regName[rs_reg_no], "#:lower16:" + name);
-    emit("movt", PlatformRiscV64::regName[rs_reg_no], "#:upper16:" + name);
+    // 假设符号地址可以直接通过 lui 和 addi 来处理
+    // 这里简单模拟加载符号地址到寄存器
+    // 实际中可能需要根据链接器等情况处理
+    // 先加载高位
+    emit("lui", PlatformRiscV64::regName[rs_reg_no], std::string(name + "@hi"));
+    // 再加载低位
+    emit("addi", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[rs_reg_no], std::string(name + "@lo"));
 }
 
-/// @brief 基址寻址 ldr r0,[fp,#100]
-/// @param rsReg 结果寄存器
-/// @param base_reg_no 基址寄存器
+/// @brief 基址寻址 lw rd, offset(base)
+/// @param rs_reg_no 结果寄存器编号
+/// @param base_reg_no 基址寄存器编号
 /// @param offset 偏移
 void ILocRiscV64::load_base(int rs_reg_no, int base_reg_no, int offset)
 {
     std::string rsReg = PlatformRiscV64::regName[rs_reg_no];
     std::string base = PlatformRiscV64::regName[base_reg_no];
+    std::string offset_str = std::to_string(offset);
 
-    if (PlatformRiscV64::isDisp(offset)) {
-        // 有效的偏移常量
-        if (offset) {
-            // [fp,#-16] [fp]
-            base += "," + toStr(offset);
-        }
-    } else {
-
-        // ldr r8,=-4096
-        load_imm(rs_reg_no, offset);
-
-        // fp,r8
-        base += "," + rsReg;
-    }
-
-    // 内存寻址
-    base = "[" + base + "]";
-
-    // ldr r8,[fp,#-16]
-    // ldr r8,[fp,r8]
-    emit("ldr", rsReg, base);
+    // RISC-V64 的加载指令 lw rd, offset(base)
+    emit("lw", rsReg, offset_str + "(" + base + ")");
 }
 
-/// @brief 基址寻址 str r0,[fp,#100]
+/// @brief 基址寻址
 /// @param srcReg 源寄存器
 /// @param base_reg_no 基址寄存器
 /// @param disp 偏移
@@ -313,31 +295,10 @@ void ILocRiscV64::load_base(int rs_reg_no, int base_reg_no, int offset)
 void ILocRiscV64::store_base(int src_reg_no, int base_reg_no, int disp, int tmp_reg_no)
 {
     std::string base = PlatformRiscV64::regName[base_reg_no];
+    std::string srcReg = PlatformRiscV64::regName[src_reg_no];
 
-    if (PlatformRiscV64::isDisp(disp)) {
-        // 有效的偏移常量
-
-        // 若disp为0，则直接采用基址，否则采用基址+偏移
-        // [fp,#-16] [fp]
-        if (disp) {
-            base += "," + toStr(disp);
-        }
-    } else {
-        // 先把立即数赋值给指定的寄存器tmpReg，然后采用基址+寄存器的方式进行
-
-        // ldr r9,=-4096
-        load_imm(tmp_reg_no, disp);
-
-        // fp,r9
-        base += "," + PlatformRiscV64::regName[tmp_reg_no];
-    }
-
-    // 内存间接寻址
-    base = "[" + base + "]";
-
-    // str r8,[fp,#-16]
-    // str r8,[fp,r9]
-    emit("str", PlatformRiscV64::regName[src_reg_no], base);
+    std::string disp_str = std::to_string(disp);
+    emit("sw", srcReg, disp_str + "(" + base + ")");
 }
 
 /// @brief 寄存器Mov操作
@@ -345,7 +306,7 @@ void ILocRiscV64::store_base(int src_reg_no, int base_reg_no, int disp, int tmp_
 /// @param src_reg_no 源寄存器
 void ILocRiscV64::mov_reg(int rs_reg_no, int src_reg_no)
 {
-    emit("mov", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[src_reg_no]);
+    emit("mv", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[src_reg_no]);
 }
 
 /// @brief 加载变量到寄存器，保证将变量放到reg中
@@ -353,51 +314,28 @@ void ILocRiscV64::mov_reg(int rs_reg_no, int src_reg_no)
 /// @param src_var 源操作数
 void ILocRiscV64::load_var(int rs_reg_no, Value * src_var)
 {
-
     if (Instanceof(constVal, ConstInt *, src_var)) {
         // 整型常量
-
-        // TODO 目前只考虑整数类型 100
-        // ldr r8,#100
         load_imm(rs_reg_no, constVal->getVal());
     } else if (src_var->getRegId() != -1) {
-
         // 源操作数为寄存器变量
         int32_t src_regId = src_var->getRegId();
-
         if (src_regId != rs_reg_no) {
-
-            // mov r8,r2 | 这里有优化空间——消除r8
-            emit("mov", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[src_regId]);
+            mov_reg(rs_reg_no, src_regId);
         }
     } else if (Instanceof(globalVar, GlobalVariable *, src_var)) {
         // 全局变量
-
-        // 读取全局变量的地址
-        // movw r8, #:lower16:a
-        // movt r8, #:lower16:a
         load_symbol(rs_reg_no, globalVar->getName());
-
-        // ldr r8, [r8]
-        emit("ldr", PlatformRiscV64::regName[rs_reg_no], "[" + PlatformRiscV64::regName[rs_reg_no] + "]");
-
+        std::string rsReg = PlatformRiscV64::regName[rs_reg_no];
+        emit("lw", rsReg, "0(" + rsReg + ")");
     } else {
-
         // 栈+偏移的寻址方式
-
-        // 栈帧偏移
         int32_t var_baseRegId = -1;
         int64_t var_offset = -1;
-
-        bool result = src_var->getMemoryAddr(&var_baseRegId, &var_offset);
+        bool    result = src_var->getMemoryAddr(&var_baseRegId, &var_offset);
         if (!result) {
             minic_log(LOG_ERROR, "BUG");
         }
-
-        // 对于栈内分配的局部数组，可直接在栈指针上进行移动与运算
-        // 但对于形参，其保存的是调用函数栈的数组的地址，需要读取出来
-
-        // ldr r8,[sp,#16]
         load_base(rs_reg_no, var_baseRegId, var_offset);
     }
 }
@@ -421,8 +359,10 @@ void ILocRiscV64::lea_var(int rs_reg_no, Value * var)
         minic_log(LOG_ERROR, "BUG");
     }
 
-    // lea r8, [fp,#-16]
-    leaStack(rs_reg_no, var_baseRegId, var_offset);
+    std::string rsReg = PlatformRiscV64::regName[rs_reg_no];
+    std::string base = PlatformRiscV64::regName[var_baseRegId];
+    std::string offset_str = std::to_string(var_offset);
+    emit("addi", rsReg, base, offset_str);
 }
 
 /// @brief 保存寄存器到变量，保证将计算结果（r8）保存到变量
@@ -434,45 +374,25 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
     // 被保存目标变量肯定不是常量
 
     if (dest_var->getRegId() != -1) {
-
         // 寄存器变量
-
-        // -1表示非寄存器，其他表示寄存器的索引值
         int dest_reg_id = dest_var->getRegId();
-
-        // 寄存器不一样才需要mov操作
         if (src_reg_no != dest_reg_id) {
-
-            // mov r2,r8 | 这里有优化空间——消除r8
-            emit("mov", PlatformRiscV64::regName[dest_reg_id], PlatformRiscV64::regName[src_reg_no]);
+            mov_reg(dest_reg_id, src_reg_no);
         }
-
     } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
         // 全局变量
-
-        // 读取符号的地址到寄存器r10
         load_symbol(tmp_reg_no, globalVar->getName());
-
-        // str r8, [r10]
-        emit("str", PlatformRiscV64::regName[src_reg_no], "[" + PlatformRiscV64::regName[tmp_reg_no] + "]");
-
+        std::string srcReg = PlatformRiscV64::regName[src_reg_no];
+        std::string tmpReg = PlatformRiscV64::regName[tmp_reg_no];
+        emit("sw", srcReg, "0(" + tmpReg + ")");
     } else {
-
         // 对于局部变量，则直接从栈基址+偏移寻址
-
-        // TODO 目前只考虑局部变量
-
-        // 栈帧偏移
         int32_t dest_baseRegId = -1;
         int64_t dest_offset = -1;
-
-        bool result = dest_var->getMemoryAddr(&dest_baseRegId, &dest_offset);
+        bool    result = dest_var->getMemoryAddr(&dest_baseRegId, &dest_offset);
         if (!result) {
             minic_log(LOG_ERROR, "BUG");
         }
-
-        // str r8,[r9]
-        // str r8, [fp, # - 16]
         store_base(src_reg_no, dest_baseRegId, dest_offset, tmp_reg_no);
     }
 }
@@ -485,17 +405,8 @@ void ILocRiscV64::leaStack(int rs_reg_no, int base_reg_no, int off)
 {
     std::string rs_reg_name = PlatformRiscV64::regName[rs_reg_no];
     std::string base_reg_name = PlatformRiscV64::regName[base_reg_no];
-
-    if (PlatformRiscV64::constExpr(off))
-        // add r8,fp,#-16
-        emit("add", rs_reg_name, base_reg_name, toStr(off));
-    else {
-        // ldr r8,=-257
-        load_imm(rs_reg_no, off);
-
-        // add r8,fp,r8
-        emit("add", rs_reg_name, base_reg_name, rs_reg_name);
-    }
+    std::string off_str = std::to_string(off);
+    emit("addi", rs_reg_name, base_reg_name, off_str);
 }
 
 /// @brief 函数内栈内空间分配（局部变量、形参变量、函数参数传值，或不能寄存器分配的临时变量等）
@@ -514,31 +425,21 @@ void ILocRiscV64::allocStack(Function * func, int tmp_reg_no)
     // 保存SP寄存器到FP寄存器中
     mov_reg(RISCV64_FP_REG_NO, RISCV64_SP_REG_NO);
 
-    if (PlatformRiscV64::constExpr(off)) {
-        // sub sp,sp,#16
-        emit("sub", "sp", "sp", toStr(off));
-    } else {
-        // ldr r8,=257
-        load_imm(tmp_reg_no, off);
-
-        // sub sp,sp,r8
-        emit("sub", "sp", "sp", PlatformRiscV64::regName[tmp_reg_no]);
-    }
+    std::string off_str = std::to_string(off);
+    emit("addi", "sp", "sp", "-" + off_str);
 }
 
 /// @brief 调用函数fun
 /// @param fun
 void ILocRiscV64::call_fun(std::string name)
 {
-    // 函数返回值在r0,不需要保护
-    emit("bl", name);
+    emit("jal", "ra", name);
 }
 
 /// @brief NOP操作
 void ILocRiscV64::nop()
 {
-    // FIXME 无操作符，要确认是否用nop指令
-    emit("");
+    emit("addi", "x0", "x0", "0");
 }
 
 ///
@@ -547,5 +448,5 @@ void ILocRiscV64::nop()
 ///
 void ILocRiscV64::jump(std::string label)
 {
-    emit("b", label);
+    emit("jal", "x0", label);
 }
