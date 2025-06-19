@@ -1,3 +1,0 @@
-[submodule "tests/official"]
-	path = tests/official
-	url = http://10.69.45.39:30080/publicprojects/compilertestcases.git

@@ -633,13 +633,13 @@ bool IRGenerator::ir_add(ast_node * node)
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     // 操作数不同时进行类型转换
     if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
@@ -1905,7 +1905,7 @@ bool IRGenerator::ir_not(ast_node * node)
     // 生成IR指令：result = -expr->val
     auto notInst = UnaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        lhs,
+        cmpInst,
         IRInstOperator::IRINST_OP_NOT_I,
         IRInstOperator::IRINST_OP_NOT_F,
         true);
@@ -2077,22 +2077,22 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     // 1. 生成条件表达式的IR
     // ir_visit_ast_node 会递归访问子节点并生成其IR。
     // 生成的指令存储在 cond->blockInsts，结果值存储在 cond->val 中。
-    ast_node * cond = ir_visit_ast_node(cond_node);
-    if (!cond) {
-        printf("Ifelse: no condition block\n");
-        return false;
-    }
+    // ast_node * cond = ir_visit_ast_node(cond_node);
+    // if (!cond) {
+    //     printf("Ifelse: no condition block\n");
+    //     return false;
+    // }
 
     // 将条件表达式生成的指令添加到当前节点的指令列表中。
     // 这些指令将构成 if-else 结构前导基本块的一部分。
-    node->blockInsts.addInst(cond->blockInsts);
+    // node->blockInsts.addInst(cond->blockInsts);
 
     // 获取条件表达式的值 (应为一个布尔值，如 IR 中的 i1 类型)
-    Value * cond_val = cond->val;
-    if (!cond_val) {
-        printf("Ifelse: condition has no value.\n");
-        return false;
-    }
+    // Value * cond_val = cond->val;
+    // if (!cond_val) {
+    //     printf("Ifelse: condition has no value.\n");
+    //     return false;
+    // }
 
     // 2. 创建表示 if-else 结构不同基本块入口的标签
     // 这些标签将在后续指令中被引用（作为跳转目标）
@@ -2126,10 +2126,22 @@ bool IRGenerator::ir_ifelse(ast_node * node)
 
     // 3. 添加条件分支指令 (br i1)
     // 这个指令紧跟在条件表达式指令之后，根据 cond_val 的布尔值决定跳转。
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, cond_val, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
+    // if (!cond_val->getType()->isInt1Byte()) {
+    //     auto castToI1 = new CastInstruction(currentFunc, cond_val, IntegerType::getTypeBool());
+    //     node->blockInsts.addInst(castToI1);
+    //     cond_val = castToI1;
+    // }
+    // ConditionalInstruction * cond_branch_inst =
+    //     new ConditionalInstruction(currentFunc, cond_val, true_branch_label, false_branch_target);
+    // node->blockInsts.addInst(cond_branch_inst);
 
+    // 支持短路，添加条件分支指令。区别于遍历ir_and/or，因为其会产生额外的一个Value ValueOfLogic
+    if (!gen_condition_branch(cond_node, true_branch_label, false_branch_target, node->blockInsts)) {
+        // Error occurred during condition branching generation
+        std::cerr << "Error generating condition branch for if-else." << std::endl;
+        // TODO: Add location info
+        return false;
+    }
     // 前导基本块（包含条件求值和条件分支）的指令已生成并添加到 node->blockInsts。
     // 接下来生成 then 块、else 块和 merge 块的指令，并按顺序添加到 node->blockInsts。
 
@@ -2388,8 +2400,10 @@ bool IRGenerator::ir_leaf_node_var_id(ast_node * node)
     if (node->is_lvar || type->isArrayType()) {
         node->val = val;
     } else {
+
         auto LoadInst = new LoadInstruction(module->getCurrentFunction(), val);
         node->val = LoadInst;
+        // std::cout << node->getNodeName() << std::endl;
         // std::cout << "var name " << node->getNodeName() << std::endl;
         node->val->setName(node->name); // 设置名称
                                         // node->val->setIRName(std::string _name)
