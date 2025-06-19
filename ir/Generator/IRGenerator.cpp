@@ -1339,17 +1339,6 @@ bool IRGenerator::ir_eq(ast_node * node)
     }
 
     // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
-
     auto eqInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1362,37 +1351,7 @@ bool IRGenerator::ir_eq(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(eqInst);
-
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, eqInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
     node->val = eqInst;
-
     return true;
 }
 
@@ -1582,18 +1541,6 @@ bool IRGenerator::ir_ge(ast_node * node)
         }
     }
 
-    // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
-
     auto geInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1601,41 +1548,7 @@ bool IRGenerator::ir_ge(ast_node * node)
         IRInstOperator::IRINST_OP_GE_I,
         IRInstOperator::IRINST_OP_GE_F,
         true);
-
-    // 创建临时变量保存IR的值，以及线性IR指令
-    // node->blockInsts.addInst(left->blockInsts);
-    // node->blockInsts.addInst(right->blockInsts);
-    node->blockInsts.addInst(geInst);
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, geInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
     node->val = geInst;
-
     return true;
 }
 
@@ -1703,18 +1616,6 @@ bool IRGenerator::ir_le(ast_node * node)
         }
     }
 
-    // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
-
     auto leInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1727,35 +1628,6 @@ bool IRGenerator::ir_le(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(leInst);
-
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, leInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
 
     node->val = leInst;
 
@@ -1827,18 +1699,6 @@ bool IRGenerator::ir_gne(ast_node * node)
         }
     }
 
-    // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
-
     auto gneInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1851,36 +1711,6 @@ bool IRGenerator::ir_gne(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(gneInst);
-
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, gneInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
-
     node->val = gneInst;
 
     return true;
@@ -1949,17 +1779,6 @@ bool IRGenerator::ir_lne(ast_node * node)
             rhs = castInst;
         }
     }
-    // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
 
     auto lneInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1968,39 +1787,6 @@ bool IRGenerator::ir_lne(ast_node * node)
         IRInstOperator::IRINST_OP_LNE_I,
         IRInstOperator::IRINST_OP_LNE_F,
         true);
-
-    // 创建临时变量保存IR的值，以及线性IR指令
-    // node->blockInsts.addInst(left->blockInsts);
-    // node->blockInsts.addInst(right->blockInsts);
-    node->blockInsts.addInst(lneInst);
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, lneInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
 
     node->val = lneInst;
     return true;
@@ -2272,7 +2058,27 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         return false;
     }
 
-    // 1. 创建表示 if-else 结构不同基本块入口的标签
+    // 1. 生成条件表达式的IR
+    // ir_visit_ast_node 会递归访问子节点并生成其IR。
+    // 生成的指令存储在 cond->blockInsts，结果值存储在 cond->val 中。
+    ast_node * cond = ir_visit_ast_node(cond_node);
+    if (!cond) {
+        printf("Ifelse: no condition block\n");
+        return false;
+    }
+
+    // 将条件表达式生成的指令添加到当前节点的指令列表中。
+    // 这些指令将构成 if-else 结构前导基本块的一部分。
+    node->blockInsts.addInst(cond->blockInsts);
+
+    // 获取条件表达式的值 (应为一个布尔值，如 IR 中的 i1 类型)
+    Value * cond_val = cond->val;
+    if (!cond_val) {
+        printf("Ifelse: condition has no value.\n");
+        return false;
+    }
+
+    // 2. 创建表示 if-else 结构不同基本块入口的标签
     // 这些标签将在后续指令中被引用（作为跳转目标）
     // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
 
@@ -2282,6 +2088,7 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     LabelInstruction * else_label = nullptr;
     // if-else 结构结束后的汇合点标签
     LabelInstruction * merge_label = new LabelInstruction(currentFunc);
+
     // 确定条件分支的假分支目标
     // 如果有 else 块，假分支跳到 else 块的标签
     // 如果没有 else 块，假分支跳到 merge 块的标签
@@ -2293,13 +2100,11 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         false_branch_target = merge_label;
     }
 
-    // 2. 生成条件表达式的IR
-    // 增加处理短路情况
-    if (!gen_condition_branch(cond_node, true_branch_label, false_branch_target, node->blockInsts)) {
-        // Error occurred during condition branching generation
-        std::cerr << "Error generating condition branch for if-else." << std::endl;
-        return false;
-    }
+    // 3. 添加条件分支指令 (br i1)
+    // 这个指令紧跟在条件表达式指令之后，根据 cond_val 的布尔值决定跳转。
+    ConditionalInstruction * cond_branch_inst =
+        new ConditionalInstruction(currentFunc, cond_val, true_branch_label, false_branch_target);
+    node->blockInsts.addInst(cond_branch_inst);
 
     // 前导基本块（包含条件求值和条件分支）的指令已生成并添加到 node->blockInsts。
     // 接下来生成 then 块、else 块和 merge 块的指令，并按顺序添加到 node->blockInsts。
