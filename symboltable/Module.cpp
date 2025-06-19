@@ -594,14 +594,14 @@ void Module::outputIR(const std::string & filePath)
         // fprintf(fp, "; -------------------------------------------\n\n");
     }
     std::string externalFuncs = R"(
-declare i32 @getint(...)
-declare i32 @getch(...)
+declare i32 @getint()
+declare i32 @getch()
 declare void @putint(i32)
 declare void @putch(i32)
 declare void @putstr(i8*)
 declare i32 @getarray(i32*)
 declare void @putarray(i32, i32*)
-declare float @getfloat(...)
+declare float @getfloat()
 declare void @putfloat(float)
 declare i32 @getfarray(float*)
 declare void @putfarray(i32, float*)
