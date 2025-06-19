@@ -393,7 +393,8 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             }
             Type *        eletype = arrayType->getElementType();
             PointerType * pointerType = new PointerType(eletype);
-            // 创建一个数组局部变量
+            // PointerType * pointee = new PointerType(pointerType);
+            //  创建一个数组局部变量
             Value * param_value = module->newVarValue(pointerType, array_name);
             if (!param_value) {
                 std::cerr << "Function formal params: Failed to create IR Value for parameter '" << array_name
@@ -493,6 +494,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
         for (auto son: paramsNode->sons) {
             ast_node * son_node;
             Type *     son_type = son->type;
+            // std::cout << "Function call(Real Param): son type is " << son_type->toString() << std::endl;
             ///因为如果是数组访问，走专门的函数，所以不能visit，否则会额外生成ir
             if (!(son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS)) {
                 son_node = ir_visit_ast_node(son);
@@ -512,10 +514,10 @@ bool IRGenerator::ir_function_call(ast_node * node)
                 // std::cout << "Function call(Real Param): arrayRParam is " << std::endl;
                 Value * arrayRParam = funcall_array_access(son);
                 // std::cout << "Function call(Real Param): arrayRParam is " << arrayRParam << std::endl;
-                // if (!arrayRParam) {
-                //     std::cerr << "Function call(Real Param):Failed to array access!" << std::endl;
-                //     return false;
-                // }
+                //  if (!arrayRParam) {
+                //      std::cerr << "Function call(Real Param):Failed to array access!" << std::endl;
+                //      return false;
+                //  }
                 if (arrayRParam == nullptr) {
                     std::cerr << "Function call(Real Param):Failed to array access, arrayRParam is nullptr!"
                               << std::endl;
@@ -2591,6 +2593,7 @@ bool IRGenerator::ir_array_access(ast_node * node)
 
     Value * tempVal = module->findVarValue(array_name);
     Type *  type = tempVal->getType();
+    std::cout << " type  " << type->toString() << std::endl;
     if ((!type->isArrayType()) && (!type->isPointerType())) {
         std::cerr << "Array access: Error: Expected an array type." << std::endl;
         return false;
@@ -2599,9 +2602,22 @@ bool IRGenerator::ir_array_access(ast_node * node)
     int accessDims = array_dims.size();
 
     // 起始指针
-    Value * gepPtr = tempVal;
-    Type *  gepType = type;
+    Value *           gepPtr = tempVal;
+    Type *            gepType = type;
+    LoadInstruction * loadInst = nullptr;
+    if (type->isPointerType()) {
+        // 如果是指针类型，直接获取指向的类型
+        // PointerType * pointerType = new PointerType(type);
 
+        // gepPtr->setType(pointerType);
+        //std::cout << "the point type" << pointerType->toString() << std::endl;
+        loadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr);
+        node->blockInsts.addInst(loadInst);
+        gepPtr = loadInst;             // 更新 gepPtr 为加载后的值
+        gepType = loadInst->getType(); // 更新 gepType 为加载后的类型
+                                       // 获取指向的类型
+        std::cout << "gep type in point: " << gepType->toString() << std::endl;
+    }
     // 逐层调用getelementptr
     for (int i = 0; i < accessDims; ++i) {
         // 先处理索引表达式，转换成Value*
@@ -2626,12 +2642,17 @@ bool IRGenerator::ir_array_access(ast_node * node)
         if (gepType->isArrayType()) {
             auto * arrTy = static_cast<ArrayType *>(gepType);
             gepType = arrTy->getElementType();
+        } else if (gepType->isPointerType()) {
+            PointerType * pointerType = new PointerType(gepType->getPointeeType()->getPointeeType());
+
+            gepType = pointerType;
         } else {
-            // 非数组，取元素类型
-            // 这里不做进一步，gepType保持当前
+            // 否则，不能进一步推进，退出
+            break;
         }
     }
-
+    std::cout << "gep type: " << gepType->toString() << std::endl;
+    std::cout << "gepPTR type: " << gepPtr->getType()->toString() << std::endl;
     if (node->is_lvar) {
         node->val = gepPtr;
     } else {
@@ -2639,7 +2660,10 @@ bool IRGenerator::ir_array_access(ast_node * node)
         node->blockInsts.addInst(loadInst);
         node->val = loadInst; // 设置为加载后的值
     }
-
+    if (type->isPointerType()) {
+        node->val->setType(gepType); // 设置最后的类型，应该是元素指针类型
+    }
+    std::cout << "final type: " << node->val->getType()->toString() << std::endl;
     // node->val->setType(gepType); // 设置最后的类型，应该是元素指针类型
 
     return true;
@@ -2662,7 +2686,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
         std::cerr << "Function call - array: Cannot find array!" << std::endl;
     }
     Type * type = tempVal->getType();
-    // std::cout << "array type  " << type->toString() << std::endl;
+    std::cout << "array type  " << type->toString() << std::endl;
     if (type->isArrayType()) {
         int accessDims = array_dims.size();
 
@@ -2683,7 +2707,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
 
             node->blockInsts.addInst(gepInst);
             node->val = gepInst;
-
+            std::cout << "array type: " << node->val->getType()->toString() << std::endl;
             return node->val; // 返回最终的 gep 指令 Value*
         } else {
             // 逐层调用getelementptr
@@ -2732,7 +2756,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                 new PointerType(gepType)); // 指定转换类型为 GEP 到指针
             node->blockInsts.addInst(castInst);
             node->val = castInst;
-
+            std::cout << "array type: " << node->val->getType()->toString() << std::endl;
             return node->val; // 返回最终的 gep 指令 Value*
         }
 

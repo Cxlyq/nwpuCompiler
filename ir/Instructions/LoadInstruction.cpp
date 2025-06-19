@@ -3,6 +3,7 @@
 #include "Type.h"
 #include "IntegerType.h"
 #include "FloatType.h"
+#include "PointerType.h"
 
 /// @brief 构造函数
 /// @param _func 所属函数
@@ -19,7 +20,11 @@ LoadInstruction::LoadInstruction(Function * _func, Value * addr)
             this->setType(IntegerType::getTypeInt()); // 如果是指向整数的指针，则结果类型为整数
         } else if (id == Type::FloatTyID) {
             this->setType(FloatType::getType()); // 如果是指向浮点数的指针，则结果类型为浮点数
-        }
+        } else if (id == Type::PointerTyID) {
+            PointerType * pointerType = new PointerType(addr->getType()->getPointeeType()->getPointeeType());
+            this->type = pointerType;
+            // this->setType(addr->getType()->getPointeeType()); // 如果是指向指针的指针，则结果类型为指针
+        } // 其他情况，直接使用指向的类型
     }
 }
 /// @brief 转换为字符串形式
