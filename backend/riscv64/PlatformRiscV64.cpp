@@ -13,29 +13,29 @@ const std::string PlatformRiscV64::regName[PlatformRiscV64::maxRegNum] = {
     "t1",   // 类型：临时  作用： 临时寄存器 ,需要栈保护，Caller
     "t2",   // 类型：临时  作用： 临时寄存器 ,需要栈保护，Caller
     "s0/fp", // 类型：保护/帧指针  作用： 保存寄存器 or 栈帧指针（可选） ,不需要栈保护，Callee
-    "s1",    // 类型：保持  作用： 保存寄存器 ,不需要栈保护，Callee
-    "a0",    // 类型：参数/返回值1  作用： 参数/返回值1  ,需要栈保护，Caller
-    "a1",    // 类型：参数/返回值2  作用： 参数/返回值2  ,需要栈保护，Caller
-    "a2",    // 类型：参数3  作用： 参数3 ,需要栈保护，Caller
-    "a3",    // 类型：参数4  作用： 参数4 ,需要栈保护，Caller
-    "a4",    // 类型：参数5  作用： 参数5 ,需要栈保护，Caller
-    "a5",    // 类型：参数6  作用： 参数6 ,需要栈保护，Caller
-    "a6",    // 类型：参数7  作用： 参数7 ,需要栈保护，Caller
-    "a7",    // 类型：参数8  作用： 参数8 ,需要栈保护，Caller
-    "s2",    // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
-    "s3",    // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
-    "s4",    // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
-    "s5",    // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
-    "s6",    // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
-    "s7",    // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
-    "s8",    // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
-    "s9",    // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
-    "s10",   // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
-    "s11",   // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
-    "t3",    // 类型：临时 作用： 临时寄存器 ,需要栈保护，Caller
-    "t4",    // 类型：临时 作用： 临时寄存器 ,需要栈保护，Caller
-    "t5",    // 类型：临时 作用： 临时寄存器 ,需要栈保护，Caller
-    "t6",    // 类型：临时 作用： 临时寄存器 ,需要栈保护，Caller
+    "s1",  // 类型：保持  作用： 保存寄存器 ,不需要栈保护，Callee
+    "a0",  // 类型：参数/返回值1  作用： 参数/返回值1  ,需要栈保护，Caller
+    "a1",  // 类型：参数/返回值2  作用： 参数/返回值2  ,需要栈保护，Caller
+    "a2",  // 类型：参数3  作用： 参数3 ,需要栈保护，Caller
+    "a3",  // 类型：参数4  作用： 参数4 ,需要栈保护，Caller
+    "a4",  // 类型：参数5  作用： 参数5 ,需要栈保护，Caller
+    "a5",  // 类型：参数6  作用： 参数6 ,需要栈保护，Caller
+    "a6",  // 类型：参数7  作用： 参数7 ,需要栈保护，Caller
+    "a7",  // 类型：参数8  作用： 参数8 ,需要栈保护，Caller
+    "s2",  // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
+    "s3",  // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
+    "s4",  // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
+    "s5",  // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
+    "s6",  // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
+    "s7",  // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
+    "s8",  // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
+    "s9",  // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
+    "s10", // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
+    "s11", // 类型：保存  作用： 保存寄存器 ,不需要栈保护，Callee
+    "t3",  // 类型：临时 作用： 临时寄存器 ,需要栈保护，Caller
+    "t4",  // 类型：临时 作用： 临时寄存器 ,需要栈保护，Caller
+    "t5",  // 类型：临时 作用： 临时寄存器 ,需要栈保护，Caller
+    "t6",  // 类型：临时 作用： 临时寄存器 ,需要栈保护，Caller
 
     "ft0",  // 类型：临时(浮点) 作用： 临时寄存器 ,需要栈保护，Caller
     "ft1",  // 类型：临时(浮点) 作用： 临时寄存器 ,需要栈保护，Caller
@@ -140,7 +140,7 @@ RegVariable * PlatformRiscV64::floatRegVal[PlatformRiscV64::maxRegNum / 2] = {
     new RegVariable(FloatType::getType(), PlatformRiscV64::regName[62], 30),
     new RegVariable(FloatType::getType(), PlatformRiscV64::regName[63], 31)};
 
-const int PlatformRiscV64::RISCV64_REGS[PlatformRiscV64::maxUsableRegNum] = {
+const int PlatformRiscV64::RISCV64_INT_REGS[PlatformRiscV64::maxUsableIntRegNum] = {
     5,
     6,
     7, // t0-t2
@@ -156,6 +156,21 @@ const int PlatformRiscV64::RISCV64_REGS[PlatformRiscV64::maxUsableRegNum] = {
     29,
     30,
     31 // t3-t6
+};
+
+const int PlatformRiscV64::RISCV64_FLOAT_REGS[PlatformRiscV64::maxUsableFloatRegNum] = {
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39, // f0 - f7 (temporary / caller-saved)
+    60,
+    61,
+    62,
+    63, // ft8 - ft11 (args/return/caller-saved)
 };
 
 /// @brief 循环左移两位

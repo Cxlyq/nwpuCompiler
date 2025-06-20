@@ -83,11 +83,6 @@ class ILocRiscV64 {
     /// @brief 符号表
     Module * module;
 
-    /// @brief 加载立即数 li r0,=#100
-    /// @param rs_reg_no 结果寄存器号
-    /// @param num 立即数
-    void load_imm(int rs_reg_no, int num);
-
     /// @brief 加载符号值 la xN, symbol; lw xN, 0(xN)
     /// @param rsReg 结果寄存器号
     /// @param name Label名字
@@ -100,6 +95,11 @@ class ILocRiscV64 {
     void leaStack(int rs_reg_no, int base_reg_no, int offset);
 
 public:
+    /// @brief 加载立即数 li r0,=#100
+    /// @param rs_reg_no 结果寄存器号
+    /// @param num 立即数
+    void load_imm(int rs_reg_no, int num);
+
     /// @brief 构造函数
     /// @param _module 符号表-模块
     ILocRiscV64(Module * _module);

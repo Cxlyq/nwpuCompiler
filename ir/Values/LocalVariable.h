@@ -96,18 +96,9 @@ public:
     /// @brief 对该Value进行Load用的寄存器编号
     /// @return int32_t 寄存器编号
     ///
-    int32_t getLoadRegId() override
+    void setRegId(int32_t regId) override
     {
-        return this->loadRegNo;
-    }
-
-    ///
-    /// @brief 对该Value进行Load用的寄存器编号
-    /// @return int32_t 寄存器编号
-    ///
-    void setLoadRegId(int32_t regId) override
-    {
-        this->loadRegNo = regId;
+        this->regId = regId;
     }
 
 private:
@@ -127,9 +118,4 @@ private:
 
     /// @brief 栈内寻找时基址寄存器名字
     std::string baseRegName;
-
-    ///
-    /// @brief 变量加载到寄存器中时对应的寄存器编号
-    ///
-    int32_t loadRegNo = -1;
 };

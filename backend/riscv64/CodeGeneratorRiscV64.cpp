@@ -323,7 +323,8 @@ void CodeGeneratorRiscV64::registerAllocation(Function * func)
     // 至少有FP和LX寄存器需要保护
     std::vector<int32_t> & protectedRegNo = func->getProtectedReg();
     protectedRegNo.clear();
-    protectedRegNo.push_back(RISCV64_TMP_REG_NO);
+
+    // protectedRegNo.push_back(RISCV64_TMP_REG_NO);
     protectedRegNo.push_back(RISCV64_FP_REG_NO);
     if (func->getExistFuncCall()) {
         protectedRegNo.push_back(RISCV64_RA_REG_NO);
@@ -359,14 +360,14 @@ void CodeGeneratorRiscV64::adjustFormalParamInsts(Function * func)
     auto & params = func->getParams();
 
     // 形参的前四个通过寄存器来传值R0-R3
-    for (int k = 0; k < (int) params.size() && k <= 3; k++) {
+    for (int k = 0; k < (int) params.size() && k <= 7; k++) {
 
         // 前四个设置分配寄存器
         params[k]->setRegId(k);
     }
 
     // 根据ARM版C语言的调用约定，除前4个外的实参进行值传递，逆序入栈
-    int64_t fp_esp = func->getProtectedReg().size() * 4;
+    int64_t fp_esp = func->getProtectedReg().size() * 8;
     for (int k = 4; k < (int) params.size(); k++) {
 
         params[k]->setMemoryAddr(RISCV64_FP_REG_NO, fp_esp);
@@ -415,7 +416,7 @@ void CodeGeneratorRiscV64::adjustFuncCallInsts(Function * func)
                 // 新建一个内存变量，把实参的值保存到栈中，以便栈传值，其寻址为SP + 非负偏移
                 MemVariable * newVal = func->newMemVariable(IntegerType::getTypeInt());
                 newVal->setMemoryAddr(RISCV64_SP_REG_NO, esp);
-                esp += 4;
+                esp += 8;
 
                 // 引入赋值指令，把实参的值保存到内存变量上
                 Instruction * assignInst = new MoveInstruction(func, newVal, arg);
@@ -518,8 +519,8 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
             int32_t size = var->getType()->getSize();
 
-            // 32位ARM平台按照4字节的大小整数倍分配局部变量
-            size = (size + 3) & ~3;
+            // 64位RISC平台按照8字节的大小整数倍分配局部变量
+            size = (size + 7) & ~7;
 
             // 累计当前作用域大小
             sp_esp += size;
@@ -542,8 +543,8 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
             int32_t size = inst->getType()->getSize();
 
-            // 32位ARM平台按照4字节的大小整数倍分配局部变量
-            size = (size + 3) & ~3;
+            // 64位RISC平台按照8字节的大小整数倍分配局部变量
+            size = (size + 7) & ~7;
 
             // 累计当前作用域大小
             sp_esp += size;
@@ -561,7 +562,7 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
     // 通过栈传递的实参，RISCV64的前四个通过寄存器传递
     int maxFuncCallArgCnt = func->getMaxFuncCallArgCnt();
     if (maxFuncCallArgCnt > 4) {
-        sp_esp += (maxFuncCallArgCnt - 4) * 4;
+        sp_esp += (maxFuncCallArgCnt - 4) * 8;
     }
 
     // 只有int类型时可以4字节对齐，支持浮点或者向量运算时要16字节对齐

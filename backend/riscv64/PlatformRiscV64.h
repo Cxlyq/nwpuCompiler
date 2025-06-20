@@ -48,13 +48,22 @@ public:
     /// @brief 可使用的通用寄存器的个数
     // x5-x7, x10-x17, x28-x31
     //使用x10-x17需要调用前保存/恢复
-    static const int maxUsableRegNum = 15;
-    
-    /// @brief 可使用的通用寄存器的对应编号
-    static const int RISCV64_REGS[maxUsableRegNum];
+    static const int maxUsableIntRegNum = 15;
 
-    /// @brief 寄存器的名字，r0-r15
+    /// @brief 可使用的通用寄存器的对应编号
+    static const int RISCV64_INT_REGS[maxUsableIntRegNum];
+
+    /// @brief 可使用的通用寄存器的名字，
+    // x5-x7, x10-x17, x28-x31
     static const std::string regName[maxRegNum];
+
+    /// @brief 可使用的浮点寄存器的个数
+    // f0-f7, ft8-ft11
+    // 使用f10-f17需要调用前保存/恢复
+    static const int maxUsableFloatRegNum = 12;
+
+    /// @brief 可使用的浮点寄存器的对应编号
+    static const int RISCV64_FLOAT_REGS[maxUsableFloatRegNum];
 
     /// @brief 对寄存器R0分配Value，记录位置
     static RegVariable * intRegVal[PlatformRiscV64::maxRegNum / 2];

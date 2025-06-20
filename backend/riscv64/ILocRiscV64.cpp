@@ -387,6 +387,10 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
         emit("sw", srcReg, "0(" + tmpReg + ")");
     } else {
         // 对于局部变量，则直接从栈基址+偏移寻址
+
+        // TODO: [寻址]目前只实现了局部变量
+
+        // 栈帧偏移
         int32_t dest_baseRegId = -1;
         int64_t dest_offset = -1;
         bool    result = dest_var->getMemoryAddr(&dest_baseRegId, &dest_offset);
