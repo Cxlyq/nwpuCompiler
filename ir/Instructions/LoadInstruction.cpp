@@ -41,8 +41,8 @@ void LoadInstruction::toString(std::string & str)
             str = getIRName() + " = load float, float* " + addr->getIRName() + ", align 4";
             break;
         case Type::PointerTyID:
-            str = getIRName() + " = load " + this->getType()->toString() + ", " + addr->getType()->toString() + " " +
-                  addr->getIRName() + ", align 4";
+            str = getIRName() + " = load " + this->getType()->toString() + ", " + addr->getType()->toString() + "* " +
+                  addr->getIRName() + ", align 8";
             break;
         default:
             str = getIRName() + " = load from " + addr->getIRName();

@@ -391,8 +391,10 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             if (!arrayType) {
                 std::cerr << "Function formal params: Failer to generate Array Type!" << std::endl;
             }
-            Type *        eletype = arrayType->getElementType();
+            Type * eletype = arrayType->getElementType();
+            std::cout << "Function formal params: Array type is " << arrayType->toString() << std::endl;
             PointerType * pointerType = new PointerType(eletype);
+            std::cout << "Function formal params: Pointer type is " << pointerType->toString() << std::endl;
             // PointerType * pointee = new PointerType(pointerType);
             //  创建一个数组局部变量
             Value * param_value = module->newVarValue(pointerType, array_name);
@@ -623,13 +625,13 @@ bool IRGenerator::ir_add(ast_node * node)
 
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
@@ -1970,12 +1972,12 @@ bool IRGenerator::ir_assign(ast_node * node)
         Roperand = castInst;
     }
 
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        Roperand = LoadInst;
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     Roperand = LoadInst;
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     ///检查右值
     node->blockInsts.addInst(left->blockInsts);
@@ -2396,18 +2398,33 @@ bool IRGenerator::ir_leaf_node_var_id(ast_node * node)
 
     val = module->findVarValue(node->name);
     Type * type = val->getType();
-    //
+    std::cout << "the type in this var is " << type->toString() << std::endl;
+    // std::cout << " " << node->is_lvar << type->isArrayType() << 'and ' << type->getTypeID() << std::endl;
     if (node->is_lvar || type->isArrayType()) {
         node->val = val;
     } else {
+        if (type->isFloatType() || type->isIntegerType()) {
 
-        auto LoadInst = new LoadInstruction(module->getCurrentFunction(), val);
-        node->val = LoadInst;
-        // std::cout << node->getNodeName() << std::endl;
-        // std::cout << "var name " << node->getNodeName() << std::endl;
-        node->val->setName(node->name); // 设置名称
-                                        // node->val->setIRName(std::string _name)
-        node->blockInsts.addInst(LoadInst);
+            auto LoadInst = new LoadInstruction(module->getCurrentFunction(), val);
+            node->val = LoadInst;
+            std::cout << node->getNodeName() << std::endl;
+            std::cout << "var name " << node->getNodeName() << std::endl;
+            node->val->setName(node->name); // 设置名称
+                                            // node->val->setIRName(std::string _name)
+            node->blockInsts.addInst(LoadInst);
+        } else {
+            std::cout << 'here' << std::endl;
+            PointerType * pointerType = new PointerType(type);
+
+            val->setType(pointerType);
+            std::cout << "the point type" << pointerType->toString() << std::endl;
+            std::cout << node->getNodeName() << std::endl;
+            auto loadInst = new LoadInstruction(module->getCurrentFunction(), val);
+            node->val = loadInst;
+            node->blockInsts.addInst(loadInst);
+
+            val->setType(type); // 还原
+        }
     }
 
     return true;
@@ -2620,16 +2637,20 @@ bool IRGenerator::ir_array_access(ast_node * node)
     Type *            gepType = type;
     LoadInstruction * loadInst = nullptr;
     if (type->isPointerType()) {
-        // 如果是指针类型，直接获取指向的类型
-        // PointerType * pointerType = new PointerType(type);
+        //如果是指针类型，直接获取指向的类型
+        PointerType * pointerType = new PointerType(type);
 
-        // gepPtr->setType(pointerType);
-        //std::cout << "the point type" << pointerType->toString() << std::endl;
+        gepPtr->setType(pointerType);
+        std::cout << "the point type" << pointerType->toString() << std::endl;
         loadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr);
         node->blockInsts.addInst(loadInst);
-        gepPtr = loadInst;             // 更新 gepPtr 为加载后的值
-        gepType = loadInst->getType(); // 更新 gepType 为加载后的类型
-                                       // 获取指向的类型
+
+        tempVal->setType(type); // 还原
+        gepPtr = loadInst;      // 更新 gepPtr 为加载后的值
+                                ///
+        // gepPtr->setType(loadInst->getType()->getPointeeType())                   //
+        gepType = gepPtr->getType(); // 更新 gepType 为加载后的类型
+                                     // 获取指向的类型
         std::cout << "gep type in point: " << gepType->toString() << std::endl;
     }
     // 逐层调用getelementptr
@@ -2645,21 +2666,34 @@ bool IRGenerator::ir_array_access(ast_node * node)
         // 生成getelementptr指令：
         // 类型：gepType是当前的数组类型，如 [5 x [6 x i32]] 或 [6 x i32]
         // 返回的类型是当前维度元素的指针类型，比如 [6 x i32]* 的元素是 i32
-        auto gepInst =
-            new GetElementPtrInst(module->getCurrentFunction(), gepPtr, gepType, std::vector<Value *>{zero, indexVal});
+        if (type->isPointerType()) {
+            // 如果是指针类型，只取一维
+            auto gepInst =
+                new GetElementPtrInst(module->getCurrentFunction(), gepPtr, gepType, std::vector<Value *>{indexVal});
+            node->blockInsts.addInst(gepInst);
 
-        node->blockInsts.addInst(gepInst);
+            gepPtr = gepInst;
+        } else {
+            auto gepInst = new GetElementPtrInst(
+                module->getCurrentFunction(),
+                gepPtr,
+                gepType,
+                std::vector<Value *>{zero, indexVal});
 
-        gepPtr = gepInst;
+            node->blockInsts.addInst(gepInst);
+
+            gepPtr = gepInst;
+        }
 
         // 更新类型为下一维
         if (gepType->isArrayType()) {
             auto * arrTy = static_cast<ArrayType *>(gepType);
             gepType = arrTy->getElementType();
         } else if (gepType->isPointerType()) {
-            PointerType * pointerType = new PointerType(gepType->getPointeeType()->getPointeeType());
-
-            gepType = pointerType;
+            // PointerType * pointerType = new PointerType(gepType->getPointeeType()->getPointeeType());
+            PointerType * pointeeType =
+                const_cast<PointerType *>(static_cast<const PointerType *>(gepType->getPointeeType()));
+            gepType = pointeeType;
         } else {
             // 否则，不能进一步推进，退出
             break;
@@ -2669,14 +2703,16 @@ bool IRGenerator::ir_array_access(ast_node * node)
     std::cout << "gepPTR type: " << gepPtr->getType()->toString() << std::endl;
     if (node->is_lvar) {
         node->val = gepPtr;
+        if (type->isPointerType()) {
+            node->val->setType(gepType); // 设置最后的类型，应该是元素指针类型
+        }
     } else {
+        gepPtr->setType(gepType); // 设置 gepPtr 的类型为最终的元素指针类型
         auto loadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr);
         node->blockInsts.addInst(loadInst);
         node->val = loadInst; // 设置为加载后的值
     }
-    if (type->isPointerType()) {
-        node->val->setType(gepType); // 设置最后的类型，应该是元素指针类型
-    }
+
     std::cout << "final type: " << node->val->getType()->toString() << std::endl;
     // node->val->setType(gepType); // 设置最后的类型，应该是元素指针类型
 

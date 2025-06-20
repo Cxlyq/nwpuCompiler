@@ -416,7 +416,7 @@ void CodeGeneratorRiscV64::adjustFuncCallInsts(Function * func)
                 // 新建一个内存变量，把实参的值保存到栈中，以便栈传值，其寻址为SP + 非负偏移
                 MemVariable * newVal = func->newMemVariable(IntegerType::getTypeInt());
                 newVal->setMemoryAddr(RISCV64_SP_REG_NO, esp);
-                esp += 4;
+                esp += 8;
 
                 // 引入赋值指令，把实参的值保存到内存变量上
                 Instruction * assignInst = new MoveInstruction(func, newVal, arg);
@@ -519,8 +519,8 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
             int32_t size = var->getType()->getSize();
 
-            // 32位ARM平台按照4字节的大小整数倍分配局部变量
-            size = (size + 3) & ~3;
+            // 64位RISC平台按照8字节的大小整数倍分配局部变量
+            size = (size + 7) & ~7;
 
             // 累计当前作用域大小
             sp_esp += size;
@@ -543,8 +543,8 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
             int32_t size = inst->getType()->getSize();
 
-            // 32位ARM平台按照4字节的大小整数倍分配局部变量
-            size = (size + 3) & ~3;
+            // 64位RISC平台按照8字节的大小整数倍分配局部变量
+            size = (size + 7) & ~7;
 
             // 累计当前作用域大小
             sp_esp += size;
@@ -562,7 +562,7 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
     // 通过栈传递的实参，RISCV64的前四个通过寄存器传递
     int maxFuncCallArgCnt = func->getMaxFuncCallArgCnt();
     if (maxFuncCallArgCnt > 4) {
-        sp_esp += (maxFuncCallArgCnt - 4) * 4;
+        sp_esp += (maxFuncCallArgCnt - 4) * 8;
     }
 
     // 只有int类型时可以4字节对齐，支持浮点或者向量运算时要16字节对齐
