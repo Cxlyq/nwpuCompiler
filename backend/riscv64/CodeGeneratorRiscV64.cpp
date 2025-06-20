@@ -359,14 +359,14 @@ void CodeGeneratorRiscV64::adjustFormalParamInsts(Function * func)
     auto & params = func->getParams();
 
     // 形参的前四个通过寄存器来传值R0-R3
-    for (int k = 0; k < (int) params.size() && k <= 3; k++) {
+    for (int k = 0; k < (int) params.size() && k <= 7; k++) {
 
         // 前四个设置分配寄存器
         params[k]->setRegId(k);
     }
 
     // 根据ARM版C语言的调用约定，除前4个外的实参进行值传递，逆序入栈
-    int64_t fp_esp = func->getProtectedReg().size() * 4;
+    int64_t fp_esp = func->getProtectedReg().size() * 8;
     for (int k = 4; k < (int) params.size(); k++) {
 
         params[k]->setMemoryAddr(RISCV64_FP_REG_NO, fp_esp);

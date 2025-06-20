@@ -258,21 +258,21 @@ void InstSelectorRiscV64::translate_br_cond(Instruction * inst)
     // if (cond_reg_no == -1) {
     //     // 分配一个寄存器r8
     //     load_cond_reg_no = simpleRegisterAllocator.Allocate(cond);
-        
-	// 	// cond -> r8，这里可能由于偏移不满足指令的要求，需要额外分配寄存器
-	// 	iloc.load_var(load_cond_reg_no, cond);
-	// } else {
-	// 	load_cond_reg_no = cond_reg_no;
+
+    // 	// cond -> r8，这里可能由于偏移不满足指令的要求，需要额外分配寄存器
+    // 	iloc.load_var(load_cond_reg_no, cond);
+    // } else {
+    // 	load_cond_reg_no = cond_reg_no;
     // }
     // // 看真分支目标是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
     // if (true_target_reg_no == -1) {
     //     // 分配一个寄存器r9
     //     load_true_target_reg_no = simpleRegisterAllocator.Allocate(trueTarget);
-        
-	// 	// trueTarget -> r9
-	// 	iloc.load_var(load_true_target_reg_no, trueTarget);
-	// } else {
-	// 	load_true_target_reg_no = true_target_reg_no;
+
+    // 	// trueTarget -> r9
+    // 	iloc.load_var(load_true_target_reg_no, trueTarget);
+    // } else {
+    // 	load_true_target_reg_no = true_target_reg_no;
     // }
     // // 看假分支目标是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
     // if (false_target_reg_no == -1) {
@@ -398,7 +398,7 @@ void InstSelectorRiscV64::translate_div_int32(Instruction * inst)
 /// @param inst IR指令
 void InstSelectorRiscV64::translate_mod_int32(Instruction * inst)
 {
-	translate_two_operator(inst, "remu");
+    translate_two_operator(inst, "remu");
 }
 
 /// @brief 整数相等指令翻译成RISCV64汇编
@@ -690,10 +690,8 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
     realArgCount = 0;
 }
 
-///
 /// @brief 实参指令翻译成RISCV64汇编
 /// @param inst
-///
 void InstSelectorRiscV64::translate_arg(Instruction * inst)
 {
     // 翻译之前必须确保源操作数要么是寄存器，要么是内存，否则出错。
@@ -730,32 +728,40 @@ void InstSelectorRiscV64::translate_arg(Instruction * inst)
 void InstSelectorRiscV64::translate_store(Instruction * inst)
 {
     // TODO: @JEV055 这里是AI自动补充的，需要重新检验
-    // // 存储指令，必须是内存变量
-    // Value * src = inst->getOperand(0);
-    // Value * dst = inst->getOperand(1);
-    // int32_t src_regId = src->getRegId();
-    // int32_t dst_regId = dst->getRegId();
-    // if (src_regId == -1) {
-	// 	// 源操作数不是寄存器，则必须是内存变量
-	// 	minic_log(LOG_ERROR, "存储指令源操作数不是寄存器");
-	// 	return;
-    // }
-	
-	// if (dst_regId != -1) {
-	// 	// 目标操作数是寄存器，则直接存储到寄存器中
-	// 	iloc.store_var(src_regId, dst, RISCV64_TMP_REG_NO);
-	// } else {
-	// 	// 目标操作数是内存变量，则需要先load到寄存器中
-	// 	int32_t temp_regno = simpleRegisterAllocator.Allocate();
+    // 存储指令，必须是内存变量
+    // IR: store src, dst
+    // RISCV64: 根据变量类型判断
+    Instanceof(src, Instruction *, inst->getOperand(0));
+    Instanceof(dst, Instruction *, inst->getOperand(1));
+    int32_t src_regId = src->getRegId();
+    int32_t dst_regId = dst->getRegId();
+    if (src->getValueCategory() == ValueCategory::IMMEDIATE) {
+        iloc.load_imm(dst_regId, src->getIntVal());
+        // TODO:[指令指派]增添浮点数处理
+    } else if (src_regId == -1) {
+        // 源操作数不是寄存器，则必须是内存变量
+        minic_log(
+            LOG_ERROR,
+            "存储指令源操作数不是寄存器,数据类型为(未知0，常量1，变量2，立即数3):%d,变量类型为",
+            src->getValueCategory());
+        return;
+    }
 
-	// 	// r8 -> dst
-	// 	iloc.load_var(temp_regno, dst);
+    if (dst_regId != -1) {
+        // 目标操作数是寄存器，则直接存储到寄存器中
+        iloc.store_var(src_regId, dst, RISCV64_TMP_REG_NO);
+    } else {
+        // 目标操作数是内存变量，则需要先load到寄存器中
+        int32_t temp_regno = simpleRegisterAllocator.Allocate();
 
-	// 	// r8 -> src
-	// 	iloc.store_var(src_regId, temp_regno, RISCV64_TMP_REG_NO);
+        // r8 -> dst
+        iloc.load_var(temp_regno, dst);
 
-	// 	simpleRegisterAllocator.free(temp_regno);
-    // }
+        // r8 -> src
+        iloc.store_var(temp_regno, dst, RISCV64_TMP_REG_NO);
+
+        simpleRegisterAllocator.free(temp_regno);
+    }
 }
 
 /// @brief 加载指令翻译成RISCV64汇编
@@ -763,31 +769,31 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
 void InstSelectorRiscV64::translate_load(Instruction * inst)
 {
     // TODO: @JEV055 这里是AI自动补充的，需要重新检
-    // // 加载指令，必须是内存变量
-    // Value * src = inst->getOperand(0);
-    // Value * dst = inst->getOperand(1);
-    // int32_t src_regId = src->getRegId();
-    // int32_t dst_regId = dst->getRegId();
-    // if (src_regId == -1) {
-    //     // 源操作数不是寄存器，则必须是内存变量
-    //     minic_log(LOG_ERROR, "加载指令源操作数不是寄存器");
-    //     return;
-    // }
-	// if (dst_regId != -1) {
-	// 	// 目标操作数是寄存器，则直接加载到寄存器中
-	// 	iloc.load_var(dst_regId, src);
-	// } else {
-	// 	// 目标操作数是内存变量，则需要先load到寄存器中
-	// 	int32_t temp_regno = simpleRegisterAllocator.Allocate();
+    // 加载指令，必须是内存变量
+    Instanceof(src, Instruction *, inst->getOperand(0));
+    Instanceof(dst, Instruction *, inst->getOperand(1));
+    int32_t src_regId = src->getRegId();
+    int32_t dst_regId = dst->getRegId();
+    if (src_regId == -1) {
+        // 源操作数不是寄存器，则必须是内存变量
+        minic_log(LOG_ERROR, "加载指令源操作数不是寄存器");
+        return;
+    }
+    if (dst_regId != -1) {
+        // 目标操作数是寄存器，则直接加载到寄存器中
+        iloc.load_var(dst_regId, src);
+    } else {
+        // 目标操作数是内存变量，则需要先load到寄存器中
+        int32_t temp_regno = simpleRegisterAllocator.Allocate();
 
-	// 	// r8 -> src
-	// 	iloc.load_var(temp_regno, src);
+        // r8 -> src
+        iloc.load_var(temp_regno, src);
 
-	// 	// r8 -> dst
-	// 	iloc.store_var(temp_regno, dst, RISCV64_TMP_REG_NO);
+        // r8 -> dst
+        iloc.store_var(temp_regno, dst, RISCV64_TMP_REG_NO);
 
-	// 	simpleRegisterAllocator.free(temp_regno);
-    // }
+        simpleRegisterAllocator.free(temp_regno);
+    }
 }
 
 /// @brief Cast指令翻译成RISCV64汇编

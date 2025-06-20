@@ -460,7 +460,7 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
 
         // 对于局部变量，则直接从栈基址+偏移寻址
 
-        // TODO 目前只考虑局部变量
+        // TODO: [寻址]目前只实现了局部变量
 
         // 栈帧偏移
         int32_t dest_baseRegId = -1;
