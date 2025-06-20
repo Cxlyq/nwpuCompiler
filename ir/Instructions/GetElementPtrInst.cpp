@@ -29,7 +29,7 @@ GetElementPtrInst::GetElementPtrInst(
         //     }
     }
     PointerType * pointerType = new PointerType(current);
-    this->type = pointerType;
+    this->setType(pointerType);
     if (base->getType()->isPointerType()) {
         // 如果 base 是指针类型，则设置为原始类型
         this->setType(gepType);
