@@ -29,9 +29,9 @@ SimpleRegisterAllocatorRicsV64::SimpleRegisterAllocatorRicsV64()
 ///
 int SimpleRegisterAllocatorRicsV64::Allocate(Value * var, int32_t no)
 {
-    if (var && (var->getLoadRegId() != -1)) {
+    if (var && (var->getRegId() != -1)) {
         // 该变量已经分配了Load寄存器了，不需要再次分配
-        return var->getLoadRegId();
+        return var->getRegId();
     }
 
     int32_t regno = -1;
@@ -70,10 +70,10 @@ int SimpleRegisterAllocatorRicsV64::Allocate(Value * var, int32_t no)
         Value * oldestVar = regValues.front();
 
         // 获取Load寄存器编号，设置该变量不再占用Load寄存器
-        regno = oldestVar->getLoadRegId();
+        regno = oldestVar->getRegId();
 
         // 设置该变量不再占用寄存器
-        oldestVar->setLoadRegId(-1);
+        oldestVar->setRegId(-1);
 
         // 从队列中删除
         regValues.erase(regValues.begin());
@@ -81,7 +81,7 @@ int SimpleRegisterAllocatorRicsV64::Allocate(Value * var, int32_t no)
 
     if (var) {
         // 加入新的变量
-        var->setLoadRegId(regno);
+        var->setRegId(regno);
         regValues.push_back(var);
     }
 
@@ -112,12 +112,12 @@ void SimpleRegisterAllocatorRicsV64::Allocate(int32_t no)
 ///
 void SimpleRegisterAllocatorRicsV64::free(Value * var)
 {
-    if (var && (var->getLoadRegId() != -1)) {
+    if (var && (var->getRegId() != -1)) {
 
         // 清除该索引的寄存器，变得可使用
-        regBitmap.reset(var->getLoadRegId());
+        regBitmap.reset(var->getRegId());
         regValues.erase(std::find(regValues.begin(), regValues.end(), var));
-        var->setLoadRegId(-1);
+        var->setRegId(-1);
     }
 }
 
@@ -137,12 +137,12 @@ void SimpleRegisterAllocatorRicsV64::free(int32_t no)
 
     // 查找寄存器编号
     auto pIter = std::find_if(regValues.begin(), regValues.end(), [=](auto val) {
-        return val->getLoadRegId() == no; // 存器编号与 no 匹配
+        return val->getRegId() == no; // 存器编号与 no 匹配
     });
 
     if (pIter != regValues.end()) {
         // 查找到，则清除，并设置为-1
-        (*pIter)->setLoadRegId(-1);
+        (*pIter)->setRegId(-1);
         regValues.erase(pIter);
     }
 }

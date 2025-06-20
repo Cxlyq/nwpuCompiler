@@ -39,24 +39,25 @@ public:
     /// @brief 对该Value进行Load用的寄存器编号
     /// @return int32_t 寄存器编号
     ///
-    int32_t getLoadRegId() override
+    int32_t getRegId() override
     {
-        return this->loadRegNo;
+        return this->regId;
     }
 
     ///
     /// @brief 设置该Value加载时的寄存器编号
     /// @param regId 寄存器编号
     ///
-    void setLoadRegId(int32_t regId) override
+    void setRegId(int32_t regId) override
     {
-        this->loadRegNo = regId;
+        this->regId = regId;
     }
 
     ///
     /// @brief 判断是否为零值（用于判断是否属于.bss段）
     /// @return true 零值
-    [[nodiscard]] bool isZeroValue() const override {
+    [[nodiscard]] bool isZeroValue() const override
+    {
         return floatVal == 0.0f;
     }
 
@@ -65,5 +66,5 @@ private:
     float floatVal;
 
     /// @brief 变量加载到寄存器中时对应的寄存器编号
-    int32_t loadRegNo = -1;
+    int32_t regId= -1;
 };

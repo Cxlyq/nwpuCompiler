@@ -134,21 +134,12 @@ bool Value::getMemoryAddr(int32_t * regId, int64_t * offset)
     return false;
 }
 
-///
-/// @brief 对该Value进行Load用的寄存器编号
-/// @return int32_t 寄存器编号
-///
-int32_t Value::getLoadRegId()
-{
-    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
-    return -1;
-}
 
 ///
 /// @brief 对该Value进行Load用的寄存器编号
 /// @return int32_t 寄存器编号
 ///
-void Value::setLoadRegId(int32_t regId)
+void Value::setRegId(int32_t regId)
 {
     (void) regId;
     std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";

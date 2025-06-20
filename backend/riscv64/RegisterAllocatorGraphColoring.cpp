@@ -194,7 +194,8 @@ void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva
                     for (Value * val: live) {
                         if (val != def) {
                             addInterference(def, val);
-                            // std::cout << "    Interfere: " << def->getIRName() << " <--> " << val->getIRName() << "\n";
+                            // std::cout << "    Interfere: " << def->getIRName() << " <--> " << val->getIRName() <<
+                            // "\n";
                         }
                     }
                 }
@@ -249,8 +250,8 @@ std::unordered_map<Value *, int> GraphColoringRegisterAllocator::getColorMap() c
 // 新增以适配SimpleRegisterAllocatorRicsV64接口
 int GraphColoringRegisterAllocator::Allocate(Value * var, int32_t no)
 {
-    if (var && (var->getLoadRegId() != -1)) {
-        return var->getLoadRegId();
+    if (var && (var->getRegId() != -1)) {
+        return var->getRegId();
     }
 
     auto iter = colorMap.find(var);
@@ -258,7 +259,7 @@ int GraphColoringRegisterAllocator::Allocate(Value * var, int32_t no)
         int regIndex = iter->second;
         if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableRegNum) {
             int regno = PlatformRiscV64::RISCV64_REGS[regIndex];
-            var->setLoadRegId(regno);
+            var->setRegId(regno);
             return regno;
         }
     }
@@ -309,8 +310,8 @@ void GraphColoringRegisterAllocator::Allocate(int32_t no)
 ///
 void GraphColoringRegisterAllocator::free(Value * var)
 {
-    if (var && var->getLoadRegId() != -1) {
-        int regIndex = regNoToIndex(var->getLoadRegId());
+    if (var && var->getRegId() != -1) {
+        int regIndex = regNoToIndex(var->getRegId());
         if (regIndex != -1) {
             regBitmap.reset(regIndex);
         }
@@ -318,7 +319,7 @@ void GraphColoringRegisterAllocator::free(Value * var)
         if (it != regValues.end()) {
             regValues.erase(it);
         }
-        var->setLoadRegId(-1);
+        var->setRegId(-1);
     }
 }
 
@@ -339,10 +340,10 @@ void GraphColoringRegisterAllocator::free(int32_t no)
 
     regBitmap.reset(regIndex);
 
-    auto pIter = std::find_if(regValues.begin(), regValues.end(), [=](auto val) { return val->getLoadRegId() == no; });
+    auto pIter = std::find_if(regValues.begin(), regValues.end(), [=](auto val) { return val->getRegId() == no; });
 
     if (pIter != regValues.end()) {
-        (*pIter)->setLoadRegId(-1);
+        (*pIter)->setRegId(-1);
         regValues.erase(pIter);
     }
 }
