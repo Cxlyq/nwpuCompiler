@@ -44,7 +44,7 @@ int SimpleRegisterAllocatorArm32::Allocate(Value * var, int32_t no)
     } else {
 
         // 查询空闲的寄存器
-        for (int k = 0; k < PlatformArm32::maxUsableRegNum; ++k) {
+        for (int k = 0; k < PlatformArm32::maxUsableIntRegNum; ++k) {
 
             if (!regBitmap.test(k)) {
 

@@ -27,7 +27,7 @@
 
 class GraphColoringRegisterAllocator {
 public:
-    GraphColoringRegisterAllocator(int regCount = PlatformRiscV64::maxUsableRegNum);
+    GraphColoringRegisterAllocator(int regCount = PlatformRiscV64::maxUsableIntRegNum);
 
     ///
     /// @brief 添加变量之间的冲突（干涉）关系
@@ -42,16 +42,18 @@ public:
     ///
     bool allocate();
 
-    ///
-    /// @brief 获取变量分配到的寄存器编号
-    ///
-    int getRegister(Value * val) const;
+    // ///
+    // /// @brief 获取变量分配到的寄存器编号
+    // ///
+    // int getRegister(Value * val) const;
 
     ///
     /// @brief 被溢出的变量列表
     ///
-    const std::vector<Value *> & getSpilled() const;
-    void                         buildGraph(const LiveVariableAnalysis & lva);
+    const std::vector<Value *> & getIntSpilled() const;
+    const std::vector<Value *> & getFloatSpilled() const;
+
+    void buildGraph(const LiveVariableAnalysis & lva);
 
     /// @brief 获取所有变量的寄存器分配映射
     std::unordered_map<Value *, int> getColorMap() const;
@@ -82,24 +84,36 @@ public:
     void free(int32_t no);
 
 private:
-    bool simplify();
+    bool simplify(
+        const std::unordered_map<Value *, std::unordered_set<Value *>> & graph, std::stack<Value *> & stack,
+        std::vector<Value *> & spilled);
     void select();
-    void assignColors();
+    void
+    assignColors(const std::unordered_map<Value *, std::unordered_set<Value *>> & graph, std::stack<Value *> & stack);
 
 private:
     int regCount;
 
-    std::unordered_map<Value *, std::unordered_set<Value *>> interferenceGraph; //干涉图
-    std::unordered_map<Value *, int>                         colorMap;          //寄存器分配表
-    std::vector<Value *>                                     spilled;           //溢出处理
+    std::unordered_map<Value *, std::unordered_set<Value *>> intInterferenceGraph;   // int型干涉图
+    std::unordered_map<Value *, std::unordered_set<Value *>> floatInterferenceGraph; // float型干涉图
 
-    std::stack<Value *> simplifyStack;
+    std::unordered_map<Value *, int> colorMap; //寄存器分配表
+    std::vector<Value *>             spilledInt;
+    std::vector<Value *>             spilledFloat; //溢出处理
+
+    std::stack<Value *> simplifyIntStack;
+    std::stack<Value *> simplifyFloatStack;
 
 protected:
     ///
-    /// @brief 寄存器位图：1已被占用，0未被使用
+    /// @brief Int星寄存器位图：1已被占用，0未被使用
     ///
-    BitMap<PlatformRiscV64::maxUsableRegNum> regBitmap;
+    BitMap<PlatformRiscV64::maxUsableIntRegNum> intRegBitmap;
+
+    ///
+    /// @brief Float型寄存器位图：1已被占用，0未被使用
+    ///
+    BitMap<PlatformRiscV64::maxUsableFloatRegNum> floatRegBitmap;
 
     ///
     /// @brief 寄存器被那个Value占用。按照时间次序加入
@@ -109,14 +123,23 @@ protected:
     ///
     /// @brief 使用过的所有寄存器编号
     ///
-    BitMap<PlatformRiscV64::maxUsableRegNum> usedBitmap;
+    BitMap<PlatformRiscV64::maxUsableIntRegNum> usedIntBitmap;
+    ///
+    /// @brief 使用过的所有寄存器编号
+    ///
+    BitMap<PlatformRiscV64::maxUsableFloatRegNum> usedFloatBitmap;
 
 protected:
     ///
-    /// @brief 寄存器被置位，使用过的寄存器被置位
+    /// @brief int型寄存器被置位，使用过的寄存器被置位
     /// @param no
     ///
-    void bitmapSet(int32_t no);
+    void intBitmapSet(int32_t no);
+    ///
+    /// @brief float型寄存器被置位，使用过的寄存器被置位
+    /// @param no
+    ///
+    void floatBitmapSet(int32_t no);
 
     ///
     /// @brief 由寄存器号查找编号
