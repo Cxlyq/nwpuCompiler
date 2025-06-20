@@ -19,20 +19,46 @@ void StoreInstruction::toString(std::string & str)
     Value * addr = getOperand(0); // 获取地址
     Value * val = getOperand(1);  // 获取存储的值
 
-    switch (addr->getType()->getTypeID()) {
-        case Type::IntegerTyID:
-            str = "store i32 " + val->getIRName() + ", i32* " + addr->getIRName() + ", align 4";
-            break;
-        case Type::FloatTyID:
-            str = "store float " + val->getIRName() + ", float* " + addr->getIRName() + ", align 4";
-            break;
-        case Type::PointerTyID:
-            str = "store " + val->getType()->toString() + " " + val->getIRName() + ", " + addr->getType()->toString() +
-                  " " + addr->getIRName() + ", align 4";
-            break;
-        default:
-            str = "store  " + val->getIRName() + ",  " + addr->getIRName() + ", align 4";
+    // switch (addr->getType()->getTypeID()) {
+    //     case Type::IntegerTyID:
+    //         str = "store i32 " + val->getIRName() + ", i32* " + addr->getIRName() + ", align 4";
+    //         break;
+    //     case Type::FloatTyID:
+    //         str = "store float " + val->getIRName() + ", float* " + addr->getIRName() + ", align 4";
+    //         break;
+    //     case Type::PointerTyID:
+    //         str = "store " + val->getType()->toString() + " " + val->getIRName() + ", " + addr->getType()->toString()
+    //         +
+    //               " " + addr->getIRName() + ", align 4";
+    //         break;
+    //     case Type::ArrayTyID:
+    //         str = "store " + val->getType()->toString() + " " + val->getIRName() + ", " + addr->getType()->toString()
+    //         +
+    //               "* " + addr->getIRName() + ", align 4";
+    //         break;
+    //     default:
+    //         str = "store  " + val->getIRName() + ",  " + addr->getIRName() + ", align 4";
 
-            break;
+    //         break;
+    // }
+    // 根据地址类型生成对应的存储指令字符串
+    if (addr->getType()->getTypeID() == Type::IntegerTyID) {
+        str = "store i32 " + val->getIRName() + ", i32* " + addr->getIRName() + ", align 4";
+    } else if (addr->getType()->getTypeID() == Type::FloatTyID) {
+        str = "store float " + val->getIRName() + ", float* " + addr->getIRName() + ", align 4";
+    }
+    ///对应两者都是指针
+    else if (
+        (val->getType()->getTypeID() == Type::PointerTyID) && (addr->getType()->getTypeID() == Type::PointerTyID)) {
+        str = "store " + val->getType()->toString() + " " + val->getIRName() + ", " + addr->getType()->toString() +
+              "* " + addr->getIRName() + ", align 8";
+    } else if (addr->getType()->getTypeID() == Type::PointerTyID) {
+        str = "store " + val->getType()->toString() + " " + val->getIRName() + ", " + addr->getType()->toString() +
+              " " + addr->getIRName() + ", align 8";
+    } else if (addr->getType()->getTypeID() == Type::ArrayTyID) {
+        str = "store " + val->getType()->toString() + " " + val->getIRName() + ", " + addr->getType()->toString() +
+              "* " + addr->getIRName() + ", align 4";
+    } else {
+        str = "store  " + val->getIRName() + ",  " + addr->getIRName() + ", align 4";
     }
 }

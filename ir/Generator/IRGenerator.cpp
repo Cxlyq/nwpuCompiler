@@ -391,8 +391,11 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             if (!arrayType) {
                 std::cerr << "Function formal params: Failer to generate Array Type!" << std::endl;
             }
-            // 创建一个数组局部变量
-            Value * param_value = module->newVarValue(arrayType, array_name);
+            Type *        eletype = arrayType->getElementType();
+            PointerType * pointerType = new PointerType(eletype);
+            // PointerType * pointee = new PointerType(pointerType);
+            //  创建一个数组局部变量
+            Value * param_value = module->newVarValue(pointerType, array_name);
             if (!param_value) {
                 std::cerr << "Function formal params: Failed to create IR Value for parameter '" << array_name
                           << "' in function '" << currentFunc->getName() << "'" << std::endl;
@@ -400,7 +403,7 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             }
             param_decl_node->val = param_value;
 
-            auto fParam = new FormalParam(arrayType, array_name);
+            auto fParam = new FormalParam(pointerType, array_name);
             currentFunc->addParams(fParam);
 
             // 生成 MoveInstruction 将传入实参值复制到局部形参变量
@@ -491,6 +494,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
         for (auto son: paramsNode->sons) {
             ast_node * son_node;
             Type *     son_type = son->type;
+            // std::cout << "Function call(Real Param): son type is " << son_type->toString() << std::endl;
             ///因为如果是数组访问，走专门的函数，所以不能visit，否则会额外生成ir
             if (!(son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS)) {
                 son_node = ir_visit_ast_node(son);
@@ -498,22 +502,22 @@ bool IRGenerator::ir_function_call(ast_node * node)
 
             if (son->node_type == ast_operator_type::AST_OP_LEAF_VAR_ID) {
                 // 叶子节点是变量ID
-                std::cout << "Function call(Real Param): son_node is " << son_node->name << std::endl;
+                // std::cout << "Function call(Real Param): son_node is " << son_node->name << std::endl;
                 son_type = module->findVarValue(son_node->name)->getType();
-            } else {
-                std::cout << "Function call(Real Param): son_node is not leaf node!" << std::endl;
-            }
+            } // else {
+            //     // std::cout << "Function call(Real Param): son_node is not leaf node!" << std::endl;
+            // }
+            // std::cout << "type " << son_type->toString() << std::endl;
 
-            std::cout << "type " << son_type->toString() << std::endl;
             ///如果是数组，就要走专门的函数
             if (son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS || son_type->isArrayType()) {
-                std::cout << "Function call(Real Param): arrayRParam is " << std::endl;
+                // std::cout << "Function call(Real Param): arrayRParam is " << std::endl;
                 Value * arrayRParam = funcall_array_access(son);
-                std::cout << "Function call(Real Param): arrayRParam is " << arrayRParam << std::endl;
-                // if (!arrayRParam) {
-                //     std::cerr << "Function call(Real Param):Failed to array access!" << std::endl;
-                //     return false;
-                // }
+                // std::cout << "Function call(Real Param): arrayRParam is " << arrayRParam << std::endl;
+                //  if (!arrayRParam) {
+                //      std::cerr << "Function call(Real Param):Failed to array access!" << std::endl;
+                //      return false;
+                //  }
                 if (arrayRParam == nullptr) {
                     std::cerr << "Function call(Real Param):Failed to array access, arrayRParam is nullptr!"
                               << std::endl;
@@ -629,13 +633,13 @@ bool IRGenerator::ir_add(ast_node * node)
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     // 操作数不同时进行类型转换
     if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
@@ -1339,17 +1343,6 @@ bool IRGenerator::ir_eq(ast_node * node)
     }
 
     // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
-
     auto eqInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1362,37 +1355,7 @@ bool IRGenerator::ir_eq(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(eqInst);
-
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, eqInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
     node->val = eqInst;
-
     return true;
 }
 
@@ -1582,18 +1545,6 @@ bool IRGenerator::ir_ge(ast_node * node)
         }
     }
 
-    // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
-
     auto geInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1601,41 +1552,8 @@ bool IRGenerator::ir_ge(ast_node * node)
         IRInstOperator::IRINST_OP_GE_I,
         IRInstOperator::IRINST_OP_GE_F,
         true);
-
-    // 创建临时变量保存IR的值，以及线性IR指令
-    // node->blockInsts.addInst(left->blockInsts);
-    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(geInst);
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, geInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
     node->val = geInst;
-
     return true;
 }
 
@@ -1703,18 +1621,6 @@ bool IRGenerator::ir_le(ast_node * node)
         }
     }
 
-    // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
-
     auto leInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1727,35 +1633,6 @@ bool IRGenerator::ir_le(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(leInst);
-
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, leInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
 
     node->val = leInst;
 
@@ -1827,18 +1704,6 @@ bool IRGenerator::ir_gne(ast_node * node)
         }
     }
 
-    // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
-
     auto gneInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1851,36 +1716,6 @@ bool IRGenerator::ir_gne(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(gneInst);
-
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, gneInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
-
     node->val = gneInst;
 
     return true;
@@ -1949,17 +1784,6 @@ bool IRGenerator::ir_lne(ast_node * node)
             rhs = castInst;
         }
     }
-    // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
 
     auto lneInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1968,40 +1792,7 @@ bool IRGenerator::ir_lne(ast_node * node)
         IRInstOperator::IRINST_OP_LNE_I,
         IRInstOperator::IRINST_OP_LNE_F,
         true);
-
-    // 创建临时变量保存IR的值，以及线性IR指令
-    // node->blockInsts.addInst(left->blockInsts);
-    // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(lneInst);
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, lneInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
-
     node->val = lneInst;
     return true;
 }
@@ -2114,7 +1905,7 @@ bool IRGenerator::ir_not(ast_node * node)
     // 生成IR指令：result = -expr->val
     auto notInst = UnaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        lhs,
+        cmpInst,
         IRInstOperator::IRINST_OP_NOT_I,
         IRInstOperator::IRINST_OP_NOT_F,
         true);
@@ -2264,6 +2055,17 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     ast_node * cond_node = node->sons[0];
     ast_node * if_node = node->sons[1];
     ast_node * else_node = (node->sons.size() > 2) ? node->sons[2] : nullptr;
+    bool       hasBreakContinueInIf = false;   // 防止if break continue标签与merge重复
+    bool       hasBreakContinueInElse = false; // 防止else break continue标签与merge重复
+
+    // 检测if子结点有没有break
+    for (auto node_in_if: if_node->sons) {
+        if (node_in_if->node_type == ast_operator_type::AST_OP_BREAK ||
+            node_in_if->node_type == ast_operator_type::AST_OP_CONTINUE) {
+            hasBreakContinueInIf = true;
+            break;
+        }
+    }
 
     // 获取当前函数，if块必须位于函数内
     Function * currentFunc = module->getCurrentFunction();
@@ -2272,7 +2074,27 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         return false;
     }
 
-    // 1. 创建表示 if-else 结构不同基本块入口的标签
+    // 1. 生成条件表达式的IR
+    // ir_visit_ast_node 会递归访问子节点并生成其IR。
+    // 生成的指令存储在 cond->blockInsts，结果值存储在 cond->val 中。
+    // ast_node * cond = ir_visit_ast_node(cond_node);
+    // if (!cond) {
+    //     printf("Ifelse: no condition block\n");
+    //     return false;
+    // }
+
+    // 将条件表达式生成的指令添加到当前节点的指令列表中。
+    // 这些指令将构成 if-else 结构前导基本块的一部分。
+    // node->blockInsts.addInst(cond->blockInsts);
+
+    // 获取条件表达式的值 (应为一个布尔值，如 IR 中的 i1 类型)
+    // Value * cond_val = cond->val;
+    // if (!cond_val) {
+    //     printf("Ifelse: condition has no value.\n");
+    //     return false;
+    // }
+
+    // 2. 创建表示 if-else 结构不同基本块入口的标签
     // 这些标签将在后续指令中被引用（作为跳转目标）
     // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
 
@@ -2282,6 +2104,7 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     LabelInstruction * else_label = nullptr;
     // if-else 结构结束后的汇合点标签
     LabelInstruction * merge_label = new LabelInstruction(currentFunc);
+
     // 确定条件分支的假分支目标
     // 如果有 else 块，假分支跳到 else 块的标签
     // 如果没有 else 块，假分支跳到 merge 块的标签
@@ -2289,18 +2112,36 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     if (else_node) {
         else_label = new LabelInstruction(currentFunc); // 创建 else 块的实际标签
         false_branch_target = else_label;
+        // 检测else中是否有break标签
+        for (auto node_in_else: else_node->sons) {
+            if (node_in_else->node_type == ast_operator_type::AST_OP_BREAK ||
+                node_in_else->node_type == ast_operator_type::AST_OP_CONTINUE) {
+                hasBreakContinueInElse = true;
+                break;
+            }
+        }
     } else {
         false_branch_target = merge_label;
     }
 
-    // 2. 生成条件表达式的IR
-    // 增加处理短路情况
+    // 3. 添加条件分支指令 (br i1)
+    // 这个指令紧跟在条件表达式指令之后，根据 cond_val 的布尔值决定跳转。
+    // if (!cond_val->getType()->isInt1Byte()) {
+    //     auto castToI1 = new CastInstruction(currentFunc, cond_val, IntegerType::getTypeBool());
+    //     node->blockInsts.addInst(castToI1);
+    //     cond_val = castToI1;
+    // }
+    // ConditionalInstruction * cond_branch_inst =
+    //     new ConditionalInstruction(currentFunc, cond_val, true_branch_label, false_branch_target);
+    // node->blockInsts.addInst(cond_branch_inst);
+
+    // 支持短路，添加条件分支指令。区别于遍历ir_and/or，因为其会产生额外的一个Value ValueOfLogic
     if (!gen_condition_branch(cond_node, true_branch_label, false_branch_target, node->blockInsts)) {
         // Error occurred during condition branching generation
         std::cerr << "Error generating condition branch for if-else." << std::endl;
+        // TODO: Add location info
         return false;
     }
-
     // 前导基本块（包含条件求值和条件分支）的指令已生成并添加到 node->blockInsts。
     // 接下来生成 then 块、else 块和 merge 块的指令，并按顺序添加到 node->blockInsts。
 
@@ -2323,7 +2164,9 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
     // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
     // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    if (!hasBreakContinueInIf) {
+        node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+    }
 
     // 5. 生成 else 块的IR (如果存在)
     if (else_node) {
@@ -2343,7 +2186,9 @@ bool IRGenerator::ir_ifelse(ast_node * node)
 
         // 在 else 块的末尾添加一个无条件跳转到 merge 块的指令。
         // 同 then 块，即使 else 块的最后一条指令本身是终止指令，也添加一个跳转。
-        node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+        if (!hasBreakContinueInElse) {
+            node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
+        }
     }
 
     // 6. 添加 merge 块的标签
@@ -2363,7 +2208,15 @@ bool IRGenerator::ir_while(ast_node * node)
 
     ast_node * cond_node = node->sons[0]; // 条件表达式AST节点
     ast_node * body_node = node->sons[1]; // 循环体AST节点
-
+    bool       hasBreakContinue = false;
+    // 防止break标签和while merge重复
+    for (auto nodeInWhile: body_node->sons) {
+        if (nodeInWhile->node_type == ast_operator_type::AST_OP_BREAK ||
+            nodeInWhile->node_type == ast_operator_type::AST_OP_CONTINUE) {
+            hasBreakContinue = true; // 检测循环体中是否有break语句
+            break;
+        }
+    }
     Function * currentFunc = module->getCurrentFunction(); // 获取当前函数
 
     // 1. 创建表示循环不同部分的标签
@@ -2383,6 +2236,7 @@ bool IRGenerator::ir_while(ast_node * node)
     // 或者，另一种结构是直接把 loop_header_label 作为当前 blockInsts 的第一个指令，
     // 表示当前的基本块就直接是循环头部块。这里采用先添加跳转，再添加标签的方式，
     // 这样 while 语句之前的指令和 while 语句的IR生成是分离的。
+
     node->blockInsts.addInst(new GotoInstruction(currentFunc, loop_header_label));
 
     // 3. 生成循环头部块 (条件求值和条件分支)
@@ -2445,7 +2299,9 @@ bool IRGenerator::ir_while(ast_node * node)
     // 在循环体块的末尾添加一个无条件跳转回循环头部标签的指令
     // 这是循环的关键，完成一次迭代后回到头部检查条件。
     // 使用你提供的 GotoInstruction 类。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, loop_header_label));
+    if (!hasBreakContinue) {
+        node->blockInsts.addInst(new GotoInstruction(currentFunc, loop_header_label));
+    }
 
     // 5. 生成循环出口块
     // 添加循环出口标签。这标志着循环结束后的基本块的开始。
@@ -2544,8 +2400,10 @@ bool IRGenerator::ir_leaf_node_var_id(ast_node * node)
     if (node->is_lvar || type->isArrayType()) {
         node->val = val;
     } else {
+
         auto LoadInst = new LoadInstruction(module->getCurrentFunction(), val);
         node->val = LoadInst;
+        // std::cout << node->getNodeName() << std::endl;
         // std::cout << "var name " << node->getNodeName() << std::endl;
         node->val->setName(node->name); // 设置名称
                                         // node->val->setIRName(std::string _name)
@@ -2749,7 +2607,8 @@ bool IRGenerator::ir_array_access(ast_node * node)
 
     Value * tempVal = module->findVarValue(array_name);
     Type *  type = tempVal->getType();
-    if (!type->isArrayType()) {
+    std::cout << " type  " << type->toString() << std::endl;
+    if ((!type->isArrayType()) && (!type->isPointerType())) {
         std::cerr << "Array access: Error: Expected an array type." << std::endl;
         return false;
     }
@@ -2757,9 +2616,22 @@ bool IRGenerator::ir_array_access(ast_node * node)
     int accessDims = array_dims.size();
 
     // 起始指针
-    Value * gepPtr = tempVal;
-    Type *  gepType = type;
+    Value *           gepPtr = tempVal;
+    Type *            gepType = type;
+    LoadInstruction * loadInst = nullptr;
+    if (type->isPointerType()) {
+        // 如果是指针类型，直接获取指向的类型
+        // PointerType * pointerType = new PointerType(type);
 
+        // gepPtr->setType(pointerType);
+        //std::cout << "the point type" << pointerType->toString() << std::endl;
+        loadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr);
+        node->blockInsts.addInst(loadInst);
+        gepPtr = loadInst;             // 更新 gepPtr 为加载后的值
+        gepType = loadInst->getType(); // 更新 gepType 为加载后的类型
+                                       // 获取指向的类型
+        std::cout << "gep type in point: " << gepType->toString() << std::endl;
+    }
     // 逐层调用getelementptr
     for (int i = 0; i < accessDims; ++i) {
         // 先处理索引表达式，转换成Value*
@@ -2784,12 +2656,17 @@ bool IRGenerator::ir_array_access(ast_node * node)
         if (gepType->isArrayType()) {
             auto * arrTy = static_cast<ArrayType *>(gepType);
             gepType = arrTy->getElementType();
+        } else if (gepType->isPointerType()) {
+            PointerType * pointerType = new PointerType(gepType->getPointeeType()->getPointeeType());
+
+            gepType = pointerType;
         } else {
-            // 非数组，取元素类型
-            // 这里不做进一步，gepType保持当前
+            // 否则，不能进一步推进，退出
+            break;
         }
     }
-
+    std::cout << "gep type: " << gepType->toString() << std::endl;
+    std::cout << "gepPTR type: " << gepPtr->getType()->toString() << std::endl;
     if (node->is_lvar) {
         node->val = gepPtr;
     } else {
@@ -2797,7 +2674,10 @@ bool IRGenerator::ir_array_access(ast_node * node)
         node->blockInsts.addInst(loadInst);
         node->val = loadInst; // 设置为加载后的值
     }
-
+    if (type->isPointerType()) {
+        node->val->setType(gepType); // 设置最后的类型，应该是元素指针类型
+    }
+    std::cout << "final type: " << node->val->getType()->toString() << std::endl;
     // node->val->setType(gepType); // 设置最后的类型，应该是元素指针类型
 
     return true;
@@ -2841,11 +2721,11 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
 
             node->blockInsts.addInst(gepInst);
             node->val = gepInst;
-
+            std::cout << "array type: " << node->val->getType()->toString() << std::endl;
             return node->val; // 返回最终的 gep 指令 Value*
         } else {
             // 逐层调用getelementptr
-            std::cout << "there is a array in function call  " << node->getNodeName() << std::endl;
+            // std::cout << "there is a array in function call  " << node->getNodeName() << std::endl;
             for (int i = 0; i < accessDims; ++i) {
                 // 先处理索引表达式，转换成Value*
                 ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
@@ -2890,7 +2770,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                 new PointerType(gepType)); // 指定转换类型为 GEP 到指针
             node->blockInsts.addInst(castInst);
             node->val = castInst;
-
+            std::cout << "array type: " << node->val->getType()->toString() << std::endl;
             return node->val; // 返回最终的 gep 指令 Value*
         }
 
