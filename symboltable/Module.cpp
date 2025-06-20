@@ -156,7 +156,7 @@ void Module::insertConstFloatDirectly(ConstFloat * val)
 /// @brief 新建一个整型数值的Value，并加入到符号表，用于后续释放空间
 /// @param intVal 整数值
 /// @return 常量Value
-ConstInt * Module::newConstInt(int32_t intVal)
+ConstInt * Module::newConstInt(uint32_t intVal)
 {
     // 查找整数字符串
     ConstInt * val = findConstInt(intVal);
@@ -174,7 +174,7 @@ ConstInt * Module::newConstInt(int32_t intVal)
 /// @brief 根据整数值获取当前符号
 /// \param name 变量名
 /// \return 变量对应的值
-ConstInt * Module::findConstInt(int32_t val)
+ConstInt * Module::findConstInt(uint32_t val)
 {
     ConstInt * temp = nullptr;
 

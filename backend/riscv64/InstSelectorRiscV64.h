@@ -223,7 +223,7 @@ protected:
     ///
     /// @brief 简单的朴素寄存器分配方法
     ///
-    SimpleRegisterAllocatorRicsV64 & simpleRegisterAllocator;
+    SimpleRegisterAllocatorRiscV64 & simpleRegisterAllocator;
 
     ///
     /// @brief 函数实参累计
@@ -245,7 +245,7 @@ public:
     /// @param _iloc 后端指令
     InstSelectorRiscV64(
         std::vector<Instruction *> & _irCode, ILocRiscV64 & _iloc, Function * _func,
-        SimpleRegisterAllocatorRicsV64 & allocator);
+        SimpleRegisterAllocatorRiscV64 & allocator);
 
     ///
     /// @brief 析构函数

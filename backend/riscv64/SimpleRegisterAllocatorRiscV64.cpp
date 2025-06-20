@@ -1,5 +1,5 @@
 ///
-/// @file SimpleRegisterAllocatorRicsV64.cpp
+/// @file SimpleRegisterAllocatorRiscV64.cpp
 /// @brief 简单或朴素的寄存器分配器
 /// @author zenglj (zenglj@live.com)
 /// @version 1.0
@@ -19,7 +19,7 @@
 ///
 /// @brief Construct a new Simple Register Allocator object
 ///
-SimpleRegisterAllocatorRicsV64::SimpleRegisterAllocatorRicsV64()
+SimpleRegisterAllocatorRiscV64::SimpleRegisterAllocatorRiscV64()
 {}
 
 ///
@@ -27,7 +27,7 @@ SimpleRegisterAllocatorRicsV64::SimpleRegisterAllocatorRicsV64()
 /// @return int 寄存器编号
 /// @param no 指定的寄存器编号
 ///
-int SimpleRegisterAllocatorRicsV64::Allocate(Value * var, int32_t no)
+int SimpleRegisterAllocatorRiscV64::Allocate(Value * var, int32_t no)
 {
     if (var && (var->getLoadRegId() != -1)) {
         // 该变量已经分配了Load寄存器了，不需要再次分配
@@ -92,7 +92,7 @@ int SimpleRegisterAllocatorRicsV64::Allocate(Value * var, int32_t no)
 /// @brief 强制占用一个指定的寄存器。如果寄存器被占用，则强制寄存器关联的变量溢出
 /// @param no 要分配的寄存器编号
 ///
-void SimpleRegisterAllocatorRicsV64::Allocate(int32_t no)
+void SimpleRegisterAllocatorRiscV64::Allocate(int32_t no)
 {
     if (regBitmap.test(no)) {
 
@@ -110,7 +110,7 @@ void SimpleRegisterAllocatorRicsV64::Allocate(int32_t no)
 /// @brief 将变量对应的load寄存器标记为空闲状态
 /// @param var 变量
 ///
-void SimpleRegisterAllocatorRicsV64::free(Value * var)
+void SimpleRegisterAllocatorRiscV64::free(Value * var)
 {
     if (var && (var->getLoadRegId() != -1)) {
 
@@ -125,7 +125,7 @@ void SimpleRegisterAllocatorRicsV64::free(Value * var)
 /// @brief 将寄存器no标记为空闲状态
 /// @param no 寄存器编号
 ///
-void SimpleRegisterAllocatorRicsV64::free(int32_t no)
+void SimpleRegisterAllocatorRiscV64::free(int32_t no)
 {
     // 无效寄存器，什么都不做，直接返回
     if (no == -1) {
@@ -151,7 +151,7 @@ void SimpleRegisterAllocatorRicsV64::free(int32_t no)
 /// @brief 寄存器被置位，使用过的寄存器被置位
 /// @param no
 ///
-void SimpleRegisterAllocatorRicsV64::bitmapSet(int32_t no)
+void SimpleRegisterAllocatorRiscV64::bitmapSet(int32_t no)
 {
     regBitmap.set(no);
     usedBitmap.set(no);

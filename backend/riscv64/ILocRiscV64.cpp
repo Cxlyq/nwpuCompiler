@@ -188,13 +188,14 @@ std::list<RiscInst *> & ILocRiscV64::getCode()
 /**
  * 数字变字符串，若flag为真，则变为立即数寻址（加#）
  */
+// TODO:[立即数]修改立即数逻辑
 std::string ILocRiscV64::toStr(int num, bool flag)
 {
     std::string ret;
 
-    if (flag) {
-        ret = "#";
-    }
+    // if (flag) {
+    //     ret = "#";
+    // }
 
     ret += std::to_string(num);
 
@@ -245,18 +246,44 @@ void ILocRiscV64::comment(std::string str)
     emit("@", str);
 }
 
-/*
-    加载立即数 ldr r0,=#100
-*/
-void ILocRiscV64::load_imm(int rs_reg_no, int constant)
+/// @brief 加载立即数 li r0,100
+/// @param rs_reg_no 结果寄存器号
+/// @param constant 立即数
+void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
 {
-    int upper = constant >> 12;
-    int lower = constant & 0xFFF;
+    // if (constant <= 2047 && constant >= -2048) {
+    //     // 如果常量在 -2048 到 2047 之间，可以直接使用 addi 指令
+    //     emit("addi", PlatformRiscV64::regName[rs_reg_no], "zero", std::to_string(constant));
+    // } else if (constant && 0xFFFFF000 == 0) {
+    //     // 如果常量是 0xFFF00000 的倍数，可以直接使用 lui 指令
+    //     emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant >> 12));
+    //     return;
+    // } else {
+    //     int upper = constant >> 12;
+    //     int lower = constant & 0xFFF;
 
-    emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(upper));
-    if (lower != 0) {
-        emit("addi", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[rs_reg_no], std::to_string(lower));
-    }
+    //     emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(upper));
+    //     if (lower != 0) {
+    //         emit(
+    //             "addi",
+    //             PlatformRiscV64::regName[rs_reg_no],
+    //             PlatformRiscV64::regName[rs_reg_no],
+    //             std::to_string(lower));
+    //     }
+    // }
+    if (rs_reg_no == -1) {
+        minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
+		return;
+	}
+    emit("li", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant));
+}
+
+/// @brief 加载立即数 li r0,100.0
+/// @param rs_reg_no 结果寄存器号
+/// @param constant 立即数
+void ILocRiscV64::load_imm(int rs_reg_no, float constant)
+{
+	//TODO:[浮点数] 加载浮点立即数到寄存器
 }
 
 /// @brief 加载符号值 ldr r0,=g ldr r0,=.L1
@@ -281,10 +308,18 @@ void ILocRiscV64::load_base(int rs_reg_no, int base_reg_no, int offset)
 {
     std::string rsReg = PlatformRiscV64::regName[rs_reg_no];
     std::string base = PlatformRiscV64::regName[base_reg_no];
-    std::string offset_str = std::to_string(offset);
+    std::string offset_str = toStr(offset);
+    if (rs_reg_no >= 0 && rs_reg_no < 32) {
+        // RISC-V64 的加载指令 lw rd, offset(base)
+        emit("lw", rsReg, offset_str + "(" + base + ")");
+    } else if (rs_reg_no >= 32 && rs_reg_no < 64) {
+		// 对于RISC-V64，使用 flw 指令加载浮点寄存器
+		emit("flw", rsReg, offset_str + "(" + base + ")");
+	} else {
+		minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
+	}
 
-    // RISC-V64 的加载指令 lw rd, offset(base)
-    emit("lw", rsReg, offset_str + "(" + base + ")");
+
 }
 
 /// @brief 基址寻址
@@ -292,13 +327,20 @@ void ILocRiscV64::load_base(int rs_reg_no, int base_reg_no, int offset)
 /// @param base_reg_no 基址寄存器
 /// @param disp 偏移
 /// @param tmp_reg_no 可能需要临时寄存器编号
-void ILocRiscV64::store_base(int src_reg_no, int base_reg_no, int disp, int tmp_reg_no)
+void ILocRiscV64::store_base(int src_reg_no, int base_reg_no, int offset)
 {
     std::string base = PlatformRiscV64::regName[base_reg_no];
     std::string srcReg = PlatformRiscV64::regName[src_reg_no];
-
-    std::string disp_str = std::to_string(disp);
-    emit("sw", srcReg, disp_str + "(" + base + ")");
+    std::string offset_str = toStr(offset);
+    if (src_reg_no >= 0 && src_reg_no < 32) {
+		// RISC-V64 的存储指令 sw rs, offset(base)
+		emit("sw", srcReg, offset_str + "(" + base + ")");
+	} else if (src_reg_no >= 32 && src_reg_no < 64) {
+		// 对于RISC-V64，使用 fsw 指令存储浮点寄存器
+		emit("fsw", srcReg, offset_str + "(" + base + ")");
+	} else {
+		minic_log(LOG_ERROR, "BUG: Invalid register number for source register: %d", src_reg_no);
+	}
 }
 
 /// @brief 寄存器Mov操作
@@ -312,22 +354,24 @@ void ILocRiscV64::mov_reg(int rs_reg_no, int src_reg_no)
 /// @brief 加载变量到寄存器，保证将变量放到reg中
 /// @param rs_reg_no 结果寄存器
 /// @param src_var 源操作数
-void ILocRiscV64::load_var(int rs_reg_no, Value * src_var)
+void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int addr_reg_no)
 {
     if (Instanceof(constVal, ConstInt *, src_var)) {
         // 整型常量
         load_imm(rs_reg_no, constVal->getVal());
+    } else if (Instanceof(constVal, ConstFloat *, src_var)) {
+        // 浮点型常量
+        load_imm(rs_reg_no, constVal->getVal());
     } else if (src_var->getRegId() != -1) {
         // 源操作数为寄存器变量
-        int32_t src_regId = src_var->getRegId();
+        int src_regId = src_var->getRegId();
         if (src_regId != rs_reg_no) {
             mov_reg(rs_reg_no, src_regId);
         }
     } else if (Instanceof(globalVar, GlobalVariable *, src_var)) {
         // 全局变量
-        load_symbol(rs_reg_no, globalVar->getName());
-        std::string rsReg = PlatformRiscV64::regName[rs_reg_no];
-        emit("lw", rsReg, "0(" + rsReg + ")");
+        load_symbol(addr_reg_no, globalVar->getName());
+        load_base(rs_reg_no, addr_reg_no, 0); // 全局变量地址加载到寄存器
     } else {
         // 栈+偏移的寻址方式
         int32_t var_baseRegId = -1;
@@ -373,18 +417,16 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
 {
     // 被保存目标变量肯定不是常量
 
-    if (dest_var->getRegId() != -1) {
+    if (Instanceof(localVar, LocalVariable *, dest_var)) {
         // 寄存器变量
-        int dest_reg_id = dest_var->getRegId();
+        int dest_reg_id = localVar->getRegId();
         if (src_reg_no != dest_reg_id) {
             mov_reg(dest_reg_id, src_reg_no);
         }
     } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
         // 全局变量
         load_symbol(tmp_reg_no, globalVar->getName());
-        std::string srcReg = PlatformRiscV64::regName[src_reg_no];
-        std::string tmpReg = PlatformRiscV64::regName[tmp_reg_no];
-        emit("sw", srcReg, "0(" + tmpReg + ")");
+        store_base(src_reg_no, tmp_reg_no, 0);
     } else {
         // 对于局部变量，则直接从栈基址+偏移寻址
 
@@ -397,7 +439,7 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
         if (!result) {
             minic_log(LOG_ERROR, "BUG");
         }
-        store_base(src_reg_no, dest_baseRegId, dest_offset, tmp_reg_no);
+        store_base(src_reg_no, dest_baseRegId, dest_offset);
     }
 }
 
