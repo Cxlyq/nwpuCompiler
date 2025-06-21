@@ -745,23 +745,23 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
         std::cout << "[InstSelectorRiscV64::translate_store] src is Instruction, regid=" << src_regId << "\n";
     } else if (Instanceof(LVSrc, LocalVariable *, src)) {
         src_regId = LVSrc->getRegId();
-        std::cout << "[InstSelectorRiscV64::translate_store] src is LocalVariable, regid=" << src_regId <<"\n";
+        std::cout << "[InstSelectorRiscV64::translate_store] src is LocalVariable, regid=" << src_regId << "\n";
     } else if (Instanceof(GLSrc, GlobalVariable *, src)) {
         src_regId = GLSrc->getRegId();
         std::cout << "[InstSelectorRiscV64::translate_store] src is GlobalVariable, regid=" << src_regId << "\n";
     } else if (Instanceof(ConstIntSrc, ConstInt *, src)) {
         std::cout << "[InstSelectorRiscV64::translate_store] src is ConstInt\n";
-        iloc.load_imm(dst_regId, ConstIntSrc->getVal());
+        iloc.load_imm(src_regId, ConstIntSrc->getVal());
         return;
         // TODO:[指令指派]增添浮点数处理
     } else {
         // 源操作数不是寄存器，则必须是内存变量
-		minic_log(
-			LOG_ERROR,
-			"存储指令源操作数不是寄存器,数据类型为(未知0，常量1，变量2，立即数3):%s,变量类型为",
-			typeid(src).name());
-		return;
-	}
+        minic_log(
+            LOG_ERROR,
+            "存储指令源操作数不是寄存器,数据类型为(未知0，常量1，变量2，立即数3):%s,变量类型为",
+            typeid(src).name());
+        return;
+    }
     if (src_regId == -1) {
         // 源操作数不是寄存器，则必须是内存变量
         minic_log(
@@ -821,22 +821,21 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
     }
 
     dst_regId = inst->getRegId();
-	if (dst_regId != -1) {
-		// 目标操作数是寄存器，则直接加载到寄存器中
-		iloc.load_var(dst_regId, inst);
-	} else {
-		// 目标操作数是内存变量，则需要先load到寄存器中
-		int32_t temp_regno = simpleRegisterAllocator.Allocate();
+    if (dst_regId != -1) {
+        // 目标操作数是寄存器，则直接加载到寄存器中
+        iloc.load_var(dst_regId, inst);
+    } else {
+        // 目标操作数是内存变量，则需要先load到寄存器中
+        int32_t temp_regno = simpleRegisterAllocator.Allocate();
 
-		// temp <- src
-		iloc.load_var(temp_regno, inst);
+        // temp <- src
+        iloc.load_var(temp_regno, inst);
 
-		//  -> dst
-		iloc.store_var(temp_regno, inst, RISCV64_TMP_REG_NO);
+        //  -> dst
+        iloc.store_var(temp_regno, inst, RISCV64_TMP_REG_NO);
 
-		simpleRegisterAllocator.free(temp_regno);
+        simpleRegisterAllocator.free(temp_regno);
     }
-
 }
 
 /// @brief Cast指令翻译成RISCV64汇编
