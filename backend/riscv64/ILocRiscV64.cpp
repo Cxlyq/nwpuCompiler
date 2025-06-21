@@ -228,7 +228,7 @@ void ILocRiscV64::inst(std::string op, std::string rs, std::string arg1)
     emit(op, rs, arg1);
 }
 
-/// @brief 一个操作数指令
+/// @brief 两个操作数指令
 /// @param op 操作码
 /// @param rs 操作数
 /// @param arg1 源操作数
@@ -273,8 +273,8 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
     // }
     if (rs_reg_no == -1) {
         minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
-		return;
-	}
+        return;
+    }
     emit("li", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant));
 }
 
@@ -283,7 +283,7 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
 /// @param constant 立即数
 void ILocRiscV64::load_imm(int rs_reg_no, float constant)
 {
-	//TODO:[浮点数] 加载浮点立即数到寄存器
+    // TODO:[浮点数] 加载浮点立即数到寄存器
 }
 
 /// @brief 加载符号值 ldr r0,=g ldr r0,=.L1
@@ -313,13 +313,11 @@ void ILocRiscV64::load_base(int rs_reg_no, int base_reg_no, int offset)
         // RISC-V64 的加载指令 lw rd, offset(base)
         emit("lw", rsReg, offset_str + "(" + base + ")");
     } else if (rs_reg_no >= 32 && rs_reg_no < 64) {
-		// 对于RISC-V64，使用 flw 指令加载浮点寄存器
-		emit("flw", rsReg, offset_str + "(" + base + ")");
-	} else {
-		minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
-	}
-
-
+        // 对于RISC-V64，使用 flw 指令加载浮点寄存器
+        emit("flw", rsReg, offset_str + "(" + base + ")");
+    } else {
+        minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
+    }
 }
 
 /// @brief 基址寻址
@@ -333,14 +331,14 @@ void ILocRiscV64::store_base(int src_reg_no, int base_reg_no, int offset)
     std::string srcReg = PlatformRiscV64::regName[src_reg_no];
     std::string offset_str = toStr(offset);
     if (src_reg_no >= 0 && src_reg_no < 32) {
-		// RISC-V64 的存储指令 sw rs, offset(base)
-		emit("sw", srcReg, offset_str + "(" + base + ")");
-	} else if (src_reg_no >= 32 && src_reg_no < 64) {
-		// 对于RISC-V64，使用 fsw 指令存储浮点寄存器
-		emit("fsw", srcReg, offset_str + "(" + base + ")");
-	} else {
-		minic_log(LOG_ERROR, "BUG: Invalid register number for source register: %d", src_reg_no);
-	}
+        // RISC-V64 的存储指令 sw rs, offset(base)
+        emit("sw", srcReg, offset_str + "(" + base + ")");
+    } else if (src_reg_no >= 32 && src_reg_no < 64) {
+        // 对于RISC-V64，使用 fsw 指令存储浮点寄存器
+        emit("fsw", srcReg, offset_str + "(" + base + ")");
+    } else {
+        minic_log(LOG_ERROR, "BUG: Invalid register number for source register: %d", src_reg_no);
+    }
 }
 
 /// @brief 寄存器Mov操作

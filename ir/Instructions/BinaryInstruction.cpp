@@ -202,6 +202,27 @@ void BinaryInstruction::toString(std::string & str)
             str = getIRName() + " = fcmp olt " + src1->getType()->toString() + " " + src1->getIRName() + ", " +
                   src2->getIRName();
             break;
+        case IRInstOperator::IRINST_OP_NEG_I:
+            // 整数单目负指令，一元运算
+            str = getIRName() + " = sub nsw " + src1->getType()->toString() + " " + src1->getIRName() + ", " +
+                  src2->getIRName();
+            break;
+        case IRInstOperator::IRINST_OP_NEG_F:
+            // 浮点数单目负指令，一元运算
+            str = getIRName() + " = fsub " + src1->getType()->toString() + " " + src1->getIRName() + ", " +
+                  src2->getIRName();
+            break;
+        case IRInstOperator::IRINST_OP_NOT_I:
+            // 整数逻辑非指令，一元运算
+            str = getIRName() + " = xor " + src1->getType()->toString() + " " + src1->getIRName() + ", true";
+
+            break;
+
+        case IRInstOperator::IRINST_OP_NOT_F:
+            // 浮点逻辑非指令，一元运算
+            str = getIRName() + " = xor " + src1->getType()->toString() + " " + src1->getIRName() + ", true";
+
+            break;
 
         default:
             // 未知指令
