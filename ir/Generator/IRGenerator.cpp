@@ -323,7 +323,7 @@ bool IRGenerator::ir_function_define(ast_node * node)
 
     // XXX:取消了出口指令，但上述似乎有一处添加了
     //  添加函数出口Label指令，主要用于return语句跳转到这里进行函数的退出
-    // irCode.addInst(exitLabelInst);
+    irCode.addInst(exitLabelInst);
 
     // 函数出口指令
     auto * loadExit = new LoadInstruction(newFunc, newFunc->getReturnValue());
@@ -2060,7 +2060,7 @@ bool IRGenerator::ir_return(ast_node * node)
     }
 
     // 跳转到函数的尾部出口指令上
-    // node->blockInsts.addInst(new GotoInstruction(currentFunc, currentFunc->getExitLabel()));
+    node->blockInsts.addInst(new GotoInstruction(currentFunc, currentFunc->getExitLabel()));
 
     return true;
 }
@@ -2074,15 +2074,19 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     ast_node * cond_node = node->sons[0];
     ast_node * if_node = node->sons[1];
     ast_node * else_node = (node->sons.size() > 2) ? node->sons[2] : nullptr;
-    bool       hasBreakContinueInIf = false;   // 防止if break continue标签与merge重复
+    bool       hasBreakContinueInIf = false; // 防止if break continue标签与merge重复
+    bool       hasReturnInIf = false;
     bool       hasBreakContinueInElse = false; // 防止else break continue标签与merge重复
+    bool       hasReturnInElse = false;
 
-    // 检测if子结点有没有break
+    // 检测if子结点有没有break continue return
     for (auto node_in_if: if_node->sons) {
         if (node_in_if->node_type == ast_operator_type::AST_OP_BREAK ||
             node_in_if->node_type == ast_operator_type::AST_OP_CONTINUE) {
             hasBreakContinueInIf = true;
-            break;
+        }
+        if (node_in_if->node_type == ast_operator_type::AST_OP_RETURN) {
+            hasReturnInIf = true;
         }
     }
 
@@ -2136,11 +2140,17 @@ bool IRGenerator::ir_ifelse(ast_node * node)
             if (node_in_else->node_type == ast_operator_type::AST_OP_BREAK ||
                 node_in_else->node_type == ast_operator_type::AST_OP_CONTINUE) {
                 hasBreakContinueInElse = true;
-                break;
+            }
+            if (node_in_else->node_type == ast_operator_type::AST_OP_RETURN) {
+                hasReturnInElse = true;
+                // false_branch_target = currentFunc->getExitLabel(); // 如果else中有return，则假分支直接跳转到exit
             }
         }
     } else {
         false_branch_target = merge_label;
+        // if (hasReturnInIf) {
+        //     false_branch_target = currentFunc->getExitLabel(); // 如果if中有return，则假分支直接跳转到exit
+        // }
     }
 
     // 3. 添加条件分支指令 (br i1)
@@ -2183,7 +2193,8 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
     // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
     // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    if (!hasBreakContinueInIf) {
+    if (!hasBreakContinueInIf &&
+        !hasReturnInIf) { // ! 注意，如果if语句有break, continue, return，其本身的跳转标签会与 merge_label 重复
         node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
     }
 
@@ -2205,13 +2216,15 @@ bool IRGenerator::ir_ifelse(ast_node * node)
 
         // 在 else 块的末尾添加一个无条件跳转到 merge 块的指令。
         // 同 then 块，即使 else 块的最后一条指令本身是终止指令，也添加一个跳转。
-        if (!hasBreakContinueInElse) {
+        if (!hasBreakContinueInElse &&
+            !hasReturnInElse) { // ! 注意，如果else语句有break, continue, return，其本身的跳转标签会与 merge_label 重复
             node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
         }
     }
 
     // 6. 添加 merge 块的标签
     // 这是 if-else 结构之后所有代码开始的地方。then 块和 else 块（如果存在）都会跳转到这里。
+
     node->blockInsts.addInst(merge_label);
 
     // if-else 语句本身不产生值，所以 node->val 保持 nullptr。
