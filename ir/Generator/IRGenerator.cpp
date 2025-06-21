@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -91,7 +92,8 @@ IRGenerator::IRGenerator(ast_node * _root, Module * _module) : root(_root), modu
     /* 语句 */
     ast2ir_handlers[ast_operator_type::AST_OP_ASSIGN] = &IRGenerator::ir_assign;
     ast2ir_handlers[ast_operator_type::AST_OP_RETURN] = &IRGenerator::ir_return;
-    ast2ir_handlers[ast_operator_type::AST_OP_IFELSE] = &IRGenerator::ir_ifelse;
+    // !if else不再交由ir_visit_ast_node处理，因为其merge标签的特殊性。将交由ir_block特殊处理
+    // ast2ir_handlers[ast_operator_type::AST_OP_IFELSE] = &IRGenerator::ir_ifelse;
     ast2ir_handlers[ast_operator_type::AST_OP_WHILE] = &IRGenerator::ir_while;
     ast2ir_handlers[ast_operator_type::AST_OP_BREAK] = &IRGenerator::ir_break;
     ast2ir_handlers[ast_operator_type::AST_OP_CONTINUE] = &IRGenerator::ir_continue;
@@ -581,11 +583,31 @@ bool IRGenerator::ir_block(ast_node * node)
         module->enterScope();
     }
 
-    std::vector<ast_node *>::iterator pIter;
-    for (pIter = node->sons.begin(); pIter != node->sons.end(); ++pIter) {
-
+    // std::vector<ast_node *>::iterator pIter;
+    for (auto base_node: node->sons) {
         // 遍历Block的每个语句，进行显示或者运算
-        ast_node * temp = ir_visit_ast_node(*pIter);
+
+        // 特殊处理if_else语句
+        if (base_node->node_type == ast_operator_type::AST_OP_IFELSE) {
+            // 为什么malloc会出问题？ LabelInstruction * mergeLabel = (LabelInstruction *)
+            // malloc(sizeof(LabelInstruction));
+            bool               stopTranslateBlock = false;
+            LabelInstruction * mergeLabel = ir_ifelse(base_node, &stopTranslateBlock);
+            if (!mergeLabel) {
+                std::cerr << "IRGenerator::ir_block: mergeLabel is nullptr!" << std::endl;
+                return false;
+            }
+            node->blockInsts.addInst(base_node->blockInsts); // 添加if else语句
+            if (stopTranslateBlock) {
+                break; //  if else里均存在return，不生成merge标签，不再翻译后续语句。
+            } else {
+                // 如果ifelse没有结束，则需要将mergeLabel添加到blockInsts中
+                node->blockInsts.addInst(mergeLabel); // 添加merge标签
+                continue;                             // 继续处理下一个语句
+            }
+        }
+
+        ast_node * temp = ir_visit_ast_node(base_node);
         if (!temp) {
             return false;
         }
@@ -2065,7 +2087,8 @@ bool IRGenerator::ir_return(ast_node * node)
     return true;
 }
 
-bool IRGenerator::ir_ifelse(ast_node * node)
+/// @return merge label
+LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateBlock)
 {
     // AST 节点结构:
     // node->sons[0] 是条件表达式
@@ -2094,7 +2117,7 @@ bool IRGenerator::ir_ifelse(ast_node * node)
     Function * currentFunc = module->getCurrentFunction();
     if (!currentFunc) {
         std::cerr << "Error: If-else outside function." << std::endl;
-        return false;
+        return nullptr;
     }
 
     // 1. 生成条件表达式的IR
@@ -2143,14 +2166,10 @@ bool IRGenerator::ir_ifelse(ast_node * node)
             }
             if (node_in_else->node_type == ast_operator_type::AST_OP_RETURN) {
                 hasReturnInElse = true;
-                // false_branch_target = currentFunc->getExitLabel(); // 如果else中有return，则假分支直接跳转到exit
             }
         }
     } else {
         false_branch_target = merge_label;
-        // if (hasReturnInIf) {
-        //     false_branch_target = currentFunc->getExitLabel(); // 如果if中有return，则假分支直接跳转到exit
-        // }
     }
 
     // 3. 添加条件分支指令 (br i1)
@@ -2169,7 +2188,7 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         // Error occurred during condition branching generation
         std::cerr << "Error generating condition branch for if-else." << std::endl;
         // TODO: Add location info
-        return false;
+        return nullptr;
     }
     // 前导基本块（包含条件求值和条件分支）的指令已生成并添加到 node->blockInsts。
     // 接下来生成 then 块、else 块和 merge 块的指令，并按顺序添加到 node->blockInsts。
@@ -2184,7 +2203,7 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         // if 块生成失败
         // 注意：即使 if 块为空（例如 `{}`），ir_visit_ast_node 也应该成功，返回一个 blockInsts 为空的节点。
         printf("if block generate failed.\n");
-        return false;
+        return nullptr;
     }
     // 将 if 块生成的指令添加到当前节点的指令列表中。
     node->blockInsts.addInst(ifBlock->blockInsts);
@@ -2209,7 +2228,7 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         if (!elseBlock) {
             // else 块生成失败
             printf("else block generate failed.\n");
-            return false;
+            return nullptr;
         }
         // 将 else 块生成的指令添加到当前节点的指令列表中。
         node->blockInsts.addInst(elseBlock->blockInsts);
@@ -2222,14 +2241,19 @@ bool IRGenerator::ir_ifelse(ast_node * node)
         }
     }
 
-    // 6. 添加 merge 块的标签
+    // ! 6. 交由block判断是否添加 merge 块的标签
     // 这是 if-else 结构之后所有代码开始的地方。then 块和 else 块（如果存在）都会跳转到这里。
-
-    node->blockInsts.addInst(merge_label);
+    // node->blockInsts.addInst(merge_label);// 将 merge_label 传递给调用者，供后续使用。
+    bool * stop = new bool;
+    if (hasReturnInIf && hasReturnInElse) {
+        *stop = true;
+    } else {
+        *stop = false; // 如果没有全部 return，则继续翻译后续代码
+    }
+    *stopTranslateBlock = *stop;
 
     // if-else 语句本身不产生值，所以 node->val 保持 nullptr。
-
-    return true;
+    return merge_label;
 }
 
 bool IRGenerator::ir_while(ast_node * node)
