@@ -1845,7 +1845,7 @@ bool IRGenerator::ir_neg(ast_node * node)
     }
 
     node->blockInsts.addInst(expr->blockInsts);
-    Value * lhs = expr->val;
+    Value * rhs = expr->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     // if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
     //     // printf("yes,left\n");
@@ -1855,11 +1855,18 @@ bool IRGenerator::ir_neg(ast_node * node)
     //     node->blockInsts.addInst(LoadInst);
     // }
     //
+    Value * zero;
 
+    if (rhs->getType()->isIntegerType()) {
+        zero = module->newConstInt(0);
+    } else {
+        zero = module->newConstFloat(0.0);
+    }
     // 生成IR指令：result = -expr->val
-    auto negInst = UnaryInstruction::createAutoTyped(
+    auto negInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
-        lhs,
+        zero,
+        rhs,
         IRInstOperator::IRINST_OP_NEG_I,
         IRInstOperator::IRINST_OP_NEG_F);
 
@@ -1895,7 +1902,13 @@ bool IRGenerator::ir_not(ast_node * node)
     //     lhs->setType(module->findVarValue(expr->name)->getType());
     //     node->blockInsts.addInst(LoadInst);
     // }
-    Value * zero = module->newConstInt(0);
+    Value * zero;
+
+    if (lhs->getType()->isIntegerType()) {
+        zero = module->newConstInt(0);
+    } else {
+        zero = module->newConstFloat(0.0);
+    }
 
     auto cmpInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1906,10 +1919,12 @@ bool IRGenerator::ir_not(ast_node * node)
         true);
     node->blockInsts.addInst(cmpInst);
 
+    Value * one = module->newConstInt(1);
     // 生成IR指令：result = -expr->val
-    auto notInst = UnaryInstruction::createAutoTyped(
+    auto notInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         cmpInst,
+        one,
         IRInstOperator::IRINST_OP_NOT_I,
         IRInstOperator::IRINST_OP_NOT_F,
         true);

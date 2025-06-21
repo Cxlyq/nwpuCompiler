@@ -304,7 +304,7 @@ std::unordered_map<Value *, int> GraphColoringRegisterAllocator::getColorMap() c
 ///
 /// @brief 分配一个寄存器。如果没有，则选取寄存器中最晚使用的寄存器，同时溢出寄存器到变量中
 /// @return int 寄存器编号
-// 新增以适配SimpleRegisterAllocatorRicsV64接口
+// 新增以适配SimpleRegisterAllocatorRiscV64接口
 int GraphColoringRegisterAllocator::Allocate(Value * var, int32_t no)
 {
     if (var && (var->getRegId() != -1)) {

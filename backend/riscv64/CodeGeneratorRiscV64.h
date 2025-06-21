@@ -66,5 +66,5 @@ private:
     ///
     /// @brief 简单的朴素寄存器分配方法
     ///
-    SimpleRegisterAllocatorRicsV64 simpleRegisterAllocator;
+    SimpleRegisterAllocatorRiscV64 simpleRegisterAllocator;
 };

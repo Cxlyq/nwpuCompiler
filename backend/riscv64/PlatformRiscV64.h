@@ -8,6 +8,7 @@
 #define RISCV64_TMP_REG_NO 5
 
 // 栈寄存器SP和FP
+#define RISCV64_ZERO_REG_NO 0 // x0
 #define RISCV64_SP_REG_NO 2
 #define RISCV64_FP_REG_NO 8
 

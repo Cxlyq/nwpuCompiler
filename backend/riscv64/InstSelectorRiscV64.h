@@ -185,6 +185,11 @@ protected:
     /// @param operator_name 操作码
     void translate_two_operator(Instruction * inst, string operator_name);
 
+    // /// @brief 一元操作指令翻译成RISCV64汇编
+    // /// @param inst IR指令
+    // /// @param operator_name 操作码
+    // void translate_one_operator(Instruction * inst, string operator_name);
+
     /// @brief 函数调用指令翻译成RISCV64汇编
     /// @param inst IR指令
     void translate_call(Instruction * inst);
@@ -223,7 +228,7 @@ protected:
     ///
     /// @brief 简单的朴素寄存器分配方法
     ///
-    SimpleRegisterAllocatorRicsV64 & simpleRegisterAllocator;
+    SimpleRegisterAllocatorRiscV64 & simpleRegisterAllocator;
 
     ///
     /// @brief 函数实参累计
@@ -245,7 +250,7 @@ public:
     /// @param _iloc 后端指令
     InstSelectorRiscV64(
         std::vector<Instruction *> & _irCode, ILocRiscV64 & _iloc, Function * _func,
-        SimpleRegisterAllocatorRicsV64 & allocator);
+        SimpleRegisterAllocatorRiscV64 & allocator);
 
     ///
     /// @brief 析构函数

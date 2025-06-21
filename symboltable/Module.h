@@ -119,7 +119,7 @@ public:
     /// @brief 新建一个整型数值的Value，并加入到符号表，用于后续释放空间
     /// \param intVal 整数值
     /// \return 临时Value
-    ConstInt * newConstInt(int32_t intVal);
+    ConstInt * newConstInt(uint32_t intVal);
 
     /// @brief 新建一个浮点数值的Value，并加入到符号表，用于后续释放空间
     /// \param floatVal 浮点数值
@@ -177,7 +177,7 @@ protected:
     /// @brief 根据整数值获取当前符号
     /// \param name 变量名
     /// \return 变量对应的值
-    ConstInt * findConstInt(int32_t val);
+    ConstInt * findConstInt(uint32_t val);
 
     /// @brief 根据浮点值获取当前符号
     /// @param name 变量名

@@ -95,14 +95,9 @@ class ILocRiscV64 {
     void leaStack(int rs_reg_no, int base_reg_no, int offset);
 
 public:
-    /// @brief 加载立即数 li r0,=#100
-    /// @param rs_reg_no 结果寄存器号
-    /// @param num 立即数
-    void load_imm(int rs_reg_no, int num);
-
-    /// @brief 构造函数
-    /// @param _module 符号表-模块
-    ILocRiscV64(Module * _module);
+	/// @brief 构造函数
+	/// @param _module 符号表-模块
+	ILocRiscV64(Module * _module);
 
     /// @brief 析构函数
     ~ILocRiscV64();
@@ -123,18 +118,28 @@ public:
     /// @return 代码序列
     std::list<RiscInst *> & getCode();
 
+    /// @brief 加载立即数 li r0,100
+    /// @param rs_reg_no 结果寄存器号
+    /// @param constant 立即数
+    void load_imm(int rs_reg_no, int32_t num);
+
+    /// @brief 加载立即数 li r0,100.0
+    /// @param rs_reg_no 结果寄存器号
+    /// @param constant 立即数
+    void load_imm(int rs_reg_no, float constant);
+
     /// @brief Load指令，基址寻址 lw xN, offset(base)
     /// @param rs_reg_no 结果寄存器
     /// @param base_reg_no 基址寄存器
     /// @param disp 偏移
-    void load_base(int rs_reg_no, int base_reg_no, int disp);
+    void load_base(int rs_reg_no, int base_reg_no, int offset);
 
     /// @brief Store指令，基址寻址 sw xN, offset(base)
     /// @param src_reg_no 源寄存器
     /// @param base_reg_no 基址寄存器
     /// @param disp 偏移
     /// @param tmp_reg_no 可能需要临时寄存器编号
-    void store_base(int src_reg_no, int base_reg_no, int disp, int tmp_reg_no);
+    void store_base(int src_reg_no, int base_reg_no, int disp);
 
     /// @brief 标签指令
     /// @param name
@@ -161,7 +166,7 @@ public:
     /// @brief 加载变量到寄存器
     /// @param rs_reg_no 结果寄存器
     /// @param var 变量
-    void load_var(int rs_reg_no, Value * var);
+    void load_var(int rs_reg_no, Value * var, int addr_reg_no = -1);
 
     /// @brief 加载变量地址到寄存器
     /// @param rs_reg_no 结果寄存器
@@ -172,7 +177,7 @@ public:
     /// @param src_reg_no 源寄存器号
     /// @param var 变量
     /// @param addr_reg_no 地址寄存器号
-    void store_var(int src_reg_no, Value * var, int addr_reg_no);
+    void store_var(int src_reg_no, Value * var, int addr_reg_no = -1);
 
     /// @brief 寄存器Mov操作
     /// @param rs_reg_no 结果寄存器

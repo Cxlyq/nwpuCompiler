@@ -43,7 +43,6 @@ CastInstruction::CastInstruction(Function * _func, Value * _srcVal, Type * _type
             case Type::FloatTyID:
                 dstType = FloatType::getType();
                 break;
-
             // 其他类型……
             default:
                 // std::cout(false && "Unknown type ID");

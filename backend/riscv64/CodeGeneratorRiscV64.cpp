@@ -323,22 +323,22 @@ void CodeGeneratorRiscV64::registerAllocation(Function * func)
     // 至少有FP和LX寄存器需要保护
     std::vector<int32_t> & protectedRegNo = func->getProtectedReg();
     protectedRegNo.clear();
-
-    // protectedRegNo.push_back(RISCV64_TMP_REG_NO);
+    protectedRegNo.push_back(0);
+    protectedRegNo.push_back(RISCV64_TMP_REG_NO);
     protectedRegNo.push_back(RISCV64_FP_REG_NO);
     if (func->getExistFuncCall()) {
         protectedRegNo.push_back(RISCV64_RA_REG_NO);
     }
 
-    // 调整函数调用指令，主要是前四个寄存器传值，后面用栈传递
+    // 调整函数调用指令，主要是前8个寄存器传值，后面用栈传递
     // 为了更好的进行寄存器分配，可以进行对函数调用的指令进行预处理
     // 当然也可以不做处理，不过性能更差。这个处理是可选的。
-    adjustFuncCallInsts(func);
+    // adjustFuncCallInsts(func);
 
     // 为局部变量和临时变量在栈内分配空间，指定偏移，进行栈空间的分配
     stackAlloc(func);
 
-    // 函数形参要求前四个寄存器分配，后面的参数采用栈传递，实现实参的值传递给形参
+    // 函数形参要求前8个寄存器分配，后面的参数采用栈传递，实现实参的值传递给形参
     // 这一步是必须的
     adjustFormalParamInsts(func);
 
@@ -366,9 +366,9 @@ void CodeGeneratorRiscV64::adjustFormalParamInsts(Function * func)
         params[k]->setRegId(k);
     }
 
-    // 根据ARM版C语言的调用约定，除前4个外的实参进行值传递，逆序入栈
+    // 根据ARM版C语言的调用约定，除前8个外的实参进行值传递，逆序入栈
     int64_t fp_esp = func->getProtectedReg().size() * 8;
-    for (int k = 4; k < (int) params.size(); k++) {
+    for (int k = 8; k < (int) params.size(); k++) {
 
         params[k]->setMemoryAddr(RISCV64_FP_REG_NO, fp_esp);
 
