@@ -143,7 +143,8 @@ void ILocRiscV64::deleteUnusedLabel()
 
         for (RiscInst * arm: code) {
             // TODO 转移语句的指令标识符根据定义修改判断
-            if ((!arm->dead) && (arm->opcode[0] == 'b') && (arm->result == labelRisc->opcode)) {
+            if ((!arm->dead) && (((arm->opcode[0] == 'b') && (arm->result == labelRisc->opcode)) ||
+                                 ((arm->opcode == "jal") && (arm->arg1 == labelRisc->opcode)))) {
                 labelUsed = true;
                 break;
             }

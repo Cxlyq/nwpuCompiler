@@ -233,7 +233,6 @@ void InstSelectorRiscV64::translate_exit(Instruction * inst)
 void InstSelectorRiscV64::translate_label(Instruction * inst)
 {
     Instanceof(labelInst, LabelInstruction *, inst);
-
     iloc.label(labelInst->getName());
 }
 
