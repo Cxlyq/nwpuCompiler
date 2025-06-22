@@ -388,20 +388,37 @@ std::any MiniCCSTVisitor::visitSingleVal(MiniCParser::SingleValContext * ctx)
 {
     return visitExpr(ctx->expr());
 }
+// /// @brief 非终结运算符multiVal的遍历
+// /// @param ctx CST上下文
+// ///	@return 向量结点
+// std::any MiniCCSTVisitor::visitMultiVal(MiniCParser::MultiValContext * ctx)
+// {
+//     if (!ctx->initVal().empty()) {
+//         ast_node * initVal_node = create_contain_node(ast_operator_type::AST_OP_INIT_VAL);
+//         for (auto & initValCtx: ctx->initVal()) {
+//             auto valNode = std::any_cast<ast_node *>(visitInitVal(initValCtx));
+//             (void) initVal_node->insert_son_node(valNode);
+//         }
+//         return initVal_node;
+//     }
+//     return nullptr;
+// }
+
 /// @brief 非终结运算符multiVal的遍历
 /// @param ctx CST上下文
-///	@return 向量结点
+/// @return 向量结点（即使为空也要创建）
 std::any MiniCCSTVisitor::visitMultiVal(MiniCParser::MultiValContext * ctx)
 {
-    if (!ctx->initVal().empty()) {
-        ast_node * initVal_node = create_contain_node(ast_operator_type::AST_OP_INIT_VAL);
-        for (auto & initValCtx: ctx->initVal()) {
-            auto valNode = std::any_cast<ast_node *>(visitInitVal(initValCtx));
-            (void) initVal_node->insert_son_node(valNode);
+    ast_node * initVal_node = create_contain_node(ast_operator_type::AST_OP_INIT_VAL);
+
+    if (auto listCtx = ctx->initValList()) {
+        for (auto valCtx: listCtx->initVal()) {
+            auto valNode = std::any_cast<ast_node *>(visit(valCtx));
+            initVal_node->insert_son_node(valNode);
         }
-        return initVal_node;
     }
-    return nullptr;
+
+    return initVal_node;
 }
 
 /// @brief 非终结运算符statement中的遍历

@@ -396,11 +396,11 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
                 std::cerr << "Function formal params: Failer to generate Array Type!" << std::endl;
             }
             Type * eletype = arrayType->getElementType();
-            std::cout << "Function formal params: Array type is " << arrayType->toString() << std::endl;
+            // std::cout << "Function formal params: Array type is " << arrayType->toString() << std::endl;
             PointerType * pointerType = new PointerType(eletype);
-            std::cout << "Function formal params: Pointer type is " << pointerType->toString() << std::endl;
-            // PointerType * pointee = new PointerType(pointerType);
-            //  创建一个数组局部变量
+            // std::cout << "Function formal params: Pointer type is " << pointerType->toString() << std::endl;
+            //  PointerType * pointee = new PointerType(pointerType);
+            //   创建一个数组局部变量
             Value * param_value = module->newVarValue(pointerType, array_name);
             if (!param_value) {
                 std::cerr << "Function formal params: Failed to create IR Value for parameter '" << array_name
@@ -2507,12 +2507,12 @@ bool IRGenerator::ir_leaf_node_var_id(ast_node * node)
                                             // node->val->setIRName(std::string _name)
             node->blockInsts.addInst(LoadInst);
         } else {
-            std::cout << 'here' << std::endl;
+            // std::cout << 'here' << std::endl;
             PointerType * pointerType = new PointerType(type);
 
             val->setType(pointerType);
-            std::cout << "the point type" << pointerType->toString() << std::endl;
-            std::cout << node->getNodeName() << std::endl;
+            // std::cout << "the point type" << pointerType->toString() << std::endl;
+            // std::cout << node->getNodeName() << std::endl;
             auto loadInst = new LoadInstruction(module->getCurrentFunction(), val);
             node->val = loadInst;
             node->blockInsts.addInst(loadInst);
@@ -2735,7 +2735,6 @@ bool IRGenerator::ir_array_access(ast_node * node)
         PointerType * pointerType = new PointerType(type);
 
         gepPtr->setType(pointerType);
-        std::cout << "the point type" << pointerType->toString() << std::endl;
         loadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr);
         node->blockInsts.addInst(loadInst);
 
@@ -2745,7 +2744,6 @@ bool IRGenerator::ir_array_access(ast_node * node)
         // gepPtr->setType(loadInst->getType()->getPointeeType())                   //
         gepType = gepPtr->getType(); // 更新 gepType 为加载后的类型
                                      // 获取指向的类型
-        std::cout << "gep type in point: " << gepType->toString() << std::endl;
     }
     // 逐层调用getelementptr
     for (int i = 0; i < accessDims; ++i) {
@@ -2792,9 +2790,9 @@ bool IRGenerator::ir_array_access(ast_node * node)
             // 否则，不能进一步推进，退出
             break;
         }
+        gepPtr->setType(gepType);
     }
-    std::cout << "gep type: " << gepType->toString() << std::endl;
-    std::cout << "gepPTR type: " << gepPtr->getType()->toString() << std::endl;
+
     if (node->is_lvar) {
         node->val = gepPtr;
         if (type->isPointerType()) {
@@ -2807,7 +2805,6 @@ bool IRGenerator::ir_array_access(ast_node * node)
         node->val = loadInst; // 设置为加载后的值
     }
 
-    std::cout << "final type: " << node->val->getType()->toString() << std::endl;
     // node->val->setType(gepType); // 设置最后的类型，应该是元素指针类型
 
     return true;
@@ -2830,7 +2827,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
         std::cerr << "Function call - array: Cannot find array!" << std::endl;
     }
     Type * type = tempVal->getType();
-    std::cout << "array type  " << type->toString() << std::endl;
+    // std::cout << "array type  " << type->toString() << std::endl;
     if (type->isArrayType()) {
         int accessDims = array_dims.size();
         int ori_dims = static_cast<ArrayType *>(type)->getDimensions().size();
@@ -2852,7 +2849,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
 
             node->blockInsts.addInst(gepInst);
             node->val = gepInst;
-            std::cout << "array type: " << node->val->getType()->toString() << std::endl;
+            // std::cout << "array type: " << node->val->getType()->toString() << std::endl;
             return node->val; // 返回最终的 gep 指令 Value*
         } else if (accessDims == ori_dims) {
             // 逐层调用getelementptr
@@ -2891,7 +2888,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
             auto * loadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr); // 加载最终的指针值
             node->blockInsts.addInst(loadInst);
             node->val = loadInst; // 设置最终的值为加载后的指针
-            std::cout << "array type: " << node->val->getType()->toString() << std::endl;
+            // std::cout << "array type: " << node->val->getType()->toString() << std::endl;
             return node->val; // 返回最终的加载指令 Value*
         } else {
             //说明是多重指针
@@ -2932,9 +2929,9 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                 gepPtr,                            // 原始数组变量 Value*，类型如 [5 x i32]*
                 gepType,                           // 类型是 [5 x i32]*
                 std::vector<Value *>{zero, zero}); // GEP 0, 0 => 获取 a[0]
-            std::cout << "final_gepinst type: " << final_gepInst->getType()->toString() << std::endl;
-            std::cout << "final_gepPtr type: " << gepPtr->getType()->toString() << std::endl;
-            std::cout << "final_gep type: " << gepType->toString() << std::endl;
+            // std::cout << "final_gepinst type: " << final_gepInst->getType()->toString() << std::endl;
+            // std::cout << "final_gepPtr type: " << gepPtr->getType()->toString() << std::endl;
+            // std::cout << "final_gep type: " << gepType->toString() << std::endl;
             node->blockInsts.addInst(final_gepInst);
 
             node->val = final_gepInst; // 设置最终的 gep 指令 Value*
@@ -3608,11 +3605,15 @@ bool IRGenerator::init_array_flattened(
 
         Value * val = nullptr;
         if (val_node) {
-            std::cout << "val_node->gettype: " << (int) val_node->node_type << std::endl;
+            // std::cout << "val_node->gettype: " << (int) val_node->node_type << std::endl;
             if (!val_node->val) {
-                ir_visit_ast_node(val_node);                                // 确保 val_node->val 被正确设置
-                val_node->parent->blockInsts.addInst(val_node->blockInsts); // 添加子节点的指令到当前节点
+                ir_visit_ast_node(val_node);                        // 确保 val_node->val 被正确设置
+                initNode->blockInsts.addInst(val_node->blockInsts); // 添加子节点的指令到当前节点 //
                 // Insts.push_back(val_node->blockInsts);
+                // for (auto inst: val_node->blockInsts.getInsts()) {
+                //     // node->blockInsts.addInst(inst);
+                //     Insts.push_back(inst); // 将指令添加到传入的 Insts 向量中
+                // }
                 if (val_type->isFloatType()) {
                     val_node->node_type = ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT; // 设置节点类型为浮点数
                 } else if (val_type->isIntegerType()) {
@@ -3622,7 +3623,7 @@ bool IRGenerator::init_array_flattened(
                     return false;
                 }
             }
-            std::cout << "val_node->gettype2: " << (int) val_node->node_type << std::endl;
+            // std::cout << "val_node->gettype2: " << (int) val_node->node_type << std::endl;
             val = val_node->val ? val_node->val : nullptr;
 
             if (!val) {
@@ -3675,12 +3676,14 @@ bool IRGenerator::init_array_flattened(
             // Insts.push_back(gepInst);
             initNode->blockInsts.addInst(gepInst);
             gepPtr = gepInst;
+            gepPtr->setType(gepType); // 确保地址的类型正确
         }
 
         Value * addr = gepPtr;
+        // addr->setType(gepType); // 确保地址的类型正确
 
-        std::cout << "here: " << addr->getType()->toString() << std::endl;
-        // 5. 生成 store 指令
+        // std::cout << "here: " << addr->getType()->toString() << std::endl;
+        //  5. 生成 store 指令
         StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
         // addr->setIRName(std::to_string(addr->getIntVal()));
         // Insts.push_back(storeInst);
@@ -3797,6 +3800,7 @@ bool IRGenerator::init_constarray_flattened(
         }
 
         Value * addr = gepPtr;
+        addr->setType(gepType); // 确保地址的类型正确
         // 5. 生成 store 指令
         StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
         // addr->setIRName(std::to_string(addr->getIntVal()));
