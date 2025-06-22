@@ -25,6 +25,7 @@
 #include "Instruction.h"
 #include "LabelInstruction.h"
 #include "Module.h"
+#include "Type.h"
 #include "Value.h"
 
 /// @brief AST遍历产生线性IR类
@@ -247,7 +248,7 @@ protected:
 
     bool init_array_flattened(
         Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts,
-        std::vector<ast_node *> & init_list);
+        std::vector<ast_node *> & init_list, Type * var_type);
     void
     flatten_init_node(ast_node * node, const std::vector<int> & dims, int depth, std::vector<ast_node *> & flat_list);
 

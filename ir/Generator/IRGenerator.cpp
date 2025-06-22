@@ -274,7 +274,7 @@ bool IRGenerator::ir_function_define(ast_node * node)
     // irCode.addInst(entryLabelInst);
 
     // // 创建并加入Entry入口指令
-    // irCode.addInst(new EntryInstruction(newFunc));
+     irCode.addInst(new EntryInstruction(newFunc));
 
     // 创建出口指令并不加入出口指令，等函数内的指令处理完毕后加入出口指令
     LabelInstruction * exitLabelInst = new LabelInstruction(newFunc);
@@ -3081,7 +3081,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         if (init_val_node) {
             std::vector<ast_node *>      init_list;
             std::vector<Instruction *> * insts = new std::vector<Instruction *>;
-            if (!init_array_flattened(node->val, dims, init_val_node, *insts, init_list)) {
+            if (!init_array_flattened(node->val, dims, init_val_node, *insts, init_list, var_type)) {
                 printf("数组初始化失败\n");
                 return false;
             }
@@ -3222,7 +3222,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
         if (init_val_node) {
             std::vector<ast_node *>      init_list;
             std::vector<Instruction *> * insts = new std::vector<Instruction *>;
-            if (!init_array_flattened(node->val, dims, init_val_node, *insts, init_list)) {
+            if (!init_array_flattened(node->val, dims, init_val_node, *insts, init_list, var_type)) {
                 std::cerr << "Const declare: Failed to init const array!" << std::endl;
                 return false;
             }
@@ -3262,7 +3262,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                     } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
                         int_init_list->push_back((float) init_num->integer_val);
                     } else {
-                        std::cerr << "ERROR(const declare): No matched type for const float array " << array_name << "."
+                        std::cerr << "ERROR(const declare): No matched type for const int array " << array_name << "."
                                   << std::endl;
                         return false;
                     }
@@ -3512,7 +3512,7 @@ bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
 
 bool IRGenerator::init_array_flattened(
     Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts,
-    std::vector<ast_node *> & init_list)
+    std::vector<ast_node *> & init_list, Type * val_type)
 {
     // 1. 计算总元素数
     int total_elems = 1;
@@ -3530,9 +3530,22 @@ bool IRGenerator::init_array_flattened(
         Value * val = nullptr;
         if (val_node) {
             if (!val_node->val) {
-                ir_visit_ast_node(val_node); // 生成 IR 值
+                float * val_float = new float;
+                evaluateConstExpr(val_node, val_float);
+                if (val_type->isFloatType()) {
+                    float result = *val_float;
+                    delete val_float;                              // 释放临时变量
+                    val_node->val = module->newConstFloat(result); // 设置浮点值                  //
+                    val_node->node_type = ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT; // 设置节点类型为浮点数
+
+                } else if (val_type->isIntegerType()) {
+                    int result = (int) *val_float;
+                    delete val_float; // 释放临时变量
+                    val_node->val = module->newConstInt(result);
+                    val_node->node_type = ast_operator_type::AST_OP_LEAF_LITERAL_UINT; // 设置节点类型为整数
+                }
             }
-            val = val_node->val;
+            val = val_node->val ? val_node->val : nullptr;
             if (!val) {
                 std::cerr << "Error: val_node->val is null at index " << i << std::endl;
                 return false;
@@ -3580,6 +3593,7 @@ void IRGenerator::flatten_init_node(
     if (node->node_type == ast_operator_type::AST_OP_INIT_VAL) {
         int i = 0;
         for (; i < (int) node->sons.size(); ++i) {
+
             flatten_init_node(node->sons[i], dims, depth + 1, flat_list);
         }
         // 补零（如果不足当前维度）
