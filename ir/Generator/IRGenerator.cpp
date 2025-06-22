@@ -598,7 +598,7 @@ bool IRGenerator::ir_block(ast_node * node)
                 return false;
             }
             node->blockInsts.addInst(base_node->blockInsts); // 添加if else语句
-            if (stopTranslateBlock) {
+            if (stopTranslateBlock && base_node == node->sons[node->sons.size() - 1]) {
                 break; //  if else里均存在return，不生成merge标签，不再翻译后续语句。
             } else {
                 // 如果ifelse没有结束，则需要将mergeLabel添加到blockInsts中
@@ -2086,7 +2086,17 @@ bool IRGenerator::ir_return(ast_node * node)
 
     return true;
 }
-
+/// @note ir_ifelse有许多特殊情况需要处理
+/// 	1. ir_ifelse不再交由ir_visit_ast_node处理， 而交由其上级ir_block或嵌套上级ir_ifelse处理。
+///		原因： 针对merge标签，ifelse无法判断其后有无语句，如果没有语句，merge标签将紧邻函数exit
+/// label。并且，如果if-else均存在return语句，或仅有if并且存在return语句，则我称其为完全返回的if-else，根据标准，后续标签和block的ir将不再生成
+///		解决方法：修改ir_ifelse，将其merge标签返回给上级，交由上级判断是否添加该merge标签。
+///		2.
+/// 短路求值问题，因为逻辑表达式的短路逻辑无法访问到ifelse产生的true/false标签，所以对于短路问题设立新函数gen_condition_branch，不再走ir_and/ir_or
+/// 	3. continue-break跳转指令重复问题，针对if/else里出现了break/continue的问题，将不再生成部分分支标签，false
+/// label将设置为函数exit label
+/// @param node AST节点
+/// @param stopTranslateBlock 标记该if-else是否为完全返回的if-else, 交由上级判断是否停止翻译后续语句块
 /// @return merge label
 LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateBlock)
 {
@@ -2102,43 +2112,12 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
     bool       hasBreakContinueInElse = false; // 防止else break continue标签与merge重复
     bool       hasReturnInElse = false;
 
-    // 检测if子结点有没有break continue return
-    for (auto node_in_if: if_node->sons) {
-        if (node_in_if->node_type == ast_operator_type::AST_OP_BREAK ||
-            node_in_if->node_type == ast_operator_type::AST_OP_CONTINUE) {
-            hasBreakContinueInIf = true;
-        }
-        if (node_in_if->node_type == ast_operator_type::AST_OP_RETURN) {
-            hasReturnInIf = true;
-        }
-    }
-
-    // 获取当前函数，if块必须位于函数内
+    // 1. 获取当前函数，if块必须位于函数内
     Function * currentFunc = module->getCurrentFunction();
     if (!currentFunc) {
         std::cerr << "Error: If-else outside function." << std::endl;
         return nullptr;
     }
-
-    // 1. 生成条件表达式的IR
-    // ir_visit_ast_node 会递归访问子节点并生成其IR。
-    // 生成的指令存储在 cond->blockInsts，结果值存储在 cond->val 中。
-    // ast_node * cond = ir_visit_ast_node(cond_node);
-    // if (!cond) {
-    //     printf("Ifelse: no condition block\n");
-    //     return false;
-    // }
-
-    // 将条件表达式生成的指令添加到当前节点的指令列表中。
-    // 这些指令将构成 if-else 结构前导基本块的一部分。
-    // node->blockInsts.addInst(cond->blockInsts);
-
-    // 获取条件表达式的值 (应为一个布尔值，如 IR 中的 i1 类型)
-    // Value * cond_val = cond->val;
-    // if (!cond_val) {
-    //     printf("Ifelse: condition has no value.\n");
-    //     return false;
-    // }
 
     // 2. 创建表示 if-else 结构不同基本块入口的标签
     // 这些标签将在后续指令中被引用（作为跳转目标）
@@ -2158,32 +2137,32 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
     if (else_node) {
         else_label = new LabelInstruction(currentFunc); // 创建 else 块的实际标签
         false_branch_target = else_label;
-        // 检测else中是否有break标签
-        for (auto node_in_else: else_node->sons) {
-            if (node_in_else->node_type == ast_operator_type::AST_OP_BREAK ||
-                node_in_else->node_type == ast_operator_type::AST_OP_CONTINUE) {
-                hasBreakContinueInElse = true;
-            }
-            if (node_in_else->node_type == ast_operator_type::AST_OP_RETURN) {
-                hasReturnInElse = true;
+
+        // 检测else中是否有break, continue, return标签或完全return的if-else语句块
+        if (else_node->node_type == ast_operator_type::AST_OP_RETURN) { // ELSE节点本身是return语句
+            hasReturnInElse = true;
+        } else if (
+            else_node->node_type == ast_operator_type::AST_OP_BREAK ||
+            else_node->node_type == ast_operator_type::AST_OP_CONTINUE) { // ELSE节点本身是continue, break语句
+            hasBreakContinueInElse = true;
+        } else {
+            for (auto node_in_else: else_node->sons) {
+                if (node_in_else->node_type == ast_operator_type::AST_OP_BREAK ||
+                    node_in_else->node_type == ast_operator_type::AST_OP_CONTINUE) {
+                    hasBreakContinueInElse = true;
+                }
+                if (node_in_else->node_type == ast_operator_type::AST_OP_RETURN ||
+                    node_in_else->isIfElseHaveReturn) { // 如果本层else有return，或者下一层if-else是完全return
+                    hasReturnInElse = true;
+                }
             }
         }
+
     } else {
         false_branch_target = merge_label;
     }
 
-    // 3. 添加条件分支指令 (br i1)
-    // 这个指令紧跟在条件表达式指令之后，根据 cond_val 的布尔值决定跳转。
-    // if (!cond_val->getType()->isInt1Byte()) {
-    //     auto castToI1 = new CastInstruction(currentFunc, cond_val, IntegerType::getTypeBool());
-    //     node->blockInsts.addInst(castToI1);
-    //     cond_val = castToI1;
-    // }
-    // ConditionalInstruction * cond_branch_inst =
-    //     new ConditionalInstruction(currentFunc, cond_val, true_branch_label, false_branch_target);
-    // node->blockInsts.addInst(cond_branch_inst);
-
-    // 支持短路，添加条件分支指令。区别于遍历ir_and/or，因为其会产生额外的一个Value ValueOfLogic
+    // 3. 支持短路，添加条件分支指令。区别于遍历ir_and/or，因为其会产生额外的一个Value ValueOfLogic
     if (!gen_condition_branch(cond_node, true_branch_label, false_branch_target, node->blockInsts)) {
         // Error occurred during condition branching generation
         std::cerr << "Error generating condition branch for if-else." << std::endl;
@@ -2198,15 +2177,49 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
     node->blockInsts.addInst(true_branch_label);
 
     // 访问 if 语句块 AST 节点。生成其内部指令
-    ast_node * ifBlock = ir_visit_ast_node(if_node);
-    if (!ifBlock) {
-        // if 块生成失败
-        // 注意：即使 if 块为空（例如 `{}`），ir_visit_ast_node 也应该成功，返回一个 blockInsts 为空的节点。
-        printf("if block generate failed.\n");
-        return nullptr;
+    if (if_node->node_type == ast_operator_type::AST_OP_IFELSE) {
+        // 如果 if_node 是一个 if-else 结构，则递归调用 ir_ifelse
+        // 这将处理嵌套的 if-else 结构，并返回 merge_label。
+        LabelInstruction * merge_label_from_if = ir_ifelse(if_node, &hasReturnInIf);
+        if (!merge_label_from_if) {
+            // if 块生成失败
+            printf("if block generate failed.\n");
+            return nullptr;
+        }
+        // 将 merge_label_from_if添加到当前节点的指令列表中。
+        node->blockInsts.addInst(if_node->blockInsts);
+        node->blockInsts.addInst(merge_label_from_if);
+    } else {
+        ast_node * ifBlock = ir_visit_ast_node(if_node);
+        if (!ifBlock) {
+            // if 块生成失败
+            // 注意：即使 if 块为空（例如 `{}`），ir_visit_ast_node 也应该成功，返回一个 blockInsts 为空的节点。
+            printf("if block generate failed.\n");
+            return nullptr;
+        }
+        // 将 if 块生成的指令添加到当前节点的指令列表中。
+        node->blockInsts.addInst(ifBlock->blockInsts);
     }
-    // 将 if 块生成的指令添加到当前节点的指令列表中。
-    node->blockInsts.addInst(ifBlock->blockInsts);
+
+    // 检测if子结点有没有break continue return语句或完全return的if-else语句块
+    if (if_node->node_type == ast_operator_type::AST_OP_RETURN) { // IF节点本身是return语句
+        hasReturnInIf = true;
+    } else if (
+        if_node->node_type == ast_operator_type::AST_OP_BREAK ||
+        if_node->node_type == ast_operator_type::AST_OP_CONTINUE) { // IF节点本身是continue, break语句块
+        hasBreakContinueInIf = true;
+    } else {
+        for (auto node_in_if: if_node->sons) {
+            if (node_in_if->node_type == ast_operator_type::AST_OP_BREAK ||
+                node_in_if->node_type == ast_operator_type::AST_OP_CONTINUE) {
+                hasBreakContinueInIf = true;
+            }
+            if (node_in_if->node_type == ast_operator_type::AST_OP_RETURN ||
+                node_in_if->isIfElseHaveReturn) { // 如果本层if有return，或者下一层if-else是完全return
+                hasReturnInIf = true;
+            }
+        }
+    }
 
     // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
     // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
@@ -2224,14 +2237,28 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
         node->blockInsts.addInst(else_label);
 
         // 访问 else 语句块 AST 节点。生成其内部指令。
-        ast_node * elseBlock = ir_visit_ast_node(else_node);
-        if (!elseBlock) {
-            // else 块生成失败
-            printf("else block generate failed.\n");
-            return nullptr;
+        if (else_node->node_type == ast_operator_type::AST_OP_IFELSE) {
+            // 如果 else_node 是一个 if-else 结构，则递归调用 ir_ifelse
+            // 这将处理嵌套的 if-else 结构，并返回 merge_label。
+            LabelInstruction * merge_label_from_else = ir_ifelse(else_node, &hasReturnInElse);
+            if (!merge_label_from_else) {
+                // else 块生成失败
+                printf("else block generate failed.\n");
+                return nullptr;
+            }
+            // 将 merge_label_from_else 添加到当前节点的指令列表中。
+            node->blockInsts.addInst(else_node->blockInsts);
+            node->blockInsts.addInst(merge_label_from_else);
+        } else {
+            ast_node * elseBlock = ir_visit_ast_node(else_node);
+            if (!elseBlock) {
+                // else 块生成失败
+                printf("else block generate failed.\n");
+                return nullptr;
+            }
+            // 将 else 块生成的指令添加到当前节点的指令列表中。
+            node->blockInsts.addInst(elseBlock->blockInsts);
         }
-        // 将 else 块生成的指令添加到当前节点的指令列表中。
-        node->blockInsts.addInst(elseBlock->blockInsts);
 
         // 在 else 块的末尾添加一个无条件跳转到 merge 块的指令。
         // 同 then 块，即使 else 块的最后一条指令本身是终止指令，也添加一个跳转。
@@ -2245,11 +2272,24 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
     // 这是 if-else 结构之后所有代码开始的地方。then 块和 else 块（如果存在）都会跳转到这里。
     // node->blockInsts.addInst(merge_label);// 将 merge_label 传递给调用者，供后续使用。
     bool * stop = new bool;
-    if (hasReturnInIf && hasReturnInElse) {
-        *stop = true;
+    if (else_node) {
+        if (hasReturnInIf && hasReturnInElse) { // if-else语句块存在完全return
+            *stop = true;
+            node->isIfElseHaveReturn = true;
+        } else {
+            *stop = false;
+            node->isIfElseHaveReturn = false; // 如果ifelse没有全部 return，则继续翻译后续代码
+        }
     } else {
-        *stop = false; // 如果没有全部 return，则继续翻译后续代码
+        if (hasReturnInIf) { // 单独if语句块存在完全return
+            *stop = true;
+            node->isIfElseHaveReturn = true;
+        } else {
+            *stop = false;
+            node->isIfElseHaveReturn = false; // 如果if没有 return，则继续翻译后续代码
+        }
     }
+
     *stopTranslateBlock = *stop;
 
     // if-else 语句本身不产生值，所以 node->val 保持 nullptr。
