@@ -124,7 +124,7 @@ void Function::toString(std::string & str)
         str += "\t" + var->getIRName() + " = alloca " + var->getType()->toString() + ", align 4\n";
     }
 
-     // 输出临时变量的declare形式
+    // 输出临时变量的declare形式
     // // 遍历所有的线性IR指令，文本输出
     // for (auto & inst: code.getInsts()) {
 
@@ -168,14 +168,14 @@ void Function::toString(std::string & str)
 
 /// @brief 设置函数出口指令
 /// @param inst 出口Label指令
-void Function::setExitLabel(Instruction * inst)
+void Function::setExitLabel(LabelInstruction * inst)
 {
     exitLabel = inst;
 }
 
 /// @brief 获取函数出口指令
 /// @return 出口Label指令
-Instruction * Function::getExitLabel()
+LabelInstruction * Function::getExitLabel()
 {
     return exitLabel;
 }

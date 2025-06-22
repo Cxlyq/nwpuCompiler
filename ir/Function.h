@@ -21,6 +21,7 @@
 #include "GlobalValue.h"
 #include "FunctionType.h"
 #include "FormalParam.h"
+#include "LabelInstruction.h"
 #include "LocalVariable.h"
 #include "MemVariable.h"
 #include "IRCode.h"
@@ -70,11 +71,11 @@ public:
 
     /// @brief 设置函数出口指令
     /// @param inst 出口Label指令
-    void setExitLabel(Instruction * inst);
+    void setExitLabel(LabelInstruction * inst);
 
     /// @brief 获取函数出口指令
     /// @return 出口Label指令
-    Instruction * getExitLabel();
+    LabelInstruction * getExitLabel();
 
     /// @brief 设置函数返回值变量
     /// @param val 返回值变量，
@@ -233,7 +234,7 @@ private:
     ///
     /// @brief 函数出口Label指令
     ///
-    Instruction * exitLabel = nullptr;
+    LabelInstruction * exitLabel = nullptr;
 
     ///
     /// @brief 函数返回值变量，不能是临时变量，必须是局部变量

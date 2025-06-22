@@ -162,7 +162,7 @@ protected:
     /// @brief ifelse AST节点翻译成线性中间IR
     /// @param node AST节点
     /// @return 翻译是否成功，true：成功，false：失败
-    bool ir_ifelse(ast_node * node);
+    LabelInstruction * ir_ifelse(ast_node * node, bool * stopTranslateBlock);
 
     /// @brief while节点翻译成线性中间IR
     /// @param node AST节点

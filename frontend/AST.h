@@ -173,6 +173,8 @@ public:
 
     bool is_lvar = false; ///< 是否是左值变量
 
+    bool isIfElseHaveReturn = false; ///< if-else语句是否有返回值
+
     /// @brief 节点类型
     ast_operator_type node_type;
 
