@@ -12,7 +12,7 @@ const std::string PlatformRiscV64::regName[PlatformRiscV64::maxRegNum] = {
     "t0",   // 类型：临时  作用： 临时寄存器 ,需要栈保护，Caller
     "t1",   // 类型：临时  作用： 临时寄存器 ,需要栈保护，Caller
     "t2",   // 类型：临时  作用： 临时寄存器 ,需要栈保护，Caller
-    "s0/fp", // 类型：保护/帧指针  作用： 保存寄存器 or 栈帧指针（可选） ,不需要栈保护，Callee
+    "s0", // 类型：保护/帧指针  作用： 保存寄存器 or 栈帧指针（可选） ,不需要栈保护，Callee
     "s1",  // 类型：保持  作用： 保存寄存器 ,不需要栈保护，Callee
     "a0",  // 类型：参数/返回值1  作用： 参数/返回值1  ,需要栈保护，Caller
     "a1",  // 类型：参数/返回值2  作用： 参数/返回值2  ,需要栈保护，Caller
@@ -141,7 +141,6 @@ RegVariable * PlatformRiscV64::floatRegVal[PlatformRiscV64::maxRegNum / 2] = {
     new RegVariable(FloatType::getType(), PlatformRiscV64::regName[63], 31)};
 
 const int PlatformRiscV64::RISCV64_INT_REGS[PlatformRiscV64::maxUsableIntRegNum] = {
-    5,
     6,
     7, // t0-t2
     10,

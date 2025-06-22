@@ -323,12 +323,13 @@ void CodeGeneratorRiscV64::registerAllocation(Function * func)
     // 至少有FP和LX寄存器需要保护
     std::vector<int32_t> & protectedRegNo = func->getProtectedReg();
     protectedRegNo.clear();
-    protectedRegNo.push_back(0);
-    protectedRegNo.push_back(RISCV64_TMP_REG_NO);
+    protectedRegNo.push_back(RISCV64_RA_REG_NO);
     protectedRegNo.push_back(RISCV64_FP_REG_NO);
-    if (func->getExistFuncCall()) {
-        protectedRegNo.push_back(RISCV64_RA_REG_NO);
-    }
+    // 按照clang的标准，全都保存ra寄存器
+
+    // if (func->getExistFuncCall()) {
+    //     protectedRegNo.push_back(RISCV64_RA_REG_NO);
+    // }
 
     // 调整函数调用指令，主要是前8个寄存器传值，后面用栈传递
     // 为了更好的进行寄存器分配，可以进行对函数调用的指令进行预处理

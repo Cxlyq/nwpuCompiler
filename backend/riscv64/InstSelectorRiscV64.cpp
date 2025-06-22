@@ -14,6 +14,7 @@
 /// </table>
 ///
 #include <cstdio>
+#include <string>
 #include <typeinfo>
 #include "Common.h"
 #include "ILocRiscV64.h"
@@ -177,26 +178,25 @@ void InstSelectorRiscV64::translate_nop(Instruction * inst)
 /// @param inst IR指令
 void InstSelectorRiscV64::translate_entry(Instruction * inst)
 {
-    // 查看保护的寄存器
+    // 获取被保护寄存器
     auto & protectedRegNo = func->getProtectedReg();
-    auto & protectedRegStr = func->getProtectedRegStr();
 
-    bool first = true;
-    for (auto regno: protectedRegNo) {
-        if (first) {
-            protectedRegStr = PlatformRiscV64::regName[regno];
-            first = false;
-        } else {
-            protectedRegStr += "," + PlatformRiscV64::regName[regno];
-        }
-    }
-
-    if (!protectedRegStr.empty()) {
-        iloc.inst("push", "{" + protectedRegStr + "}");
-    }
-
-    // 为fun分配栈帧，含局部变量、函数调用值传递的空间等
+    // 分配栈帧空间
     iloc.allocStack(func, RISCV64_TMP_REG_NO);
+    // 保存被保护寄存器到栈
+    int offset = func->getMaxDep() - 8; // 栈偏移起点（64位每次减8）
+    for (auto regno: protectedRegNo) {
+        std::string regName = PlatformRiscV64::regName[regno];
+        iloc.inst("sd", regName, std::to_string(offset) + "(sp)");
+        offset -= 8;
+    }
+
+    // 设置帧指针 s0(fp) = sp + frame_size
+    iloc.inst(
+        "addi",
+        PlatformRiscV64::regName[RISCV64_FP_REG_NO],
+        PlatformRiscV64::regName[RISCV64_SP_REG_NO],
+        std::to_string(func->getMaxDep())); // fp = sp + frame_size
 }
 
 /// @brief 函数出口指令翻译成RISCV64汇编
@@ -207,20 +207,25 @@ void InstSelectorRiscV64::translate_exit(Instruction * inst)
         // 存在返回值
         Value * retVal = inst->getOperand(0);
 
-        // 赋值给寄存器R0
-        iloc.load_var(0, retVal);
+        // 赋值给寄存器a0
+        iloc.load_var(10, retVal);
+    }
+    auto & protectedRegNo = func->getProtectedReg();
+
+    // 保护寄存器的恢复
+    // 保存被保护寄存器到栈
+    int offset = func->getMaxDep() - 8; // 栈偏移起点（64位每次减8）
+    for (auto regno: protectedRegNo) {
+        std::string regName = PlatformRiscV64::regName[regno];
+        iloc.inst("ld", regName, std::to_string(offset) + "(sp)");
+        offset -= 8;
     }
 
     // 恢复栈空间
-    iloc.inst("mov", "sp", "fp");
+    iloc.inst("addi", "sp", "sp", to_string(func->getMaxDep()));
 
-    // 保护寄存器的恢复
-    auto & protectedRegStr = func->getProtectedRegStr();
-    if (!protectedRegStr.empty()) {
-        iloc.inst("pop", "{" + protectedRegStr + "}");
-    }
-
-    iloc.inst("bx", "lr");
+    // 返回
+    iloc.inst("jr", "ra");
 }
 
 /// @brief Label指令指令翻译成RISCV64汇编
@@ -787,8 +792,8 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
     int32_t dst_regId = -1;
     Value * src = inst->getOperand(1);
     Value * dst = inst->getOperand(0);
-    std::cout << "[InstSelectorRiscV64::translate_store] srctype:" << typeid(src).name() << "\n"
-              << "[InstSelectorRiscV64::translate_store] dsttype:" << typeid(dst).name() << "\n";
+    std::cout << "[InstSelectorRiscV64::translate_store] srctype:" << typeid(inst->getOperand(1)).name() << "\n"
+              << "[InstSelectorRiscV64::translate_store] dsttype:" << typeid(inst->getOperand(0)).name() << "\n";
     if (Instanceof(InstSrc, Instruction *, src)) {
 
         src_regId = InstSrc->getRegId();

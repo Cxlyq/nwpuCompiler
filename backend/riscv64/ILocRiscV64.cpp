@@ -467,7 +467,7 @@ void ILocRiscV64::allocStack(Function * func, int tmp_reg_no)
     }
 
     // 保存SP寄存器到FP寄存器中
-    mov_reg(RISCV64_FP_REG_NO, RISCV64_SP_REG_NO);
+    // mov_reg(RISCV64_FP_REG_NO, RISCV64_SP_REG_NO);
 
     std::string off_str = std::to_string(off);
     emit("addi", "sp", "sp", "-" + off_str);
