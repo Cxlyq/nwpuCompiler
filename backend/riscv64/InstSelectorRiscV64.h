@@ -24,7 +24,7 @@
 #include "PlatformRiscV64.h"
 #include "SimpleRegisterAllocatorRiscV64.h"
 #include "RegVariable.h"
-
+#include "RegisterAllocatorGraphColoring.h"
 using namespace std;
 
 /// @brief 指令选择器-RISCV64

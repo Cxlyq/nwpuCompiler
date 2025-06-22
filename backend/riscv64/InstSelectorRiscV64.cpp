@@ -183,7 +183,7 @@ void InstSelectorRiscV64::translate_entry(Instruction * inst)
     auto & protectedRegNo = func->getProtectedReg();
 
     // 分配栈帧空间
-    iloc.allocStack(func, RISCV64_TMP_REG_NO);
+    iloc.allocStack(func);
     // 保存被保护寄存器到栈
     int offset = func->getMaxDep() - 8; // 栈偏移起点（64位每次减8）
     for (auto regno: protectedRegNo) {

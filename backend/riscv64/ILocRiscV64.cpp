@@ -388,12 +388,13 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int addr_reg_no)
 
     if (Instanceof(localVar, LocalVariable *, dest_var)) {
         // 寄存器变量
-		store_var(src_reg_no,localVar);
+        store_var(src_reg_no, localVar);
     } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
-		store_var(src_reg_no,globalVar,addr_reg_no);
+        store_var(src_reg_no, globalVar, addr_reg_no);
     } else {
         // TODO: [寻址]目前只实现了局部变量和全局变量
-        std::cout<<"[ILocRiscV64::store_var]被保存目标变量不是局部变量或全局变量\n";
+        std::cout << "[ILocRiscV64::store_var]被保存目标变量不是局部变量或全局变量\n";
+        emit("sw", "?", "?");
     }
 }
 /// @brief 加载变量到寄存器，保证将变量放到reg中
@@ -410,11 +411,12 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int addr_reg_no)
     } else if (Instanceof(instVar, Instruction *, src_var)) {
         load_var(rs_reg_no, instVar);
     } else if (Instanceof(localVar, LocalVariable *, src_var)) {
-        load_var(rs_reg_no,localVar);
+        load_var(rs_reg_no, localVar);
     } else if (Instanceof(globalVar, GlobalVariable *, src_var)) {
-        load_var(rs_reg_no,globalVar,addr_reg_no);
+        load_var(rs_reg_no, globalVar, addr_reg_no);
     } else {
-        
+        std::cout << "[ILocRiscV64::store_var]被保存目标变量不是局部变量或全局变量\n";
+        emit("lw", "?", "?");
     }
 }
 /// @brief 加载变量到寄存器，保证将变量放到reg中
@@ -422,7 +424,7 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int addr_reg_no)
 /// @param src_var 源操作数：指令临时变量
 void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var)
 {
-	if (src_var->getRegId() != -1) {
+    if (src_var->getRegId() != -1) {
         // 源操作数为寄存器变量
         int src_regId = src_var->getRegId();
         if (src_regId != rs_reg_no) {
@@ -466,7 +468,7 @@ void ILocRiscV64::load_var(int rs_reg_no, LocalVariable * src_var)
 /// @param src_var 源操作数：全局变量
 void ILocRiscV64::load_var(int rs_reg_no, GlobalVariable * src_var, int addr_reg_no)
 {
-    //xxx:可以做局部改进，将addr_reg_no与rs_reg_no设为同一寄存器
+    // xxx:可以做局部改进，将addr_reg_no与rs_reg_no设为同一寄存器
     std::string name = src_var->getName();
     emit("lui", PlatformRiscV64::regName[addr_reg_no], std::string("%hi(" + name + ")"));
     // 再加载低位
@@ -520,7 +522,6 @@ void ILocRiscV64::load_symbol(int rs_reg_no, std::string name)
         PlatformRiscV64::regName[rs_reg_no],
         std::string("%lo(" + name + ")(" + PlatformRiscV64::regName[rs_reg_no] + ")"));
 }
-
 
 /// @brief 加载栈内变量地址
 /// @param rsReg 结果寄存器号
