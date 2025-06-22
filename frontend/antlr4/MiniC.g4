@@ -52,9 +52,10 @@ varDecl: basicType varDef (T_COMMA varDef)* T_SEMICOLON;
 varDef: T_ID (T_L_SQBRA expr T_R_SQBRA)* (T_ASSIGN initVal)?;
 // 右值（数组{}赋值或单表达式）
 initVal:
-	expr												# singleVal
-	| T_L_BRACE (initVal (T_COMMA initVal)*)? T_R_BRACE	# multiVal;
+	expr								# singleVal
+	| T_L_BRACE initValList? T_R_BRACE	# multiVal;
 
+initValList: initVal (T_COMMA initVal)*;
 //-------------------基本语句与表达式---------------------------
 // 基本语句
 statement:

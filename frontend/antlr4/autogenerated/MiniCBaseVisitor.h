@@ -79,6 +79,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitInitValList(MiniCParser::InitValListContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitReturnStatement(MiniCParser::ReturnStatementContext *ctx) override {
     return visitChildren(ctx);
   }

@@ -49,7 +49,7 @@ public:
     /// @brief 可使用的通用寄存器的个数
     // x5-x7, x10-x17, x28-x31
     //使用x10-x17需要调用前保存/恢复
-    static const int maxUsableIntRegNum = 15;
+    static const int maxUsableIntRegNum = 14;
 
     /// @brief 可使用的通用寄存器的对应编号
     static const int RISCV64_INT_REGS[maxUsableIntRegNum];

@@ -145,7 +145,8 @@ void ILocRiscV64::deleteUnusedLabel()
 
         for (RiscInst * arm: code) {
             // TODO 转移语句的指令标识符根据定义修改判断
-            if ((!arm->dead) && (arm->opcode[0] == 'b') && (arm->result == labelRisc->opcode)) {
+            if ((!arm->dead) && (((arm->opcode[0] == 'b') && (arm->result == labelRisc->opcode)) ||
+                                 ((arm->opcode == "jal") && (arm->arg1 == labelRisc->opcode)))) {
                 labelUsed = true;
                 break;
             }
@@ -547,7 +548,7 @@ void ILocRiscV64::allocStack(Function * func)
     }
 
     // 保存SP寄存器到FP寄存器中
-    mov_reg(RISCV64_FP_REG_NO, RISCV64_SP_REG_NO);
+    // mov_reg(RISCV64_FP_REG_NO, RISCV64_SP_REG_NO);
 
     std::string off_str = std::to_string(off);
     emit("addi", "sp", "sp", "-" + off_str);

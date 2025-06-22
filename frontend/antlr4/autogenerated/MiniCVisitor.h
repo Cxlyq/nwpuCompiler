@@ -51,6 +51,8 @@ public:
 
     virtual std::any visitMultiVal(MiniCParser::MultiValContext *context) = 0;
 
+    virtual std::any visitInitValList(MiniCParser::InitValListContext *context) = 0;
+
     virtual std::any visitReturnStatement(MiniCParser::ReturnStatementContext *context) = 0;
 
     virtual std::any visitAssignStatement(MiniCParser::AssignStatementContext *context) = 0;
