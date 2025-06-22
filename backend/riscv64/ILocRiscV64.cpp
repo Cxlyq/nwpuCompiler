@@ -19,6 +19,8 @@
 #include "ILocRiscV64.h"
 #include "Common.h"
 #include "Function.h"
+#include "GlobalVariable.h"
+#include "LocalVariable.h"
 #include "PlatformRiscV64.h"
 #include "Module.h"
 
@@ -283,23 +285,14 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
 /// @param constant 立即数
 void ILocRiscV64::load_imm(int rs_reg_no, float constant)
 {
-    // TODO:[浮点数] 加载浮点立即数到寄存器
+    // TODO:[浮点数] 加载浮点立即数到寄存器，需要分配中间寄存器
+    // if (rs_reg_no == -1) {
+    //     minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
+    //     return;
+    // }
+    // emit("li", 中间寄存器, std::to_string(constant));
+    // emit("fmv.w.x", PlatformRiscV64::regName[rs_reg_no], 中间寄存器;
 }
-
-/// @brief 加载符号值 ldr r0,=g ldr r0,=.L1
-/// @param rs_reg_no 结果寄存器编号
-/// @param name 符号名
-void ILocRiscV64::load_symbol(int rs_reg_no, std::string name)
-{
-    // 假设符号地址可以直接通过 lui 和 addi 来处理
-    // 这里简单模拟加载符号地址到寄存器
-    // 实际中可能需要根据链接器等情况处理
-    // 先加载高位
-    emit("lui", PlatformRiscV64::regName[rs_reg_no], std::string(name + "@hi"));
-    // 再加载低位
-    emit("addi", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[rs_reg_no], std::string(name + "@lo"));
-}
-
 /// @brief 基址寻址 lw rd, offset(base)
 /// @param rs_reg_no 结果寄存器编号
 /// @param base_reg_no 基址寄存器编号
@@ -319,7 +312,6 @@ void ILocRiscV64::load_base(int rs_reg_no, int base_reg_no, int offset)
         minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
     }
 }
-
 /// @brief 基址寻址
 /// @param srcReg 源寄存器
 /// @param base_reg_no 基址寄存器
@@ -340,7 +332,6 @@ void ILocRiscV64::store_base(int src_reg_no, int base_reg_no, int offset)
         minic_log(LOG_ERROR, "BUG: Invalid register number for source register: %d", src_reg_no);
     }
 }
-
 /// @brief 寄存器Mov操作
 /// @param rs_reg_no 结果寄存器
 /// @param src_reg_no 源寄存器
@@ -348,7 +339,62 @@ void ILocRiscV64::mov_reg(int rs_reg_no, int src_reg_no)
 {
     emit("mv", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[src_reg_no]);
 }
+/// @brief 保存寄存器到局部变量，
+/// @param src_reg_no 源寄存器
+/// @param dest_var  局部变量
+void ILocRiscV64::store_var(int src_reg_no, LocalVariable * dest_var)
+{
+    //在这里解决目的操作数是否为寄存器变量的问题
+    int dest_reg_id = dest_var->getRegId();
+    if (dest_reg_id != -1) {
+        if (src_reg_no != dest_reg_id) {
+            mov_reg(dest_reg_id, src_reg_no);
+        }
+    } else {
+        // 对于局部变量，则直接从栈基址+偏移寻址
+        // 栈帧偏移
+        int32_t dest_baseRegId = -1;
+        int64_t dest_offset = -1;
+        bool    result = dest_var->getMemoryAddr(&dest_baseRegId, &dest_offset);
+        if (!result) {
+            minic_log(LOG_ERROR, "BUG");
+        }
+        store_base(src_reg_no, dest_baseRegId, dest_offset);
+    }
+}
 
+/// @brief 保存寄存器到变量，
+/// @param src_reg_no 源寄存器
+/// @param dest_var  全局变量
+/// @param tmp_reg_no 基址寄存器
+void ILocRiscV64::store_var(int src_reg_no, GlobalVariable * dest_var, int addr_reg_no)
+{
+    std::string name = dest_var->getName();
+    emit("lui", PlatformRiscV64::regName[addr_reg_no], std::string("%hi(" + name + ")"));
+    // 再加载低位
+    emit(
+        "sw",
+        PlatformRiscV64::regName[src_reg_no],
+        std::string("%lo(" + name + ")(" + PlatformRiscV64::regName[addr_reg_no] + ")"));
+}
+/// @brief 保存寄存器到变量，保证将计算结果（r8）保存到变量
+/// @param src_reg_no 源寄存器
+/// @param dest_var  变量
+/// @param tmp_reg_no 基址寄存器
+void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int addr_reg_no)
+{
+    // 被保存目标变量肯定不是常量
+
+    if (Instanceof(localVar, LocalVariable *, dest_var)) {
+        // 寄存器变量
+		store_var(src_reg_no,localVar);
+    } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
+		store_var(src_reg_no,globalVar,addr_reg_no);
+    } else {
+        // TODO: [寻址]目前只实现了局部变量和全局变量
+        std::cout<<"[ILocRiscV64::store_var]被保存目标变量不是局部变量或全局变量\n";
+    }
+}
 /// @brief 加载变量到寄存器，保证将变量放到reg中
 /// @param rs_reg_no 结果寄存器
 /// @param src_var 源操作数
@@ -360,16 +406,27 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int addr_reg_no)
     } else if (Instanceof(constVal, ConstFloat *, src_var)) {
         // 浮点型常量
         load_imm(rs_reg_no, constVal->getVal());
-    } else if (src_var->getRegId() != -1) {
+    } else if (Instanceof(instVar, Instruction *, src_var)) {
+        load_var(rs_reg_no, instVar);
+    } else if (Instanceof(localVar, LocalVariable *, src_var)) {
+        load_var(rs_reg_no,localVar);
+    } else if (Instanceof(globalVar, GlobalVariable *, src_var)) {
+        load_var(rs_reg_no,globalVar,addr_reg_no);
+    } else {
+        
+    }
+}
+/// @brief 加载变量到寄存器，保证将变量放到reg中
+/// @param rs_reg_no 结果寄存器
+/// @param src_var 源操作数：指令临时变量
+void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var)
+{
+	if (src_var->getRegId() != -1) {
         // 源操作数为寄存器变量
         int src_regId = src_var->getRegId();
         if (src_regId != rs_reg_no) {
             mov_reg(rs_reg_no, src_regId);
         }
-    } else if (Instanceof(globalVar, GlobalVariable *, src_var)) {
-        // 全局变量
-        load_symbol(addr_reg_no, globalVar->getName());
-        load_base(rs_reg_no, addr_reg_no, 0); // 全局变量地址加载到寄存器
     } else {
         // 栈+偏移的寻址方式
         int32_t var_baseRegId = -1;
@@ -381,10 +438,47 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int addr_reg_no)
         load_base(rs_reg_no, var_baseRegId, var_offset);
     }
 }
+/// @brief 加载变量到寄存器，保证将变量放到reg中
+/// @param rs_reg_no 结果寄存器
+/// @param src_var 源操作数：指令临时变量
+void ILocRiscV64::load_var(int rs_reg_no, LocalVariable * src_var)
+{
+    if (src_var->getRegId() != -1) {
+        // 源操作数为寄存器变量
+        int src_regId = src_var->getRegId();
+        if (src_regId != rs_reg_no) {
+            mov_reg(rs_reg_no, src_regId);
+        }
+    } else {
+        // 栈+偏移的寻址方式
+        int32_t var_baseRegId = -1;
+        int64_t var_offset = -1;
+        bool    result = src_var->getMemoryAddr(&var_baseRegId, &var_offset);
+        if (!result) {
+            minic_log(LOG_ERROR, "BUG");
+        }
+        load_base(rs_reg_no, var_baseRegId, var_offset);
+    }
+}
+/// @brief 加载变量到寄存器，保证将变量放到reg中
+/// @param rs_reg_no 结果寄存器
+/// @param src_var 源操作数：全局变量
+void ILocRiscV64::load_var(int rs_reg_no, GlobalVariable * src_var, int addr_reg_no)
+{
+    //xxx:可以做局部改进，将addr_reg_no与rs_reg_no设为同一寄存器
+    std::string name = src_var->getName();
+    emit("lui", PlatformRiscV64::regName[addr_reg_no], std::string("%hi(" + name + ")"));
+    // 再加载低位
+    emit(
+        "lw",
+        PlatformRiscV64::regName[rs_reg_no],
+        std::string("%lo(" + name + ")(" + PlatformRiscV64::regName[addr_reg_no] + ")"));
+}
 
 /// @brief 加载变量地址到寄存器
 /// @param rs_reg_no
 /// @param var
+// TODO:@JEV055 论证是否弃用
 void ILocRiscV64::lea_var(int rs_reg_no, Value * var)
 {
     // 被加载的变量肯定不是常量！
@@ -407,39 +501,25 @@ void ILocRiscV64::lea_var(int rs_reg_no, Value * var)
     emit("addi", rsReg, base, offset_str);
 }
 
-/// @brief 保存寄存器到变量，保证将计算结果（r8）保存到变量
-/// @param src_reg_no 源寄存器
-/// @param dest_var  变量
-/// @param tmp_reg_no 第三方寄存器
-void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
+/// @brief 加载符号值 ldr r0,=g ldr r0,=.L1
+/// @param rs_reg_no 结果寄存器编号
+/// @param name 符号名
+// TODO:论证是否弃用
+void ILocRiscV64::load_symbol(int rs_reg_no, std::string name)
 {
-    // 被保存目标变量肯定不是常量
-
-    if (Instanceof(localVar, LocalVariable *, dest_var)) {
-        // 寄存器变量
-        int dest_reg_id = localVar->getRegId();
-        if (src_reg_no != dest_reg_id) {
-            mov_reg(dest_reg_id, src_reg_no);
-        }
-    } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
-        // 全局变量
-        load_symbol(tmp_reg_no, globalVar->getName());
-        store_base(src_reg_no, tmp_reg_no, 0);
-    } else {
-        // 对于局部变量，则直接从栈基址+偏移寻址
-
-        // TODO: [寻址]目前只实现了局部变量
-
-        // 栈帧偏移
-        int32_t dest_baseRegId = -1;
-        int64_t dest_offset = -1;
-        bool    result = dest_var->getMemoryAddr(&dest_baseRegId, &dest_offset);
-        if (!result) {
-            minic_log(LOG_ERROR, "BUG");
-        }
-        store_base(src_reg_no, dest_baseRegId, dest_offset);
-    }
+    // 假设符号地址可以直接通过 lui 和 addi 来处理
+    // 这里简单模拟加载符号地址到寄存器
+    // 实际中可能需要根据链接器等情况处理
+    // 先加载高位
+    emit("lui", PlatformRiscV64::regName[rs_reg_no], std::string("%hi(" + name + ")"));
+    // 再加载低位
+    emit(
+        "lw",
+        PlatformRiscV64::regName[rs_reg_no],
+        PlatformRiscV64::regName[rs_reg_no],
+        std::string("%lo(" + name + ")(" + PlatformRiscV64::regName[rs_reg_no] + ")"));
 }
+
 
 /// @brief 加载栈内变量地址
 /// @param rsReg 结果寄存器号
@@ -456,7 +536,7 @@ void ILocRiscV64::leaStack(int rs_reg_no, int base_reg_no, int off)
 /// @brief 函数内栈内空间分配（局部变量、形参变量、函数参数传值，或不能寄存器分配的临时变量等）
 /// @param func 函数
 /// @param tmp_reg_No
-void ILocRiscV64::allocStack(Function * func, int tmp_reg_no)
+void ILocRiscV64::allocStack(Function * func)
 {
     // 计算栈帧大小
     int off = func->getMaxDep();

@@ -18,6 +18,9 @@
 #include <list>
 #include <string>
 
+#include "GlobalVariable.h"
+#include "Instruction.h"
+#include "LocalVariable.h"
 #include "Module.h"
 
 #define Instanceof(res, type, var) auto res = dynamic_cast<type>(var)
@@ -167,6 +170,21 @@ public:
     /// @param rs_reg_no 结果寄存器
     /// @param var 变量
     void load_var(int rs_reg_no, Value * var, int addr_reg_no = -1);
+    
+    /// @brief 加载变量到寄存器
+    /// @param rs_reg_no 结果寄存器
+    /// @param var Instruction中间结果变量
+    void load_var(int rs_reg_no, Instruction * var);
+    
+    /// @brief 加载变量到寄存器
+    /// @param rs_reg_no 结果寄存器
+    /// @param var 局部变量
+    void load_var(int rs_reg_no, LocalVariable * var);
+    
+    /// @brief 加载变量到寄存器
+    /// @param rs_reg_no 结果寄存器
+    /// @param var 全局变量
+    void load_var(int rs_reg_no, GlobalVariable * var, int addr_reg_no = -1);
 
     /// @brief 加载变量地址到寄存器
     /// @param rs_reg_no 结果寄存器
@@ -178,6 +196,16 @@ public:
     /// @param var 变量
     /// @param addr_reg_no 地址寄存器号
     void store_var(int src_reg_no, Value * var, int addr_reg_no = -1);
+    /// @brief 保存寄存器到变量
+    /// @param src_reg_no 源寄存器号
+    /// @param var 变量
+    /// @param addr_reg_no 地址寄存器号
+    void store_var(int src_reg_no, GlobalVariable * var, int addr_reg_no = -1);
+    /// @brief 保存寄存器到变量
+    /// @param src_reg_no 源寄存器号
+    /// @param var 变量
+    /// @param addr_reg_no 地址寄存器号
+    void store_var(int src_reg_no, LocalVariable * var);
 
     /// @brief 寄存器Mov操作
     /// @param rs_reg_no 结果寄存器
@@ -191,7 +219,7 @@ public:
     /// @brief 分配栈帧
     /// @param func 函数
     /// @param tmp_reg_No
-    void allocStack(Function * func, int tmp_reg_No);
+    void allocStack(Function * func);
 
     /// @brief 加载函数的参数到寄存器
     /// @param fun
