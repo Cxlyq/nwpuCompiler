@@ -18,6 +18,7 @@
 
 #include "CodeGeneratorAsm.h"
 #include "SimpleRegisterAllocatorRiscV64.h"
+#include "RegisterAllocatorGraphColoring.h"
 
 class CodeGeneratorRiscV64 : public CodeGeneratorAsm {
 
@@ -66,5 +67,10 @@ private:
     ///
     /// @brief 简单的朴素寄存器分配方法
     ///
-    SimpleRegisterAllocatorRiscV64 simpleRegisterAllocator;
+    SimpleRegisterAllocatorRiscV64 simpleRegisterAllocator1;
+
+    ///
+    /// @brief 基于图着色的寄存器分配方法
+    ///
+    GraphColoringRegisterAllocator simpleRegisterAllocator;
 };

@@ -58,13 +58,22 @@ public:
     /// @brief 获取所有变量的寄存器分配映射
     std::unordered_map<Value *, int> getColorMap() const;
     ///
-    /// @brief 尝试按指定的寄存器编号进行分配，若能分配，则直接分配，否则按图着色分配
+    /// @brief 按图着色分配
     /// @param var 分配寄存器的变量
     /// @param no 指定的寄存器编号
     /// @return int 寄存器编号
     ///
-    int Allocate(Value * var = nullptr, int32_t no = -1);
+    int Allocate(Value * var);
 
+    /// @brief 临时分配一个int型寄存器
+    /// @return int 寄存器编号
+    ///
+    int AllocateTempInt();
+
+    /// @brief 临时分配一个float型寄存器
+    /// @return int 寄存器编号
+    ///
+    int AllocateTempFloat();
     ///
     /// @brief 强制占用一个指定的寄存器。如果寄存器被占用，则强制寄存器关联的变量溢出
     /// @param no 要分配的寄存器编号

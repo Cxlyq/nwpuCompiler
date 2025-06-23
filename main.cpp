@@ -315,7 +315,8 @@ static int compile(std::string inputFile, std::string outputFile)
         if (gShowASM) {
 
             CodeGenerator * generator = nullptr;
-
+            // 对IR的名字重命名
+            module->renameIR();
             if (gCPUTarget == "ARM32") {
                 // 输出面向ARM32的汇编指令
                 generator = new CodeGeneratorArm32(module);

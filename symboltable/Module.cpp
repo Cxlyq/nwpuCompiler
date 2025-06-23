@@ -549,7 +549,7 @@ void Module::outputIR(const std::string & filePath)
         std::string instStr;
         func->toString(instStr);
         fprintf(fp, "%s", instStr.c_str());
-        // // 活跃变量分析
+        // // // 活跃变量分析
         // fprintf(fp, "\n; ---------- Live Variable Analysis ----------\n");
 
         // LiveVariableAnalysis lva;

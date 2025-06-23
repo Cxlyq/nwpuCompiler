@@ -363,6 +363,26 @@ void ILocRiscV64::store_var(int src_reg_no, LocalVariable * dest_var)
         store_base(src_reg_no, dest_baseRegId, dest_offset);
     }
 }
+void ILocRiscV64::store_var(int src_reg_no, Instruction * dest_var)
+{
+    //在这里解决目的操作数是否为寄存器变量的问题
+    int dest_reg_id = dest_var->getRegId();
+    if (dest_reg_id != -1) {
+        if (src_reg_no != dest_reg_id) {
+            mov_reg(dest_reg_id, src_reg_no);
+        }
+    } else {
+        // 对于局部变量，则直接从栈基址+偏移寻址
+        // 栈帧偏移
+        int32_t dest_baseRegId = -1;
+        int64_t dest_offset = -1;
+        bool    result = dest_var->getMemoryAddr(&dest_baseRegId, &dest_offset);
+        if (!result) {
+            minic_log(LOG_ERROR, "BUG");
+        }
+        store_base(src_reg_no, dest_baseRegId, dest_offset);
+    }
+}
 
 /// @brief 保存寄存器到变量，
 /// @param src_reg_no 源寄存器
@@ -370,6 +390,9 @@ void ILocRiscV64::store_var(int src_reg_no, LocalVariable * dest_var)
 /// @param tmp_reg_no 基址寄存器
 void ILocRiscV64::store_var(int src_reg_no, GlobalVariable * dest_var, int addr_reg_no)
 {
+    if (addr_reg_no == -1) {
+        std::cout << "BUG[ILocRiscV64::store_var]:addr_reg_no can't be -1 when dealing with globalvariable.\n";
+    }
     std::string name = dest_var->getName();
     emit("lui", PlatformRiscV64::regName[addr_reg_no], std::string("%hi(" + name + ")"));
     // 再加载低位
@@ -389,6 +412,8 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int addr_reg_no)
     if (Instanceof(localVar, LocalVariable *, dest_var)) {
         // 寄存器变量
         store_var(src_reg_no, localVar);
+    } else if (Instanceof(instVar, Instruction *, dest_var)) {
+        store_var(src_reg_no, instVar);
     } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
         store_var(src_reg_no, globalVar, addr_reg_no);
     } else {

@@ -242,7 +242,6 @@ void CodeGeneratorRiscV64::genCodeSection(Function * func)
 {
     // 寄存器分配以及栈内局部变量的站内地址重新分配
     registerAllocation(func);
-
     // 获取函数的指令列表
     std::vector<Instruction *> & IrInsts = func->getInterCode().getInsts();
 
@@ -254,8 +253,17 @@ void CodeGeneratorRiscV64::genCodeSection(Function * func)
     }
 
     // ILOC代码序列
-    ILocRiscV64 iloc(module);
-
+    ILocRiscV64          iloc(module);
+    LiveVariableAnalysis lva;
+    // printf("LVA addr = %p\n", &lva); // 看是否是 0x50 或其他非法值
+    lva.run(func);
+    simpleRegisterAllocator.buildGraph(lva); // 构建干涉图
+    bool success = simpleRegisterAllocator.allocate();
+    if (success) {
+        std::cout << "寄存器分配成功 ✅\n";
+    } else {
+        std::cout << "部分变量需要溢出 ❌\n";
+    }
     // 指令选择生成汇编指令
     InstSelectorRiscV64 instSelector(IrInsts, iloc, func, simpleRegisterAllocator);
     instSelector.setShowLinearIR(this->showLinearIR);
@@ -520,8 +528,8 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
             int32_t size = var->getType()->getSize();
 
-            // 64位RISC平台按照8字节的大小整数倍分配局部变量
-            size = (size + 7) & ~7;
+            // 64位RISC平台按照4字节的大小整数倍分配局部变量
+            size = (size + 3) & ~3;
 
             // 累计当前作用域大小
             sp_esp += size;
@@ -544,8 +552,8 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
             int32_t size = inst->getType()->getSize();
 
-            // 64位RISC平台按照8字节的大小整数倍分配局部变量
-            size = (size + 7) & ~7;
+            // 64位RISC平台按照4字节的大小整数倍分配局部变量
+            size = (size + 3) & ~3;
 
             // 累计当前作用域大小
             sp_esp += size;
@@ -563,7 +571,7 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
     // 通过栈传递的实参，RISCV64的前四个通过寄存器传递
     int maxFuncCallArgCnt = func->getMaxFuncCallArgCnt();
     if (maxFuncCallArgCnt > 4) {
-        sp_esp += (maxFuncCallArgCnt - 4) * 8;
+        sp_esp += (maxFuncCallArgCnt - 4) * 4;
     }
 
     // 只有int类型时可以4字节对齐，支持浮点或者向量运算时要16字节对齐

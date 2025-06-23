@@ -100,28 +100,51 @@ bool GraphColoringRegisterAllocator::simplify(
     const std::unordered_map<Value *, std::unordered_set<Value *>> & graph, std::stack<Value *> & stack,
     std::vector<Value *> & spilled)
 {
+    // 从变量名提取数字的lambda
+    auto extractNumber = [](const std::string & name) -> int {
+        size_t i = 0;
+        while (i < name.size() && !isdigit(name[i]))
+            i++;
+        if (i == name.size())
+            return -1;
+        return std::stoi(name.substr(i));
+    };
+
     std::unordered_map<Value *, std::unordered_set<Value *>> tempGraph = graph;
     std::unordered_set<Value *>                              removed;
 
     bool progress = false;
 
     while (true) {
-        bool found = false;
+        bool                 found = false;
+        std::vector<Value *> candidates;
 
+        // 找所有度数小于寄存器数量的节点
         for (auto & entry: tempGraph) {
             Value * node = entry.first;
             if (removed.count(node))
                 continue;
 
-            const auto & neighbors = entry.second;
-
             int degree = 0;
-            for (Value * n: neighbors) {
+            for (Value * n: entry.second) {
                 if (!removed.count(n))
                     degree++;
             }
-
             if (degree < regCount) {
+                candidates.push_back(node);
+            }
+        }
+
+        if (candidates.empty())
+            break;
+
+        // 按数字降序排序，数字大的先压栈，数字小的后压栈
+        std::sort(candidates.begin(), candidates.end(), [&](Value * a, Value * b) {
+            return extractNumber(a->getIRName()) > extractNumber(b->getIRName());
+        });
+
+        for (Value * node: candidates) {
+            if (!removed.count(node)) {
                 stack.push(node);
                 removed.insert(node);
                 found = true;
@@ -133,7 +156,7 @@ bool GraphColoringRegisterAllocator::simplify(
             break;
     }
 
-    // 溢出记录
+    // 剩下没删的节点就是溢出节点
     for (const auto & entry: tempGraph) {
         if (!removed.count(entry.first)) {
             spilled.push_back(entry.first);
@@ -158,6 +181,7 @@ void GraphColoringRegisterAllocator::assignColors(
     while (!stack.empty()) {
         Value * node = stack.top();
         stack.pop();
+        std::cout << "Assigning color to variable " << node->getIRName() << "\n";
 
         std::unordered_set<int> usedColors;
         for (Value * neighbor: graph.at(node)) { // <<< 改为当前图graph
@@ -223,6 +247,8 @@ void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva
     const auto & stackVars = lva.getStackVars(); // <<< 获取栈变量集合
     for (auto * block: lva.getBasicBlocks()) {
         std::unordered_set<Value *> live;
+        std::cout << "\n>>> BasicBlock: " << block->label << "\n";
+
         for (auto * v: lva.getLiveOut(block->label)) {
             if (!stackVars.count(v)) // <<< 过滤掉栈变量
                 live.insert(v);
@@ -238,6 +264,33 @@ void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva
         for (auto it = block->instructions.rbegin(); it != block->instructions.rend(); ++it) {
             Instruction * inst = *it;
 
+            if (inst->hasResultValue()) {
+                Value * def = inst;
+                if (!stackVars.count(def)) { // 过滤栈变量
+                    bool inserted = false;
+                    for (Value * val: live) {
+                        if (val != def &&
+                            val->getType()->isFloatType() == def->getType()->isFloatType()) { // 仅相同类型变量干涉
+                            addInterference(def, val);
+                            inserted = true;
+                        }
+                    }
+                    // 如果没有和任何变量干涉，也要把 def 加进干涉图（空邻居集）
+                    if (!inserted) {
+                        if (def->getType()->isFloatType()) {
+                            if (!floatInterferenceGraph.count(def)) {
+                                floatInterferenceGraph[def] = {};
+                            }
+                        } else {
+                            if (!intInterferenceGraph.count(def)) {
+                                intInterferenceGraph[def] = {};
+                            }
+                        }
+                    }
+                }
+                live.erase(def); // 依然要 erase（不管是不是栈变量）
+            }
+
             // 添加使用的变量到 live
             for (Use * use: inst->getOperands()) {
                 Value * operand = use->getUsee();
@@ -249,19 +302,6 @@ void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva
                     continue;
                 live.insert(operand);
                 // std::cout << "  USE: " << operand->getIRName() << "\n";
-            }
-            if (inst->hasResultValue()) {
-                Value * def = inst;
-                if (!stackVars.count(def)) { // 过滤栈变量
-                    for (Value * val: live) {
-
-                        if (val != def &&
-                            val->getType()->isFloatType() == def->getType()->isFloatType()) { // 仅相同类型变量干涉
-                            addInterference(def, val);
-                        }
-                    }
-                }
-                live.erase(def); // 依然要 erase（不管是不是栈变量）
             }
 
             // std::cout << "  Updated live set: ";
@@ -276,22 +316,22 @@ void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva
         // std::cout << "\n\n";
     }
 
-    // //输出最终干涉图
-    // std::cout << "=== intInterference Graph ===\n";
-    // for (auto & [v, neighbors]: intInterferenceGraph) {
-    //     std::cout << v->getIRName() << " : ";
-    //     for (auto * n: neighbors)
-    //         std::cout << n->getIRName() << " ";
-    //     std::cout << "\n";
-    // }
-    // std::cout << "=== floatInterference Graph ===\n";
+    //输出最终干涉图
+    std::cout << "=== intInterference Graph ===\n";
+    for (auto & [v, neighbors]: intInterferenceGraph) {
+        std::cout << v->getIRName() << " : ";
+        for (auto * n: neighbors)
+            std::cout << n->getIRName() << " ";
+        std::cout << "\n";
+    }
+    std::cout << "=== floatInterference Graph ===\n";
 
-    // for (auto & [v, neighbors]: floatInterferenceGraph) {
-    //     std::cout << v->getIRName() << " : ";
-    //     for (auto * n: neighbors)
-    //         std::cout << n->getIRName() << " ";
-    //     std::cout << "\n";
-    // }
+    for (auto & [v, neighbors]: floatInterferenceGraph) {
+        std::cout << v->getIRName() << " : ";
+        for (auto * n: neighbors)
+            std::cout << n->getIRName() << " ";
+        std::cout << "\n";
+    }
 }
 
 /// @brief 获取所有变量的寄存器分配映射
@@ -305,12 +345,12 @@ std::unordered_map<Value *, int> GraphColoringRegisterAllocator::getColorMap() c
 /// @brief 分配一个寄存器。如果没有，则选取寄存器中最晚使用的寄存器，同时溢出寄存器到变量中
 /// @return int 寄存器编号
 // 新增以适配SimpleRegisterAllocatorRiscV64接口
-int GraphColoringRegisterAllocator::Allocate(Value * var, int32_t no)
+int GraphColoringRegisterAllocator::Allocate(Value * var)
 {
+
     if (var && (var->getRegId() != -1)) {
         return var->getRegId();
     }
-
     auto iter = colorMap.find(var);
     if (iter != colorMap.end()) {
         int regIndex = iter->second;
@@ -335,6 +375,69 @@ int GraphColoringRegisterAllocator::Allocate(Value * var, int32_t no)
     }
 
     return -1;
+}
+
+/// @brief 临时分配一个int型寄存器
+/// @return int 寄存器编号
+///
+int GraphColoringRegisterAllocator::AllocateTempInt()
+{
+    int32_t regno = -1;
+    int     regIndex = -1;
+    // 查询空闲的整数寄存器
+    for (int k = 0; k < PlatformRiscV64::maxUsableIntRegNum; ++k) {
+        if (!intRegBitmap.test(k)) { // 如果该寄存器未被占用
+            regIndex = k;
+            break;
+        }
+    }
+
+    if (regIndex != -1) {
+        // 占用该寄存器
+        intBitmapSet(regIndex);
+    } else {
+        // 没有空闲寄存器，选择溢出最旧的变量
+        Value * oldestVar = regValues.front();
+        regno = oldestVar->getRegId();
+        oldestVar->setRegId(-1);
+        regValues.erase(regValues.begin());
+    }
+    if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableIntRegNum) {
+        regno = PlatformRiscV64::RISCV64_INT_REGS[regIndex];
+    }
+    return regno; // 返回物理寄存器编号
+}
+
+/// @brief 临时分配一个float型寄存器
+/// @return int 寄存器编号
+///
+int GraphColoringRegisterAllocator::AllocateTempFloat()
+{
+    int32_t regno = -1;
+    int     regIndex = -1;
+
+    // 查询空闲的浮点寄存器
+    for (int k = 0; k < PlatformRiscV64::maxUsableFloatRegNum; ++k) {
+        if (!floatRegBitmap.test(k)) { // 如果该浮点寄存器未被占用
+            regIndex = k;
+            break;
+        }
+    }
+
+    if (regIndex != -1) {
+        // 占用该寄存器
+        floatBitmapSet(regIndex);
+    } else {
+        // 没有空闲寄存器，选择溢出最旧的变量
+        Value * oldestVar = regValues.front();
+        regno = oldestVar->getRegId();
+        oldestVar->setRegId(-1);
+        regValues.erase(regValues.begin());
+    }
+    if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableFloatRegNum) {
+        regno = PlatformRiscV64::RISCV64_FLOAT_REGS[regIndex];
+    }
+    return regno; // 返回物理浮点寄存器编号
 }
 
 /// @brief 由寄存器号查找编号（支持整数和浮点寄存器）
