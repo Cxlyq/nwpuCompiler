@@ -874,27 +874,27 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
     int32_t dst_regId = -1;
     Value * src = inst->getOperand(0);
     Value * dst = inst;
-    std::cout << "[InstSelectorRiscV64::translate_store] srctype:" << typeid(inst->getOperand(1)).name() << "\n"
-              << "[InstSelectorRiscV64::translate_store] dsttype:" << typeid(inst->getOperand(0)).name() << "\n";
+    std::cout << "[InstSelectorRiscV64::translate_load] srctype:" << typeid(inst->getOperand(1)).name() << "\n"
+              << "[InstSelectorRiscV64::translate_load] dsttype:" << typeid(inst->getOperand(0)).name() << "\n";
 
 	// 源变量是Instruction临时变量或Local局部变量的情况
 	if (Instanceof(InstSrc, Instruction *, src)) {
 		src_regId = InstSrc->getRegId();
-		std::cout << "[InstSelectorRiscV64::translate_store] src is Instruction, regid=" << src_regId << "\n";
+		std::cout << "[InstSelectorRiscV64::translate_load] src is Instruction, regid=" << src_regId << "\n";
 	} else if (Instanceof(LVSrc, LocalVariable *, src)) {
 		src_regId = LVSrc->getRegId();
-		std::cout << "[InstSelectorRiscV64::translate_store] src is LocalVariable, regid=" << src_regId << "\n";
+		std::cout << "[InstSelectorRiscV64::translate_load] src is LocalVariable, regid=" << src_regId << "\n";
 	} else if (Instanceof(GLSrc, GlobalVariable *, src)) {
 		src_regId = GLSrc->getRegId();
-		std::cout << "[InstSelectorRiscV64::translate_store] src is LocalVariable, regid=" << src_regId << "\n";
+		std::cout << "[InstSelectorRiscV64::translate_load] src is LocalVariable, regid=" << src_regId << "\n";
 	} else {
-		std::cout << "[InstSelectorRiscV64::translate_store] src is not a Instruction/Local variable\n";
+		std::cout << "[InstSelectorRiscV64::translate_load] src is not a Instruction/Local variable\n";
 		return;
 	}
 
 	// 目的变量是局部变量，不需要额外分配指针寄存器
 	dst_regId = inst->getRegId();
-	std::cout << "[InstSelectorRiscV64::translate_store] dst is LocalVariable, regid=" << dst_regId << "\n";
+	std::cout << "[InstSelectorRiscV64::translate_load] dst is LocalVariable, regid=" << dst_regId << "\n";
 	if (src_regId != -1) {
 		// 源操作数是寄存器，则直接存储到寄存器中
 		iloc.store_var(src_regId, dst); // XXX: 考虑修改函数，看是否需要额外指派地址寄存器

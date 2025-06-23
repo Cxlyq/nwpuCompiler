@@ -415,7 +415,7 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int addr_reg_no)
     } else if (Instanceof(globalVar, GlobalVariable *, src_var)) {
         load_var(rs_reg_no, globalVar, addr_reg_no);
     } else {
-        std::cout << "[ILocRiscV64::store_var]被保存目标变量不是局部变量或全局变量\n";
+        std::cout << "[ILocRiscV64::load_var]被保存目标变量不是局部变量或全局变量或临时变量\n";
         emit("lw", "?", "?");
     }
 }
