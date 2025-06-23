@@ -127,7 +127,12 @@ protected:
     ///
     /// @brief 寄存器被那个Value占用。按照时间次序加入
     ///
-    std::vector<Value *> regValues;
+    std::vector<Value *> intRegValues;
+
+    ///
+    /// @brief 寄存器被那个Value占用。按照时间次序加入
+    ///
+    std::vector<Value *> floatRegValues;
 
     ///
     /// @brief 使用过的所有寄存器编号

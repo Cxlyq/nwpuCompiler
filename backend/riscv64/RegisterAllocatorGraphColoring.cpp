@@ -358,20 +358,79 @@ int GraphColoringRegisterAllocator::Allocate(Value * var)
             if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableFloatRegNum) {
                 int regno = PlatformRiscV64::RISCV64_FLOAT_REGS[regIndex];
                 var->setRegId(regno);
+                floatRegValues.push_back(var);
                 return regno;
             }
         } else { // 整数变量
             if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableIntRegNum) {
                 int regno = PlatformRiscV64::RISCV64_INT_REGS[regIndex];
                 var->setRegId(regno);
+                intRegValues.push_back(var);
                 return regno;
             }
         }
     }
 
-    if (std::find(spilledInt.begin(), spilledInt.end(), var) != spilledInt.end() ||
-        std::find(spilledFloat.begin(), spilledFloat.end(), var) != spilledFloat.end()) {
-        return -1;
+    // 2. 图着色溢出的变量，动态分配
+    if (std::find(spilledInt.begin(), spilledInt.end(), var) != spilledInt.end()) {
+        int32_t regno = -1;
+        int     regIndex = -1;
+        // 查询空闲的整数寄存器
+        for (int k = 0; k < PlatformRiscV64::maxUsableIntRegNum; ++k) {
+            if (!intRegBitmap.test(k)) { // 如果该寄存器未被占用
+                regIndex = k;
+                break;
+            }
+        }
+
+        if (regIndex != -1) {
+            // 占用该寄存器
+            intBitmapSet(regIndex);
+        } else {
+            // 没有空闲寄存器，选择溢出最旧的变量
+            Value * oldestVar = intRegValues.front();
+            regno = oldestVar->getRegId();
+            oldestVar->setRegId(-1);
+            intRegValues.erase(intRegValues.begin());
+        }
+        if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableIntRegNum) {
+            regno = PlatformRiscV64::RISCV64_INT_REGS[regIndex];
+        }
+        // 加入新的变量
+        var->setRegId(regno);
+        intRegValues.push_back(var);
+        return regno; // 返回物理寄存器编号
+    }
+
+    if (std::find(spilledFloat.begin(), spilledFloat.end(), var) != spilledFloat.end()) {
+        int32_t regno = -1;
+        int     regIndex = -1;
+
+        // 查询空闲的浮点寄存器
+        for (int k = 0; k < PlatformRiscV64::maxUsableFloatRegNum; ++k) {
+            if (!floatRegBitmap.test(k)) { // 如果该浮点寄存器未被占用
+                regIndex = k;
+                break;
+            }
+        }
+
+        if (regIndex != -1) {
+            // 占用该寄存器
+            floatBitmapSet(regIndex);
+        } else {
+            // 没有空闲寄存器，选择溢出最旧的变量
+            Value * oldestVar = floatRegValues.front();
+            regno = oldestVar->getRegId();
+            oldestVar->setRegId(-1);
+            floatRegValues.erase(floatRegValues.begin());
+        }
+        if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableFloatRegNum) {
+            regno = PlatformRiscV64::RISCV64_FLOAT_REGS[regIndex];
+        }
+        // 加入新的变量
+        var->setRegId(regno);
+        floatRegValues.push_back(var);
+        return regno; // 返回物理浮点寄存器编号
     }
 
     return -1;
@@ -397,10 +456,10 @@ int GraphColoringRegisterAllocator::AllocateTempInt()
         intBitmapSet(regIndex);
     } else {
         // 没有空闲寄存器，选择溢出最旧的变量
-        Value * oldestVar = regValues.front();
+        Value * oldestVar = intRegValues.front();
         regno = oldestVar->getRegId();
         oldestVar->setRegId(-1);
-        regValues.erase(regValues.begin());
+        intRegValues.erase(intRegValues.begin());
     }
     if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableIntRegNum) {
         regno = PlatformRiscV64::RISCV64_INT_REGS[regIndex];
@@ -429,10 +488,10 @@ int GraphColoringRegisterAllocator::AllocateTempFloat()
         floatBitmapSet(regIndex);
     } else {
         // 没有空闲寄存器，选择溢出最旧的变量
-        Value * oldestVar = regValues.front();
+        Value * oldestVar = floatRegValues.front();
         regno = oldestVar->getRegId();
         oldestVar->setRegId(-1);
-        regValues.erase(regValues.begin());
+        floatRegValues.erase(floatRegValues.begin());
     }
     if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableFloatRegNum) {
         regno = PlatformRiscV64::RISCV64_FLOAT_REGS[regIndex];
@@ -496,14 +555,18 @@ void GraphColoringRegisterAllocator::free(Value * var)
             if (var->getType()->isIntegerType()) {
                 // 整数寄存器，直接操作 intRegBitmap
                 intRegBitmap.reset(regIndex);
+                auto it = std::find(intRegValues.begin(), intRegValues.end(), var);
+                if (it != intRegValues.end()) {
+                    intRegValues.erase(it);
+                }
             } else {
+                auto it = std::find(floatRegValues.begin(), floatRegValues.end(), var);
+                if (it != floatRegValues.end()) {
+                    floatRegValues.erase(it);
+                }
                 // 浮点寄存器，计算浮点寄存器对应的bitmap索引
                 floatRegBitmap.reset(regIndex);
             }
-        }
-        auto it = std::find(regValues.begin(), regValues.end(), var);
-        if (it != regValues.end()) {
-            regValues.erase(it);
         }
         var->setRegId(-1);
     }
@@ -526,19 +589,22 @@ void GraphColoringRegisterAllocator::free(int32_t no)
 
     if (no >= 32) {
         floatRegBitmap.reset(regIndex);
-
+        auto pIter =
+            std::find_if(floatRegValues.begin(), floatRegValues.end(), [=](auto val) { return val->getRegId() == no; });
+        if (pIter != floatRegValues.end()) {
+            (*pIter)->setRegId(-1);
+            floatRegValues.erase(pIter);
+        }
     } else {
         intRegBitmap.reset(regIndex);
-    }
-
-    auto pIter = std::find_if(regValues.begin(), regValues.end(), [=](auto val) { return val->getRegId() == no; });
-
-    if (pIter != regValues.end()) {
-        (*pIter)->setRegId(-1);
-        regValues.erase(pIter);
+        auto pIter =
+            std::find_if(intRegValues.begin(), intRegValues.end(), [=](auto val) { return val->getRegId() == no; });
+        if (pIter != intRegValues.end()) {
+            (*pIter)->setRegId(-1);
+            intRegValues.erase(pIter);
+        }
     }
 }
-
 void GraphColoringRegisterAllocator::intBitmapSet(int32_t no)
 {
     intRegBitmap.set(no);
