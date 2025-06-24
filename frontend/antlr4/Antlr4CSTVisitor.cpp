@@ -208,6 +208,11 @@ std::any MiniCCSTVisitor::visitBlockItemList(MiniCParser::BlockItemListContext *
 
         // 插入到块节点中
         (void) block_node->insert_son_node(blockItem);
+        if (blockItem->node_type == ast_operator_type::AST_OP_BREAK ||
+            blockItem->node_type == ast_operator_type::AST_OP_CONTINUE ||
+            blockItem->node_type == ast_operator_type::AST_OP_RETURN) {
+            break; // 语句块中出现break, continue, return语句后，其后的语句将不再被遍历
+        }
     }
 
     return block_node;

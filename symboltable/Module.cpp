@@ -14,7 +14,11 @@
 /// </table>
 ///
 #include "Module.h"
+#include "FloatType.h"
+#include "FormalParam.h"
 #include "FrameAllocator.h"
+#include "IntegerType.h"
+#include "PointerType.h"
 #include "ScopeStack.h"
 #include "Common.h"
 #include "Value.h"
@@ -34,7 +38,32 @@ Module::Module(std::string _name) : name(_name)
 
     // 加入内置函数putint
     (void) newFunction("putint", VoidType::getType(), {new FormalParam{IntegerType::getTypeInt(), ""}}, true);
+    (void) newFunction("putch", VoidType::getType(), {new FormalParam{IntegerType::getTypeInt(), ""}}, true);
     (void) newFunction("getint", IntegerType::getTypeInt(), {}, true);
+    (void) newFunction("getch", IntegerType::getTypeInt(), {}, true);
+    (void) newFunction(
+        "getarray",
+        IntegerType::getTypeInt(),
+        {new FormalParam{new PointerType(IntegerType::getTypeInt()), ""}},
+        true);
+    (void) newFunction(
+        "putarray",
+        VoidType::getType(),
+        {new FormalParam{IntegerType::getTypeInt(), ""},
+         new FormalParam{new PointerType(IntegerType::getTypeInt()), ""}},
+        true);
+    (void) newFunction("getfloat", FloatType::getType(), {}, true);
+    (void) newFunction("putfloat", VoidType::getType(), {new FormalParam{FloatType::getType(), ""}}, true);
+    (void) newFunction(
+        "getfarray",
+        IntegerType::getTypeInt(),
+        {new FormalParam{new PointerType(FloatType::getType()), ""}},
+        true);
+    (void) newFunction(
+        "putfarray",
+        VoidType::getType(),
+        {new FormalParam{IntegerType::getTypeInt(), ""}, new FormalParam{new PointerType(FloatType::getType()), ""}},
+        true);
 }
 
 /// @brief 进入作用域，如进入函数体块、语句块等
