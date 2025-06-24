@@ -581,6 +581,8 @@ bool IRGenerator::ir_function_call(ast_node * node)
 /// @brief 语句块（含函数体）AST节点翻译成线性中间IR
 /// @param node AST节点
 /// @return 翻译是否成功，true：成功，false：失败
+/// @note 翻译block，1, 对if-else结点做了特殊处理； 2, 注意当block结点中含有return行为时(return语句, 完全返回的if-else，
+/// 已返回的子block)，停止翻译后续语句。
 bool IRGenerator::ir_block(ast_node * node)
 {
     // 进入作用域
@@ -615,13 +617,20 @@ bool IRGenerator::ir_block(ast_node * node)
             stop = true; // block中遇到return语句，停止翻译后续语句
         }
 
+        // 除了if-else以外的语句会进行到此处
         ast_node * temp = ir_visit_ast_node(base_node);
         if (!temp) {
             return false;
         }
-
         node->blockInsts.addInst(temp->blockInsts);
+
+        if (base_node->returnedBlock) {
+            stop = true; // block结点(node)中含有已返回的子block结点(base_node已经返回)， 则停止翻译
+        }
+
+        // block语句块中遇到return或完全返回的if-else或已返回的子block
         if (stop) {
+            node->returnedBlock = true; // 标记该block结点是已经有返回的block
             break;
         }
     }
@@ -2100,7 +2109,7 @@ bool IRGenerator::ir_return(ast_node * node)
 /// @note ir_ifelse有许多特殊情况需要处理
 /// 	1. ir_ifelse不再交由ir_visit_ast_node处理， 而交由其上级ir_block或嵌套上级ir_ifelse处理。
 ///		原因： 针对merge标签，ifelse无法判断其后有无语句，如果没有语句，merge标签将紧邻函数exit
-/// label。并且，如果if-else均存在return语句，或仅有if并且存在return语句，则我称其为完全返回的if-else，根据标准，后续标签和block的ir将不再生成
+/// label。并且，如果if-else均存在return语句，则我称其为完全返回的if-else，根据标准，后续标签和block的ir将不再生成
 ///		解决方法：修改ir_ifelse，将其merge标签返回给上级，交由上级判断是否添加该merge标签。
 ///		2.
 /// 短路求值问题，因为逻辑表达式的短路逻辑无法访问到ifelse产生的true/false标签，所以对于短路问题设立新函数gen_condition_branch，不再走ir_and/ir_or
@@ -2177,7 +2186,6 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
     if (!gen_condition_branch(cond_node, true_branch_label, false_branch_target, node->blockInsts)) {
         // Error occurred during condition branching generation
         std::cerr << "Error generating condition branch for if-else." << std::endl;
-        // TODO: Add location info
         return nullptr;
     }
     // 前导基本块（包含条件求值和条件分支）的指令已生成并添加到 node->blockInsts。
@@ -2292,13 +2300,14 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
             node->isIfElseHaveReturn = false; // 如果ifelse没有全部 return，则继续翻译后续代码
         }
     } else {
-        if (hasReturnInIf) { // 单独if语句块存在完全return
-            *stop = true;
-            node->isIfElseHaveReturn = true;
-        } else {
-            *stop = false;
-            node->isIfElseHaveReturn = false; // 如果if没有 return，则继续翻译后续代码
-        }
+        // if (hasReturnInIf) { // 单独if语句块存在完全return
+        //     *stop = true;
+        //     node->isIfElseHaveReturn = true;
+        // } else {
+        //     *stop = false;
+        //     node->isIfElseHaveReturn = false; // 如果if没有 return，则继续翻译后续代码
+        // }
+        *stop = false;
     }
 
     *stopTranslateBlock = *stop;

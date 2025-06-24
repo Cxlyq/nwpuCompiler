@@ -173,7 +173,9 @@ public:
 
     bool is_lvar = false; ///< 是否是左值变量
 
-    bool isIfElseHaveReturn = false; ///< if-else语句是否有返回值
+    bool isIfElseHaveReturn = false; ///< if-else是否为完全返回的if-else节点
+
+    bool returnedBlock = false; /// 除了if-else的 block 是否已返回 (fix 2025-002)
 
     /// @brief 节点类型
     ast_operator_type node_type;
@@ -373,7 +375,6 @@ ast_node * create_var_param(type_attr dataType, var_id_attr idAttr);
 
 /// @brief 创建数组形参节点
 ast_node * create_array_param(type_attr dataType, var_id_attr idAttr, const std::vector<ast_node *> & dimensions);
-
 
 /// @brief 将基本类型转换为 Type
 /// @param bt 基本类型
