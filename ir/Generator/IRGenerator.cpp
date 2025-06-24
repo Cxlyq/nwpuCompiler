@@ -587,7 +587,7 @@ bool IRGenerator::ir_block(ast_node * node)
     if (node->needScope) {
         module->enterScope();
     }
-
+    bool stop = false;
     // std::vector<ast_node *>::iterator pIter;
     for (auto base_node: node->sons) {
         // 遍历Block的每个语句，进行显示或者运算
@@ -603,13 +603,16 @@ bool IRGenerator::ir_block(ast_node * node)
                 return false;
             }
             node->blockInsts.addInst(base_node->blockInsts); // 添加if else语句
-            if (stopTranslateBlock && base_node == node->sons[node->sons.size() - 1]) {
+            if (stopTranslateBlock) {
+                stop = true;
                 break; //  if else里均存在return，不生成merge标签，不再翻译后续语句。
             } else {
                 // 如果ifelse没有结束，则需要将mergeLabel添加到blockInsts中
                 node->blockInsts.addInst(mergeLabel); // 添加merge标签
                 continue;                             // 继续处理下一个语句
             }
+        } else if (base_node->node_type == ast_operator_type::AST_OP_RETURN) {
+            stop = true; // block中遇到return语句，停止翻译后续语句
         }
 
         ast_node * temp = ir_visit_ast_node(base_node);
@@ -618,6 +621,9 @@ bool IRGenerator::ir_block(ast_node * node)
         }
 
         node->blockInsts.addInst(temp->blockInsts);
+        if (stop) {
+            break;
+        }
     }
 
     // 离开作用域
