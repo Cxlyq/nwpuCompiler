@@ -20,6 +20,7 @@
 #include "IRConstant.h"
 #include "Function.h"
 #include "ArrayType.h"
+#include "Type.h"
 #include "Value.h"
 
 /// @brief 指定函数名字、函数类型的构造函数
@@ -324,7 +325,17 @@ void Function::renameIR()
     for (auto inst: this->getInterCode().getInsts()) {
         if (inst->getOp() == IRInstOperator::IRINST_OP_LABEL) {
             // inst->setIRName(IR_LABEL_PREFIX + std::to_string(labelIndex++));
-            inst->setIRName(std::to_string(varnameIndex++));
+            LabelInstruction * labelInst = dynamic_cast<LabelInstruction *>(inst);
+            if (labelInst == nullptr) {
+                std::cerr << "Error: Label instruction is not a LabelInstruction type.\n";
+                exit(EXIT_FAILURE);
+            }
+            if (labelInst->isUsed) {
+                inst->setIRName(std::to_string(varnameIndex++));
+            } else {
+                // 未使用的Label, 不分配IR NAME
+                inst->setIRName("label_" + std::to_string(-1));
+            }
         } else if (inst->hasResultValue()) {
             // inst->setIRName(IR_TEMP_VARNAME_PREFIX + std::to_string(varnameIndex++));
             inst->setIRName('%' + std::to_string(varnameIndex++));

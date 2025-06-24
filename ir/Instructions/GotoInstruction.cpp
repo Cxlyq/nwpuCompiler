@@ -29,6 +29,7 @@ GotoInstruction::GotoInstruction(Function * _func, Instruction * _target)
     // 真假目标一样，则无条件跳转
     target = static_cast<LabelInstruction *>(_target);
     addOperand(target);
+    target->isUsed = true; // 设置目标Label指令为已使用
 }
 
 /// @brief 转换成IR指令文本

@@ -39,4 +39,7 @@ public:
     /// @param str 返回指令字符串
     ///
     void toString(std::string & str) override;
+
+    /// 标记标签是否被使用过
+    bool isUsed = false;
 };

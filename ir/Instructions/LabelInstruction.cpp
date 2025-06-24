@@ -29,5 +29,9 @@ LabelInstruction::LabelInstruction(Function * _func)
 /// @param str 返回指令字符串
 void LabelInstruction::toString(std::string & str)
 {
-    str = IRName + ":";
+    if (isUsed) {
+        str = IRName + ":";
+    } else {
+        str = "";
+    }
 }

@@ -16,6 +16,8 @@ ConditionalInstruction::ConditionalInstruction(
     addOperand(cond_val);
     addOperand(true_branch_label);
     addOperand(false_branch_target);
+    true_branch_label->isUsed = true;   // 标记真分支标签被使用;
+    false_branch_target->isUsed = true; // 标记假分支标签被使用
 }
 
 /// @brief 转换成字符串
@@ -38,5 +40,6 @@ void ConditionalInstruction::toString(std::string & str)
     // 注意：条件值在 LLVM IR 中必须是 i1 类型，这里的 toString 直接写死了 i1。
     // 这意味着 ir_ifelse 在创建 ConditionalBranchInstruction 之前，
     // 必须确保 condition->val 已经是 i1 类型的值 (例如通过 icmp 或其他逻辑操作)。
-    str = "br " + cond_val->getType()->toString() + " " + cond_name + ", label %" + true_label_name + ", label %" + false_label_name;
+    str = "br " + cond_val->getType()->toString() + " " + cond_name + ", label %" + true_label_name + ", label %" +
+          false_label_name;
 }
