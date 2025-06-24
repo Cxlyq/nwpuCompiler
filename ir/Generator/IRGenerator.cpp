@@ -301,9 +301,10 @@ bool IRGenerator::ir_function_define(ast_node * node)
         retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type, "ret"));
         // XXX: 初步完成：这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
         node->blockInsts.addInst(new StoreInstruction(newFunc, retValue, module->newConstInt(0)));
+    } else {
+        retValue = new Value(type_node->type);
     }
     newFunc->setReturnValue(retValue);
-
     // 函数内已经进入作用域，内部不再需要做变量的作用域管理
     block_node->needScope = false;
 
@@ -328,9 +329,13 @@ bool IRGenerator::ir_function_define(ast_node * node)
     irCode.addInst(exitLabelInst);
 
     // 函数出口指令
-    auto * loadExit = new LoadInstruction(newFunc, newFunc->getReturnValue());
-    irCode.addInst(loadExit);
-    irCode.addInst(new ExitInstruction(newFunc, loadExit));
+    if (!type_node->type->isVoidType()) {
+        auto * loadExit = new LoadInstruction(newFunc, newFunc->getReturnValue());
+        irCode.addInst(loadExit);
+        irCode.addInst(new ExitInstruction(newFunc, loadExit));
+    } else {
+        irCode.addInst(new ExitInstruction(newFunc, nullptr));
+    }
 
     // 恢复成外部函数
     module->setCurrentFunction(nullptr);
