@@ -1373,18 +1373,39 @@ bool IRGenerator::ir_eq(ast_node * node)
     // }
 
     // 操作数不同时进行类型转换
-    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
-        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+    // 操作数不同时进行类型转换
+
+    auto lTyID = left->val->getType()->getTypeID();
+    auto rTyID = right->val->getType()->getTypeID();
+
+    if (lTyID != rTyID) {
+        if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
         }
-        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+        if ((rTyID == Type::IntegerTyID) && (lTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             rhs = castInst;
+        }
+    } else if (lTyID == Type::IntegerTyID && rTyID == Type::IntegerTyID) {
+        // 如果两个操作数都是整数类型, 比较位宽
+        auto lTy = (IntegerType *) left->val->getType();
+        auto rTy = (IntegerType *) right->val->getType();
+        auto lBitWide = lTy->getBitWidth();
+        auto rBitWide = rTy->getBitWidth();
+        if (lBitWide != rBitWide) {
+            // 如果位宽不同，进行类型转换
+            if (lBitWide < rBitWide) {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, rTy);
+                node->blockInsts.addInst(castInst);
+                lhs = castInst;
+            } else {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, lTy);
+                node->blockInsts.addInst(castInst);
+                rhs = castInst;
+            }
         }
     }
 
@@ -1455,31 +1476,40 @@ bool IRGenerator::ir_neq(ast_node * node)
     // }
 
     // 操作数不同时进行类型转换
-    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
-        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+
+    auto lTyID = left->val->getType()->getTypeID();
+    auto rTyID = right->val->getType()->getTypeID();
+
+    if (lTyID != rTyID) {
+        if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
         }
-        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+        if ((rTyID == Type::IntegerTyID) && (lTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             rhs = castInst;
         }
+    } else if (lTyID == Type::IntegerTyID && rTyID == Type::IntegerTyID) {
+        // 如果两个操作数都是整数类型, 比较位宽
+        auto lTy = (IntegerType *) left->val->getType();
+        auto rTy = (IntegerType *) right->val->getType();
+        auto lBitWide = lTy->getBitWidth();
+        auto rBitWide = rTy->getBitWidth();
+        if (lBitWide != rBitWide) {
+            // 如果位宽不同，进行类型转换
+            if (lBitWide < rBitWide) {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, rTy);
+                node->blockInsts.addInst(castInst);
+                lhs = castInst;
+            } else {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, lTy);
+                node->blockInsts.addInst(castInst);
+                rhs = castInst;
+            }
+        }
     }
-    // 2. 创建表示结构不同基本块入口的标签
-    // 这些标签将在后续指令中被引用（作为跳转目标）
-    // 同时，它们本身也是指令，会被添加到线性指令列表中，代表基本块的开始。
-    Function * currentFunc = module->getCurrentFunction();
-
-    // 真块的入口标签
-    LabelInstruction * true_branch_label = new LabelInstruction(currentFunc);
-    // 假块的入口标签 (如果存在)。如果在 else 块之前创建，可以作为假分支的目标。
-    LabelInstruction * false_branch_target = new LabelInstruction(currentFunc);
-    // 汇合点标签
-    LabelInstruction * merge_label = new LabelInstruction(currentFunc);
 
     auto neqInst = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1493,34 +1523,6 @@ bool IRGenerator::ir_neq(ast_node * node)
     // node->blockInsts.addInst(left->blockInsts);
     // node->blockInsts.addInst(right->blockInsts);
     node->blockInsts.addInst(neqInst);
-
-    ConditionalInstruction * cond_branch_inst =
-        new ConditionalInstruction(currentFunc, neqInst, true_branch_label, false_branch_target);
-    node->blockInsts.addInst(cond_branch_inst);
-    // 添加标签
-    node->blockInsts.addInst(true_branch_label);
-    Value * zero = module->newConstInt(0);
-
-    Value *     one = module->newConstInt(1);
-    std::string tmpName = generateTempName("ValueOfLogic");
-    Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
-    ValueOfLogic->setType(IntegerType::getTypeInt());
-    StoreInstruction * storeInst1 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, one);
-    node->blockInsts.addInst(storeInst1);
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(false_branch_target);
-    StoreInstruction * storeInst2 = new StoreInstruction(module->getCurrentFunction(), ValueOfLogic, zero);
-    node->blockInsts.addInst(storeInst2);
-
-    node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
-    node->blockInsts.addInst(merge_label);
-    LoadInstruction * LoadInst3 = new LoadInstruction(module->getCurrentFunction(), ValueOfLogic);
-    LoadInst3->setType(module->findVarValue(ValueOfLogic->getName())->getType());
-    node->blockInsts.addInst(LoadInst3);
     node->val = neqInst;
 
     return true;
@@ -1576,18 +1578,39 @@ bool IRGenerator::ir_ge(ast_node * node)
     // }
 
     // 操作数不同时进行类型转换
-    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
-        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+    // 操作数不同时进行类型转换
+
+    auto lTyID = left->val->getType()->getTypeID();
+    auto rTyID = right->val->getType()->getTypeID();
+
+    if (lTyID != rTyID) {
+        if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
         }
-        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+        if ((rTyID == Type::IntegerTyID) && (lTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             rhs = castInst;
+        }
+    } else if (lTyID == Type::IntegerTyID && rTyID == Type::IntegerTyID) {
+        // 如果两个操作数都是整数类型, 比较位宽
+        auto lTy = (IntegerType *) left->val->getType();
+        auto rTy = (IntegerType *) right->val->getType();
+        auto lBitWide = lTy->getBitWidth();
+        auto rBitWide = rTy->getBitWidth();
+        if (lBitWide != rBitWide) {
+            // 如果位宽不同，进行类型转换
+            if (lBitWide < rBitWide) {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, rTy);
+                node->blockInsts.addInst(castInst);
+                lhs = castInst;
+            } else {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, lTy);
+                node->blockInsts.addInst(castInst);
+                rhs = castInst;
+            }
         }
     }
 
@@ -1652,18 +1675,39 @@ bool IRGenerator::ir_le(ast_node * node)
     // }
 
     // 操作数不同时进行类型转换
-    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
-        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+    // 操作数不同时进行类型转换
+
+    auto lTyID = left->val->getType()->getTypeID();
+    auto rTyID = right->val->getType()->getTypeID();
+
+    if (lTyID != rTyID) {
+        if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
         }
-        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+        if ((rTyID == Type::IntegerTyID) && (lTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             rhs = castInst;
+        }
+    } else if (lTyID == Type::IntegerTyID && rTyID == Type::IntegerTyID) {
+        // 如果两个操作数都是整数类型, 比较位宽
+        auto lTy = (IntegerType *) left->val->getType();
+        auto rTy = (IntegerType *) right->val->getType();
+        auto lBitWide = lTy->getBitWidth();
+        auto rBitWide = rTy->getBitWidth();
+        if (lBitWide != rBitWide) {
+            // 如果位宽不同，进行类型转换
+            if (lBitWide < rBitWide) {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, rTy);
+                node->blockInsts.addInst(castInst);
+                lhs = castInst;
+            } else {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, lTy);
+                node->blockInsts.addInst(castInst);
+                rhs = castInst;
+            }
         }
     }
 
@@ -1735,18 +1779,39 @@ bool IRGenerator::ir_gne(ast_node * node)
     // }
 
     // 操作数不同时进行类型转换
-    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
-        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+    // 操作数不同时进行类型转换
+
+    auto lTyID = left->val->getType()->getTypeID();
+    auto rTyID = right->val->getType()->getTypeID();
+
+    if (lTyID != rTyID) {
+        if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
         }
-        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+        if ((rTyID == Type::IntegerTyID) && (lTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             rhs = castInst;
+        }
+    } else if (lTyID == Type::IntegerTyID && rTyID == Type::IntegerTyID) {
+        // 如果两个操作数都是整数类型, 比较位宽
+        auto lTy = (IntegerType *) left->val->getType();
+        auto rTy = (IntegerType *) right->val->getType();
+        auto lBitWide = lTy->getBitWidth();
+        auto rBitWide = rTy->getBitWidth();
+        if (lBitWide != rBitWide) {
+            // 如果位宽不同，进行类型转换
+            if (lBitWide < rBitWide) {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, rTy);
+                node->blockInsts.addInst(castInst);
+                lhs = castInst;
+            } else {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, lTy);
+                node->blockInsts.addInst(castInst);
+                rhs = castInst;
+            }
         }
     }
 
@@ -1816,18 +1881,39 @@ bool IRGenerator::ir_lne(ast_node * node)
     // }
 
     // 操作数不同时进行类型转换
-    if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
-        if ((left->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (right->val->getType()->getTypeID() == Type::FloatTyID)) {
+    // 操作数不同时进行类型转换
+
+    auto lTyID = left->val->getType()->getTypeID();
+    auto rTyID = right->val->getType()->getTypeID();
+
+    if (lTyID != rTyID) {
+        if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
         }
-        if ((right->val->getType()->getTypeID() == Type::IntegerTyID) &&
-            (left->val->getType()->getTypeID() == Type::FloatTyID)) {
+        if ((rTyID == Type::IntegerTyID) && (lTyID == Type::FloatTyID)) {
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             rhs = castInst;
+        }
+    } else if (lTyID == Type::IntegerTyID && rTyID == Type::IntegerTyID) {
+        // 如果两个操作数都是整数类型, 比较位宽
+        auto lTy = (IntegerType *) left->val->getType();
+        auto rTy = (IntegerType *) right->val->getType();
+        auto lBitWide = lTy->getBitWidth();
+        auto rBitWide = rTy->getBitWidth();
+        if (lBitWide != rBitWide) {
+            // 如果位宽不同，进行类型转换
+            if (lBitWide < rBitWide) {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, rTy);
+                node->blockInsts.addInst(castInst);
+                lhs = castInst;
+            } else {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, lTy);
+                node->blockInsts.addInst(castInst);
+                rhs = castInst;
+            }
         }
     }
 
