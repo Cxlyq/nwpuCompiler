@@ -205,7 +205,10 @@ std::any MiniCCSTVisitor::visitBlockItemList(MiniCParser::BlockItemListContext *
 
         // 非终结符，需遍历
         auto blockItem = std::any_cast<ast_node *>(visitBlockItem(blockItemCtx));
-
+        if (blockItem->node_type == ast_operator_type::AST_OP_EMPTY) {
+            // 可能是空的blockItem
+            continue;
+        }
         // 插入到块节点中
         (void) block_node->insert_son_node(blockItem);
         if (blockItem->node_type == ast_operator_type::AST_OP_BREAK ||
@@ -517,7 +520,7 @@ std::any MiniCCSTVisitor::visitExpressionStatement(MiniCParser::ExpressionStatem
         return visitExpr(ctx->expr());
     } else {
         // 空语句直接返回空指针，需要再把语句加入到语句块时要注意判断，空语句不要加入
-        return nullptr;
+        return new ast_node(ast_operator_type::AST_OP_EMPTY, VoidType::getType(), -1);
     }
 }
 
