@@ -607,6 +607,7 @@ bool IRGenerator::ir_block(ast_node * node)
             node->blockInsts.addInst(base_node->blockInsts); // 添加if else语句
             if (stopTranslateBlock) {
                 stop = true;
+                node->returnedBlock = true; // 标记该block结点是已经有返回的block
                 break; //  if else里均存在return，不生成merge标签，不再翻译后续语句。
             } else {
                 // 如果ifelse没有结束，则需要将mergeLabel添加到blockInsts中
@@ -2195,7 +2196,8 @@ bool IRGenerator::ir_return(ast_node * node)
 /// @note ir_ifelse有许多特殊情况需要处理
 /// 	1. ir_ifelse不再交由ir_visit_ast_node处理， 而交由其上级ir_block或嵌套上级ir_ifelse处理。
 ///		原因： 针对merge标签，ifelse无法判断其后有无语句，如果没有语句，merge标签将紧邻函数exit
-/// label。并且，如果if-else均存在return语句，则我称其为完全返回的if-else，根据标准，后续标签和block的ir将不再生成
+/// label。并且，如果if-else均存在return， break,
+/// continue语句，则我称其为完全返回的if-else，控制流不可能穿过该if-else语句块执行下面的语句。因此，根据标准，后续标签和block的ir将不再生成
 ///		解决方法：修改ir_ifelse，将其merge标签返回给上级，交由上级判断是否添加该merge标签。
 ///		2.
 /// 短路求值问题，因为逻辑表达式的短路逻辑无法访问到ifelse产生的true/false标签，所以对于短路问题设立新函数gen_condition_branch，不再走ir_and/ir_or
@@ -2378,7 +2380,8 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
     // node->blockInsts.addInst(merge_label);// 将 merge_label 传递给调用者，供后续使用。
     bool * stop = new bool;
     if (else_node) {
-        if (hasReturnInIf && hasReturnInElse) { // if-else语句块存在完全return
+        if ((hasReturnInIf && hasReturnInElse) ||
+            (hasBreakContinueInIf && hasBreakContinueInElse)) { // if-else语句块存在完全return
             *stop = true;
             node->isIfElseHaveReturn = true;
         } else {
@@ -2445,35 +2448,6 @@ bool IRGenerator::ir_while(ast_node * node)
     // 添加循环头部标签，标记这个基本块的开始
     node->blockInsts.addInst(loop_header_label);
 
-    // // 访问条件表达式AST节点，生成其IR
-    // ast_node * cond = ir_visit_ast_node(cond_node);
-    // if (!cond) {
-    //     // 条件表达式生成失败
-    //     enterLabels.pop();
-    //     exitLabels.pop();
-    //     printf("While: Condition express generate failed.\n");
-    //     return false;
-    // }
-    // // 将条件表达式生成的指令添加到当前节点的指令列表中 (属于循环头部块)
-    // node->blockInsts.addInst(cond->blockInsts);
-
-    // // 获取条件表达式的值 (应为一个布尔值，i1 类型)
-    // Value * cond_val = cond->val;
-    // if (!cond_val) {
-    //     // 条件表达式必须产生一个值
-    //     enterLabels.pop();
-    //     exitLabels.pop();
-    //     printf("While: no value for condition expression\n");
-    //     return false; // 或者更详细的错误处理
-    // }
-
-    // // 添加条件分支指令 (br i1)
-    // // 如果条件为真 (cond_val)，跳转到 loop_body_label
-    // // 如果条件为假 (!cond_val)，跳转到 loop_exit_label
-    // ConditionalInstruction * cond_branch_inst =
-    //     new ConditionalInstruction(currentFunc, cond_val, loop_body_label, loop_exit_label);
-    // node->blockInsts.addInst(cond_branch_inst);
-
     // 支持短路
     if (!gen_condition_branch(cond_node, loop_body_label, loop_exit_label, node->blockInsts)) {
         // Error occurred during condition branching generation
@@ -2501,7 +2475,9 @@ bool IRGenerator::ir_while(ast_node * node)
     // 在循环体块的末尾添加一个无条件跳转回循环头部标签的指令
     // 这是循环的关键，完成一次迭代后回到头部检查条件。
     // 使用你提供的 GotoInstruction 类。
-    if (!hasBreakContinue) {
+    if (!hasBreakContinue &&
+        !body->returnedBlock) { // ! 注意，如果循环体有break, continue, return，或含有完全返回的ifelse,
+                                // 其本身的跳转标签会与 loop_header_label 重复
         node->blockInsts.addInst(new GotoInstruction(currentFunc, loop_header_label));
     }
 
