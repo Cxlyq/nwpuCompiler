@@ -843,7 +843,7 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
             // 目的变量是全局变量，需要分配指针寄存器
             dst_regId = GLDst->getRegId();
             std::cout << "[InstSelectorRiscV64::translate_store] dst is GlobalVariable, regid=" << dst_regId << "\t"
-                      << LVDst->getIRName() << "\n";
+                      << GLDst->getIRName() << "\n";
         } else {
             std::cout << "[InstSelectorRiscV64::translate_store] dst is not a GlobalVariable/LocalVariable\n";
             return;
@@ -889,7 +889,7 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
                   << LVSrc->getIRName() << "\n";
     } else if (Instanceof(GLSrc, GlobalVariable *, src)) {
         src_regId = GLSrc->getRegId();
-        std::cout << "[InstSelectorRiscV64::translate_load] src is LocalVariable, regid=" << src_regId << "\t"
+        std::cout << "[InstSelectorRiscV64::translate_load] src is GlobalVariable, regid=" << src_regId << "\t"
                   << GLSrc->getIRName() << "\n";
     } else {
         std::cout << "[InstSelectorRiscV64::translate_load] src is not a Instruction/Local variable\n";
