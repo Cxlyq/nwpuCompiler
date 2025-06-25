@@ -356,9 +356,8 @@ int GraphColoringRegisterAllocator::Allocate(Value * var)
         int regIndex = iter->second;
 
         if (var->getType()->isFloatType()) { // 浮点变量
-            if (!floatRegBitmap.test(regIndex)) {
+            if (floatRegBitmap.test(regIndex)) {
                 int32_t regno = -1;
-                int     regIndex = -1;
 
                 // 查询空闲的浮点寄存器
                 for (int k = 0; k < PlatformRiscV64::maxUsableFloatRegNum; ++k) {
@@ -393,9 +392,8 @@ int GraphColoringRegisterAllocator::Allocate(Value * var)
                 return regno;
             }
         } else { // 整数变量
-            if (!intRegBitmap.test(regIndex)) {
+            if (intRegBitmap.test(regIndex)) {
                 int32_t regno = -1;
-                int     regIndex = -1;
                 // 查询空闲的整数寄存器
                 for (int k = 0; k < PlatformRiscV64::maxUsableIntRegNum; ++k) {
                     if (!intRegBitmap.test(k)) { // 如果该寄存器未被占用
