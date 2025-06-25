@@ -354,25 +354,80 @@ int GraphColoringRegisterAllocator::Allocate(Value * var)
     auto iter = colorMap.find(var);
     if (iter != colorMap.end()) {
         int regIndex = iter->second;
+
         if (var->getType()->isFloatType()) { // 浮点变量
-            if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableFloatRegNum) {
+            if (floatRegBitmap.test(regIndex)) {
+                int32_t regno = -1;
+
+                // 查询空闲的浮点寄存器
+                for (int k = 0; k < PlatformRiscV64::maxUsableFloatRegNum; ++k) {
+                    if (!floatRegBitmap.test(k)) { // 如果该浮点寄存器未被占用
+                        regIndex = k;
+                        break;
+                    }
+                }
+
+                if (regIndex != -1) {
+                    // 占用该寄存器
+                    floatBitmapSet(regIndex);
+                } else {
+                    // 没有空闲寄存器，选择溢出最旧的变量
+                    Value * oldestVar = floatRegValues.front();
+                    regno = oldestVar->getRegId();
+                    oldestVar->setRegId(-1);
+                    floatRegValues.erase(floatRegValues.begin());
+                }
+                if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableFloatRegNum) {
+                    regno = PlatformRiscV64::RISCV64_FLOAT_REGS[regIndex];
+                }
+                // 加入新的变量
+                var->setRegId(regno);
+                floatRegValues.push_back(var);
+                return regno; // 返回物理浮点寄存器编号
+            } else if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableFloatRegNum) {
                 int regno = PlatformRiscV64::RISCV64_FLOAT_REGS[regIndex];
                 var->setRegId(regno);
                 floatRegValues.push_back(var);
+                floatBitmapSet(regIndex);
                 return regno;
             }
         } else { // 整数变量
-            if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableIntRegNum) {
+            if (intRegBitmap.test(regIndex)) {
+                int32_t regno = -1;
+                // 查询空闲的整数寄存器
+                for (int k = 0; k < PlatformRiscV64::maxUsableIntRegNum; ++k) {
+                    if (!intRegBitmap.test(k)) { // 如果该寄存器未被占用
+                        regIndex = k;
+                        break;
+                    }
+                }
+
+                if (regIndex != -1) {
+                    // 占用该寄存器
+                    intBitmapSet(regIndex);
+                } else {
+                    // 没有空闲寄存器，选择溢出最旧的变量
+                    Value * oldestVar = intRegValues.front();
+                    regno = oldestVar->getRegId();
+                    oldestVar->setRegId(-1);
+                    intRegValues.erase(intRegValues.begin());
+                }
+                if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableIntRegNum) {
+                    regno = PlatformRiscV64::RISCV64_INT_REGS[regIndex];
+                }
+                // 加入新的变量
+                var->setRegId(regno);
+                intRegValues.push_back(var);
+                return regno; // 返回物理寄存器编号
+            } else if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableIntRegNum) {
                 int regno = PlatformRiscV64::RISCV64_INT_REGS[regIndex];
                 var->setRegId(regno);
                 intRegValues.push_back(var);
+                intBitmapSet(regIndex);
                 return regno;
             }
         }
-    }
-
-    // 2. 图着色溢出的变量，动态分配
-    if (std::find(spilledInt.begin(), spilledInt.end(), var) != spilledInt.end()) {
+    } else if (std::find(spilledInt.begin(), spilledInt.end(), var) != spilledInt.end()) {
         int32_t regno = -1;
         int     regIndex = -1;
         // 查询空闲的整数寄存器
@@ -400,9 +455,7 @@ int GraphColoringRegisterAllocator::Allocate(Value * var)
         var->setRegId(regno);
         intRegValues.push_back(var);
         return regno; // 返回物理寄存器编号
-    }
-
-    if (std::find(spilledFloat.begin(), spilledFloat.end(), var) != spilledFloat.end()) {
+    } else if (std::find(spilledFloat.begin(), spilledFloat.end(), var) != spilledFloat.end()) {
         int32_t regno = -1;
         int     regIndex = -1;
 
