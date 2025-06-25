@@ -575,7 +575,7 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
     }
 
     // 只有int类型时可以4字节对齐，支持浮点或者向量运算时要16字节对齐
-    // sp_esp = (sp_esp + 15) & ~15;
+    sp_esp = (sp_esp + 15) & ~15;
 
     // 设置函数的最大栈帧深度，没有考虑寄存器保护的空间大小
     func->setMaxDep(sp_esp);

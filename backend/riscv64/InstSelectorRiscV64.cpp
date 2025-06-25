@@ -682,9 +682,9 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
         simpleRegisterAllocator.Allocate(16);
         simpleRegisterAllocator.Allocate(17);
 
-        // 前四个的后面参数采用栈传递
+        // 前八个的后面参数采用栈传递
         int esp = 0;
-        for (int32_t k = 7; k < operandNum; k++) {
+        for (int32_t k = 8; k < operandNum; k++) {
 
             auto arg = callInst->getOperand(k);
 
@@ -701,7 +701,7 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
             delete assignInst;
         }
 
-        for (int32_t k = 0; k < operandNum && k < 4; k++) {
+        for (int32_t k = 0; k < operandNum && k < 8; k++) {
 
             auto arg = callInst->getOperand(k);
 
