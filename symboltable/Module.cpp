@@ -305,7 +305,7 @@ GlobalVariable * Module::newGlobalArrayVariable(Type * type, std::string array_n
 
     // 创建全局数组变量
     GlobalVariable * newArrayVar = new GlobalVariable(arrayType, array_name);
-    newArrayVar->setAlignment(8);
+    newArrayVar->setAlignment(16);
 
     insertGlobalValueDirectly(newArrayVar);
 
@@ -461,6 +461,7 @@ Value * Module::newVarValueWithInt(Type * type, std::string name, uint32_t initV
             gv->setFasle_inBSSSection();
         }
         gv->setInitVal(initVal); // 设置初值
+        gv->isInited = true;     // 设置已初始化
     }
 
     // 增加做作用域中

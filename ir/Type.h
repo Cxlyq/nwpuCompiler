@@ -177,6 +177,8 @@ public:
 
     virtual int getSizeInBytes() const;
 
+    virtual int getTotalSize() const;
+
     virtual Type * getElementType() const
     {
         return nullptr;

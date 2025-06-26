@@ -24,6 +24,8 @@ public:
     /// @brief 获取数组的大小（字节数）
     int getSizeInBytes() const override;
 
+    int getTotalSize() const override;
+
     /// @brief 获取数组的维度数量
     size_t getNumDimensions() const;
 

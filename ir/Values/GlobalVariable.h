@@ -18,7 +18,8 @@
 
 #include "GlobalValue.h"
 #include "IRConstant.h"
-
+#include "iostream"
+#include <string>
 ///
 /// @brief 全局变量，寻址时通过符号名或变量名来寻址
 ///
@@ -101,9 +102,40 @@ public:
         str = getIRName() + " = global " + getType()->toString() + " ";
 
         if (isInited) {
-            str += getInitValStr(); // 初始化值，如 "0", "1", ...
+            if (getType()->isArrayType()) {
+                // 数组类型的初始值需要特殊处理
+                str += "[";
+                if (getType()->getBaseElementType()->isFloatType()) {
+                    std::vector<float> * floatList = initVal.array_float_init_list;
+
+                    for (size_t i = 0; i < floatList->size(); ++i) {
+                        float val = (*floatList)[i];
+                        str += "float " + std::to_string(val);
+                        if (i != floatList->size() - 1)
+                            str += ", ";
+                    }
+                } else {
+                    std::vector<int> * intList = initVal.array_int_init_list;
+
+                    for (size_t i = 0; i < intList->size(); ++i) {
+                        int val = (*intList)[i];
+                        str += "i32 " + std::to_string(val);
+                        if (i != intList->size() - 1)
+                            str += ", ";
+                    }
+                }
+
+                str += "]";
+            } else {
+                str += getInitValStr(); // 初始化值，如 "0", "1", ...
+            }
+
         } else {
-            str += "0"; // 未初始化
+            if (getType()->isArrayType())
+                str += "zeroinitializer";
+            else {
+                str += "0"; // 未初始化
+            }
         }
         str += ", align " + std::to_string(getAlignment());
     }
