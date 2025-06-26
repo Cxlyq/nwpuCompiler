@@ -191,7 +191,8 @@ public:
     uint32_t integer_val;
 
     /// @brief float类型字面量值
-    float float_val;
+    double   float_val;
+    uint64_t float_bits; ///< 浮点数的二进制表示
 
     /// @brief 变量名，或者函数名
     std::string name;

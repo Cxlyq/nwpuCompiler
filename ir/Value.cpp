@@ -20,6 +20,9 @@
 #include <iostream>
 #include <sys/types.h>
 
+#include <sstream> // std::ostringstream 定义在此头文件中
+#include <iomanip> // std::hexfloat 等格式操控器定义在这里
+#include <cstring>
 #include "Value.h"
 #include "Use.h"
 
@@ -141,7 +144,6 @@ bool Value::getMemoryAddr(int32_t * regId, int64_t * offset)
     return false;
 }
 
-
 ///
 /// @brief 对该Value进行Load用的寄存器编号
 /// @return int32_t 寄存器编号
@@ -154,11 +156,11 @@ void Value::setRegId(int32_t regId)
 
 // 为value赋初值
 // TODO:[重构] 将下面方法抽象为较少的父方法，在每一类value的对应文件中override Value对应子类的继承方法。
-float Value::getFloatInitVal()
+double Value::getFloatInitVal()
 {
-    return initVal.floatVal;
+    return initVal.floatVal.val;
 }
-uint32_t Value::getIntInitVal()
+int Value::getIntInitVal()
 {
     return initVal.intVal;
 }
@@ -177,7 +179,7 @@ void Value::setCategory(ValueCategory cat)
     valueCategory = cat;
 }
 
-bool Value::setInitVal(float val)
+bool Value::setInitVal(FloatNum val)
 {
     // if (valueCategory != ValueCategory::CONSTANT) {
     //     std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
@@ -186,10 +188,9 @@ bool Value::setInitVal(float val)
     initVal.floatVal = val;
     this->valueType = ValueType::FLOAT;
     isInited = true;
-    this->val.floatVal = val;
     return true;
 }
-bool Value::setInitVal(uint32_t val)
+bool Value::setInitVal(int val)
 {
     // if (valueCategory != ValueCategory::CONSTANT) {
     //     std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;
@@ -198,35 +199,23 @@ bool Value::setInitVal(uint32_t val)
     initVal.intVal = val;
     this->valueType = ValueType::INT;
     isInited = true;
-    this->val.intVal = val;
     return true;
 }
 
 std::string Value::getInitValStr()
 {
-    if (valueType == ValueType::FLOAT) {
-        return std::to_string(initVal.floatVal);
+    if (valueType == ValueType::FLOAT) { // 对于LLVM IR,FLOAT必须为十六进制
+        float              cut = (float) initVal.floatVal.val;
+        double             extend = (double) cut;
+        uint64_t           float_bits = bitcast<double, uint64_t>(extend);
+        std::ostringstream oss;
+        oss << "0x" << std::hex << std::uppercase << float_bits;
+        return oss.str();
     } else {
         return std::to_string(initVal.intVal);
     }
 }
 
-uint32_t Value::getIntVal()
-{
-    return val.intVal;
-}
-float Value::getFloatVal()
-{
-    return val.floatVal;
-}
-void Value::setVal(uint32_t val)
-{
-    this->val.intVal = val;
-}
-void Value::setVal(float val)
-{
-    this->val.floatVal = val;
-}
 bool Value::setInitVal(std::vector<int> * arrayVal)
 {
 
@@ -235,7 +224,7 @@ bool Value::setInitVal(std::vector<int> * arrayVal)
     isInited = true;
     return true;
 }
-bool Value::setInitVal(std::vector<float> * arrayVal)
+bool Value::setInitVal(std::vector<double> * arrayVal)
 {
     valueType = ARRAY_FLOAT;
     initVal.array_float_init_list = arrayVal;
@@ -243,7 +232,7 @@ bool Value::setInitVal(std::vector<float> * arrayVal)
     return true;
 }
 // TODO:完成访问数组初值的功能
-bool Value::getArrayValByIndex(std::vector<int> & indexs, float * val)
+bool Value::getArrayValByIndex(std::vector<int> & indexs, double * val)
 {
     const std::vector<int> origin_dims = this->getType()->getDimensions();
     // 检查索引的大小是否超过数组维度
@@ -277,7 +266,7 @@ bool Value::getArrayValByIndex(std::vector<int> & indexs, float * val)
 
     if (this->valueCategory == ValueCategory::CONSTANT && this->isInited) {
         if (this->valueType == ValueType::ARRAY_INT) {
-            *val = (float) (*(this->initVal.array_int_init_list))[linear_index];
+            *val = (double) (*(this->initVal.array_int_init_list))[linear_index];
             return true;
         } else if (this->valueType == ValueType::ARRAY_FLOAT) {
             *val = (*(this->initVal.array_float_init_list))[linear_index];
@@ -297,7 +286,7 @@ std::vector<int> * Value::getInitIntVal()
 {
     return initVal.array_int_init_list;
 }
-std::vector<float> * Value::getInitFloatVal()
+std::vector<double> * Value::getInitFloatVal()
 {
     return initVal.array_float_init_list;
 }

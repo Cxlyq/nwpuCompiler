@@ -80,6 +80,9 @@ void CastInstruction::toString(std::string & str)
     } else if (srcType->isInt32Type() && dstType->isInt1Byte()) {
         // i32 -> i1
         str = getIRName() + " = trunc i32 " + src->getIRName() + " to i1";
+    } else if (srcType->isInt32Type() && dstType->isInt64Type()) {
+        // i32 -> i64
+        str = getIRName() + " = sext i32 " + src->getIRName() + " to i64";
     }
 
     else {

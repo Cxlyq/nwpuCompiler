@@ -36,6 +36,8 @@ public:
     ///
     static IntegerType * getTypeInt();
 
+    static IntegerType * getTypeInt64();
+
     ///
     /// @brief 获取类型的IR标识符
     /// @return std::string IR标识符void
@@ -74,6 +76,11 @@ public:
         return bitWidth == 32;
     }
 
+    [[nodiscard]] bool isInt64Type() const override
+    {
+        return bitWidth == 64;
+    }
+
     ///
     /// @brief 获得类型所占内存空间大小
     /// @return int32_t
@@ -99,6 +106,8 @@ private:
     /// @brief 唯一的VOID类型实例
     ///
     static IntegerType * oneInstanceInt;
+
+    static IntegerType * oneInstanceInt64;
 
     ///
     /// @brief 位宽

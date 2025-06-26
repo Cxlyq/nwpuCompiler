@@ -22,7 +22,7 @@
 ///
 IntegerType * IntegerType::oneInstanceBool;
 IntegerType * IntegerType::oneInstanceInt;
-
+IntegerType * IntegerType::oneInstanceInt64;
 ///
 /// @brief 获取类型bool
 /// @return VoidType*
@@ -48,4 +48,18 @@ IntegerType * IntegerType::getTypeInt()
     }
 
     return oneInstanceInt;
+}
+
+///
+/// @brief 获取类型int
+/// @return VoidType*
+///
+IntegerType * IntegerType::getTypeInt64()
+{
+    // 只维持一份
+    if (!oneInstanceInt64) {
+        oneInstanceInt64 = new IntegerType(64);
+    }
+
+    return oneInstanceInt64;
 }
