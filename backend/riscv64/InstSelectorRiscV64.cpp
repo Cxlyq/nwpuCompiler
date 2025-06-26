@@ -924,7 +924,7 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
     } else if (Instanceof(ConstFloatSrc, ConstFloat *, src)) {
         // 源操作数是立即数
         // FIXME: 目前只支持整数
-        std::cout << "[InstSelectorRiscV64::translate_store] src is ConstInt\n";
+        std::cout << "[InstSelectorRiscV64::translate_store] src is ConstFloat\n";
         if (Instanceof(LVDst, LocalVariable *, dst)) {
             dst_regId = LVDst->getRegId();
             std::cout << "[InstSelectorRiscV64::translate_store] dst is LocalVariable, regid=" << dst_regId << "\t"

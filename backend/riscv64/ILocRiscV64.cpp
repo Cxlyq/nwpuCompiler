@@ -287,13 +287,13 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
 /// @param constant 立即数
 void ILocRiscV64::load_imm(int rs_reg_no, float constant)
 {
-    // TODO:[浮点数] 加载浮点立即数到寄存器，需要分配中间寄存器
+    // // TODO:[浮点数] 加载浮点立即数到寄存器，需要分配中间寄存器
     // if (rs_reg_no == -1) {
     //     minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
     //     return;
     // }
-    // emit("li", 中间寄存器, std::to_string(constant));
-    // emit("fmv.w.x", PlatformRiscV64::regName[rs_reg_no], 中间寄存器;
+    // emit("li", std::to_string(constant));
+    // emit("fmv.w.x", PlatformRiscV64::regName[rs_reg_no]); //中间寄存器;
 }
 /// @brief 基址寻址 lw rd, offset(base)
 /// @param rs_reg_no 结果寄存器编号
