@@ -1166,5 +1166,17 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         std::cout << "baseOffset:" << baseOffset << endl;
         std::cout << "offset:" << offset << endl;
         inst->setMemoryAddr(baseRegId, offset);
+    } else if (Instanceof(base_gv, GlobalVariable *, base)) {
+        std::string label = base_gv->getName();                                     // 获取全局变量标签名
+        int         elementSize = base->getType()->getBaseElementType()->getSize(); // 比如 i32 -> 4
+        int         offset = 0;
+        offset = (index1->getVal() * elementSize);
+        if (offset != 0) {
+            inst->setName(label);
+        } else {
+            inst->setName(label + "+ offset");
+        }
+    } else {
+        std::cout << "[InstSelectorRiscV64::translate_gep] src is not a Global/Local variable\n";
     }
 }

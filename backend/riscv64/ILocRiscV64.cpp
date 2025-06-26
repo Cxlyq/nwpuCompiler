@@ -23,7 +23,7 @@
 #include "LocalVariable.h"
 #include "PlatformRiscV64.h"
 #include "Module.h"
-
+#include "GetElementPtrInst.h"
 RiscInst::RiscInst(
     std::string _opcode, std::string _result, std::string _arg1, std::string _arg2, std::string _cond,
     std::string _addition)
@@ -423,8 +423,20 @@ void ILocRiscV64::store_var(int src_reg_no, GlobalVariable * dest_var, int addr_
 /// @param tmp_reg_no 基址寄存器
 void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
 {
-    // 被保存目标变量肯定不是常量
+    //被保存目标变量肯定不是常量
+    // if (Instanceof(GEP, GetElementPtrInst *, dest_var)) {
+    //     if (Instanceof(base, LocalVariable *, GEP->getOperand(0))) {
+    //         base->getRegId();
+    //         store_var(src_reg_no, GEP);
+    //     } else if (Instanceof(base, GlobalVariable *, GEP->getOperand(0))) {
+    //         std::cout << 31 << std::endl;
+    //         base->getRegId();
+    //         std::cout << 32 << std::endl;
 
+    //         store_var(src_reg_no, GEP, tmp_reg_no);
+    //         std::cout << 33 << std::endl;
+    //     }
+    // } else
     if (Instanceof(localVar, LocalVariable *, dest_var)) {
         // 寄存器变量
         store_var(src_reg_no, localVar);
