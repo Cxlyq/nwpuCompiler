@@ -533,8 +533,8 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
         if ((var->getRegId() == -1) && (!var->getMemoryAddr())) {
 
             // 该变量没有分配寄存器
-
-            int32_t size = var->getType()->getSize();
+            int32_t size = 0;
+            size = var->getType()->getSize();
 
             // 64位RISC平台按照4字节的大小整数倍分配局部变量
             size = (size + 3) & ~3;

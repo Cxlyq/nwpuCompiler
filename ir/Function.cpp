@@ -381,10 +381,10 @@ Function::newArrayLocalVarValue(Type * type, std::string array_name, std::vector
     LocalVariable * newArrayVar = new LocalVariable(arrayType, array_name, scope_level);
 
     // 分配栈空间（单位可能是字节，也可能是字长对齐）
-    int totalSize = arrayType->getSizeInBytes();
-    int offset = frameAllocator.allocate(totalSize); // 栈帧分配器维护当前偏移
+    // int totalSize = arrayType->getSizeInBytes();
+    // int offset = frameAllocator.allocate(totalSize); // 栈帧分配器维护当前偏移
 
-    newArrayVar->setMemoryAddr(FP_REG, offset); // 通常 FP_REG 是一个常量如 -1 表示 RBP
+    // newArrayVar->setMemoryAddr(FP_REG, offset); // 通常 FP_REG 是一个常量如 -1 表示 RBP
 
     // 加入局部变量表
     varsVector.push_back(newArrayVar);
