@@ -286,8 +286,8 @@ private:
         ast_node * cond_node, LabelInstruction * true_target, LabelInstruction * false_target,
         InterCode & current_block_insts);
 
-    bool getConstVal(std::string name, float * val);
-    bool getConstVal(std::string name, std::vector<int> & dims, float * val);
+    bool getConstVal(std::string name, double * val);
+    bool getConstVal(std::string name, std::vector<int> & dims, double * val);
 
-    bool evaluateConstExpr(ast_node * root, float * result);
+    bool evaluateConstExpr(ast_node * root, double * result);
 };

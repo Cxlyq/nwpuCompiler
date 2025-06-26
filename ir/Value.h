@@ -21,6 +21,7 @@
 #include <vector>
 #include "Use.h"
 #include "Type.h"
+#include <cstring>
 
 ///
 /// @brief 值类，每个值都要有一个类型，全局变量和局部变量可以有名字，
@@ -34,7 +35,11 @@ enum class ValueCategory {
     UNKNOWN,
     CONSTANT, // 常量
     VARIABLE, // 变量
-    IMMEDIATE //立即数
+    IMMEDIATE // 立即数
+};
+struct FloatNum {
+    double   val;        // 浮点数值
+    uint64_t float_bits; // 高精度float二进制格式
 };
 class Value {
 
@@ -58,17 +63,12 @@ protected:
     enum ValueType { NONE, INT, FLOAT, ARRAY_INT, ARRAY_FLOAT };
 
     union InitVal {
-        uint32_t             intVal;
-        float                floatVal;
-        std::vector<int> *   array_int_init_list;
-        std::vector<float> * array_float_init_list;
+        uint32_t              intVal;
+        FloatNum              floatVal;
+        std::vector<int> *    array_int_init_list;
+        std::vector<double> * array_float_init_list;
     };
 
-    union Val {
-        uint32_t intVal;
-        float    floatVal;
-    };
-    Val           val;
     InitVal       initVal;
     ValueType     valueType = NONE;
     ValueCategory valueCategory = ValueCategory::UNKNOWN;
@@ -152,21 +152,25 @@ public:
 
     // 为value赋初值
 
-    float                getFloatInitVal();
+    double               getFloatInitVal();
     uint32_t             getIntInitVal();
     ValueType            getValueType();
     ValueCategory        getValueCategory();             //获取值的类别（常量或变量）
     void                 setCategory(ValueCategory cat); //设置值的类别（常量或变量）
-    bool                 setInitVal(float val);
+    bool                 setInitVal(FloatNum val);
     bool                 setInitVal(uint32_t val);
     bool                 setInitVal(std::vector<int> * arrayVal);
-    bool                 setInitVal(std::vector<float> * arrayVal);
+    bool                 setInitVal(std::vector<double> * arrayVal);
     std::vector<int> *   getInitIntVal();
-    std::vector<float> * getInitFloatVal();
+    std::vector<double> * getInitFloatVal();
     std::string          getInitValStr();
-    uint32_t             getIntVal();
-    float                getFloatVal();
-    void                 setVal(uint32_t val);
-    void                 setVal(float val);
-    bool                 getArrayValByIndex(std::vector<int> & indexs, float * val);
+    bool                 getArrayValByIndex(std::vector<int> & indexs, double * val);
+
+    template <typename T, typename U>
+    static U bitcast(T value){
+        static_assert(sizeof(T) == sizeof(U), "Size mismatch");
+        U result;
+        std::memcpy(&result, &value, sizeof(T));
+        return result;
+    }
 };

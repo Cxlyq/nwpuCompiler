@@ -3225,7 +3225,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         // 解析维度表达式为实际的常数
         std::vector<int> dims;
         for (auto * expr_node: array_dims) {
-            float dim_size;
+            double dim_size;
             if (!evaluateConstExpr(expr_node, &dim_size)) {
                 std::cerr << "Const declare: Failed to evaluate constant expression for array dimension." << std::endl;
                 return false;
@@ -3300,16 +3300,20 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         if (init_val_node) {
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
-                float result;
+                double result;
                 if (evaluateConstExpr(init_val_node, &result)) { // 尝试计算初值结点
                     init_val_node->float_val = result;
+                    init_val_node->float_bits = Value::bitcast<double, uint64_t>(result);
                 }
 
-                node->val =
-                    module->newVarValueWithFloat(var_type, var_name, init_val_node->float_val, ValueCategory::VARIABLE);
+                node->val = module->newVarValueWithFloat(
+                    var_type,
+                    var_name,
+                    {init_val_node->float_val, init_val_node->float_bits},
+                    ValueCategory::VARIABLE);
             } else {
                 // 整数类型
-                float result;
+                double result;
                 if (evaluateConstExpr(init_val_node, &result)) { // 尝试计算初值结点
                     init_val_node->integer_val = (int) result;
                 }
@@ -3376,7 +3380,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
         // 解析维度表达式为实际的常数
         std::vector<int> dims;
         for (auto * expr_node: array_dims) {
-            float dim_size;
+            double dim_size;
             if (!evaluateConstExpr(expr_node, &dim_size)) {
                 std::cerr << "Const declare: Failed to evaluate constant expression for array dimension." << std::endl;
                 return false;
@@ -3399,7 +3403,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
             // 存储初值
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
-                auto float_init_list = new std::vector<float>;
+                auto float_init_list = new std::vector<double>;
                 for (auto init_num: init_list) {
                     if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
                         float_init_list->push_back(init_num->float_val);
@@ -3422,12 +3426,12 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                 auto int_init_list = new std::vector<int>;
                 for (auto init_num: init_list) {
                     if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
-                        int_init_list->push_back(init_num->float_val);
+                        int_init_list->push_back((int) init_num->float_val);
                         std::cerr << "Warning: Auto transform type \"float\" to \"int\" at \"" << array_name << "\"."
                                   << std::endl;
                         // TODO 增加类型转化指令
                     } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
-                        int_init_list->push_back((float) init_num->integer_val);
+                        int_init_list->push_back(init_num->integer_val);
                     } else {
                         std::cerr << "ERROR(const declare): No matched type for const int array " << array_name << "."
                                   << std::endl;
@@ -3451,10 +3455,12 @@ bool IRGenerator::ir_const_declare(ast_node * node)
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
                 if (init_val_node->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                    double   int_to_double = (double) init_val_node->integer_val;
+                    uint64_t integer_bits = Value::bitcast<double, uint64_t>(int_to_double);
                     node->val = module->newVarValueWithFloat(
                         var_type,
                         var_name,
-                        (float) init_val_node->integer_val,
+                        {(float) init_val_node->integer_val, integer_bits},
                         ValueCategory::CONSTANT);
                     if (init_val_node->integer_val != 0) {
                         std::cerr << "Warning: Auto transform type \"int\" to \"float\" at variable \"" << var_name
@@ -3464,17 +3470,22 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                     node->val = module->newVarValueWithFloat(
                         var_type,
                         var_name,
-                        init_val_node->float_val,
+                        {init_val_node->float_val, init_val_node->float_bits},
                         ValueCategory::CONSTANT);
                 } else {
-                    float init_num;
+                    double init_num;
                     if (!evaluateConstExpr(init_val_node, &init_num)) {
                         std::cerr << "ERROR(const declare): Cannot evaluate a non-const expression!" << var_name << "."
                                   << std::endl;
                         return false;
                     } else {
                         std::cout << "Evaluate successful with return value: " << init_num << std::endl;
-                        node->val = module->newVarValueWithFloat(var_type, var_name, init_num, ValueCategory::CONSTANT);
+                        uint64_t init_num_bits = Value::bitcast<double, uint64_t>(init_num);
+                        node->val = module->newVarValueWithFloat(
+                            var_type,
+                            var_name,
+                            {init_num, init_num_bits},
+                            ValueCategory::CONSTANT);
                     }
                 }
                 // 检查是否成功创建常量变量
@@ -3491,7 +3502,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                         init_val_node->integer_val,
                         ValueCategory::CONSTANT);
                 } else if (init_val_node->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
-                    node->val = module->newVarValueWithFloat(
+                    node->val = module->newVarValueWithInt(
                         var_type,
                         var_name,
                         (int) init_val_node->float_val,
@@ -3500,7 +3511,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                               << std::endl;
                     // TODO 增加类型转化指令
                 } else {
-                    float init_num;
+                    double init_num;
                     if (!evaluateConstExpr(init_val_node, &init_num)) {
                         std::cerr << "ERROR(const declare): Cannot evaluate a non-const expression!" << var_name << "."
                                   << std::endl;
@@ -3555,14 +3566,14 @@ bool IRGenerator::ir_const_declare(ast_node * node)
 }
 // TODO：验证计算功能（等待实现常量访问的方法）
 
-bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
+bool IRGenerator::evaluateConstExpr(ast_node * root, double * result)
 {
     if (!root || !result)
         return false;
 
     switch (root->node_type) {
         case ast_operator_type::AST_OP_LEAF_LITERAL_UINT:
-            *result = static_cast<float>(root->integer_val);
+            *result = static_cast<double>(root->integer_val);
             return true;
 
         case ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT:
@@ -3581,7 +3592,7 @@ bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
 
             std::vector<int> dims;
             for (size_t i = 1; i < root->sons.size(); ++i) {
-                float val;
+                double val;
                 if (!evaluateConstExpr(root->sons[i], &val))
                     return false;
                 dims.push_back(static_cast<int>(val));
@@ -3595,7 +3606,7 @@ bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
         case ast_operator_type::AST_OP_NOT: {
             if (root->sons.size() != 1)
                 return false;
-            float operand;
+            double operand;
             if (!evaluateConstExpr(root->sons[0], &operand))
                 return false;
 
@@ -3619,7 +3630,7 @@ bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
         default: {
             if (root->sons.size() != 2)
                 return false;
-            float lhs, rhs;
+            double lhs, rhs;
             if (!evaluateConstExpr(root->sons[0], &lhs))
                 return false;
             if (!evaluateConstExpr(root->sons[1], &rhs))
@@ -3804,10 +3815,10 @@ bool IRGenerator::init_constarray_flattened(
         Value * val = nullptr;
         if (val_node) {
             if (!val_node->val) {
-                float * val_float = new float;
+                double * val_float = new double;
                 evaluateConstExpr(val_node, val_float);
                 if (val_type->isFloatType()) {
-                    float result = *val_float;
+                    double result = *val_float;
                     delete val_float;                              // 释放临时变量
                     val_node->val = module->newConstFloat(result); // 设置浮点值                  //
                     val_node->node_type = ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT; // 设置节点类型为浮点数
@@ -4088,7 +4099,7 @@ bool IRGenerator::gen_condition_branch(
 }
 
 // TODO:验证获取常量是否正常
-bool IRGenerator::getConstVal(std::string name, float * val)
+bool IRGenerator::getConstVal(std::string name, double * val)
 {
     Value * var = module->findVarValue(name);
     if (!var) {
@@ -4100,7 +4111,7 @@ bool IRGenerator::getConstVal(std::string name, float * val)
             *val = var->getFloatInitVal();
             return true;
         } else if (var->getType()->isIntegerType()) {
-            *val = (float) var->getIntInitVal();
+            *val = (double) var->getIntInitVal();
             return true;
         } else {
             return false;
@@ -4110,7 +4121,7 @@ bool IRGenerator::getConstVal(std::string name, float * val)
         return false;
     }
 }
-bool IRGenerator::getConstVal(std::string name, std::vector<int> & dims, float * val)
+bool IRGenerator::getConstVal(std::string name, std::vector<int> & dims, double * val)
 {
     Value * var = module->findVarValue(name);
     if (!var) {

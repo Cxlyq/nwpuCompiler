@@ -143,7 +143,8 @@ public:
     /// @param name 变量ID
     /// @param type 变量类型
     Value * newVarValueWithFloat(
-        Type * type, std::string name = "", float initVal = 0.0f, ValueCategory valueCategory = ValueCategory::UNKNOWN);
+        Type * type, std::string name = "", FloatNum initVal = {0.0f, 0},
+        ValueCategory valueCategory = ValueCategory::UNKNOWN);
 
     /// @brief 新建变量型Value，会根据currentFunc的值进行判断创建全局或者局部变量
     /// ! 该函数只有在AST遍历生成线性IR中使用，其它地方不能使用

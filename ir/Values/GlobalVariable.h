@@ -18,6 +18,8 @@
 
 #include "GlobalValue.h"
 #include "IRConstant.h"
+#include "Value.h"
+#include <string>
 
 ///
 /// @brief 全局变量，寻址时通过符号名或变量名来寻址
@@ -97,10 +99,17 @@ public:
     ///
     void toDeclareString(std::string & str)
     {
-        // LLVM IR 中，全局变量必须以 `@` 开头
-        str = getIRName() + " = global " + getType()->toString() + " ";
+        // 添加全局常数判断
+        if (this->valueCategory == ValueCategory::CONSTANT) {
+            // LLVM IR 中，全局变量必须以 `@` 开头
+            str = getIRName() + " = dso_local constant " + getType()->toString() + " ";
+        } else {
+            // LLVM IR 中，全局变量必须以 `@` 开头
+            str = getIRName() + " = global " + getType()->toString() + " ";
+        }
 
         if (isInited) {
+
             str += getInitValStr(); // 初始化值，如 "0", "1", ...
         } else {
             str += "0"; // 未初始化

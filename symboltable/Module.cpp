@@ -360,7 +360,7 @@ Value * Module::newVarValue(Type * type, std::string name)
     return retVal;
 }
 
-Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVal, ValueCategory valueCategory)
+Value * Module::newVarValueWithFloat(Type * type, std::string name, FloatNum initVal, ValueCategory valueCategory)
 {
     Value *     retVal;
     std::string varName;
@@ -400,7 +400,7 @@ Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVa
         GlobalVariable * gv = static_cast<GlobalVariable *>(retVal);
 
         const float EPSILON = 1e-6f;
-        if (std::fabs(initVal) > EPSILON) {
+        if (std::fabs(initVal.val) > EPSILON) {
             gv->setFasle_inBSSSection();
         }
 
