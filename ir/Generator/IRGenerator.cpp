@@ -505,7 +505,8 @@ bool IRGenerator::ir_function_call(ast_node * node)
         for (auto son: paramsNode->sons) {
             ast_node * son_node;
             Type *     son_type = son->type;
-            // std::cout << "Function call(Real Param): son type is " << son_type->toString() << std::endl;
+            std::cout << "Function call(Real Param): son type is " << son_type->toString() << std::endl;
+            std::cout << "Function call(Real Param): son type is " << (int) son->node_type << std::endl;
             ///因为如果是数组访问，走专门的函数，所以不能visit，否则会额外生成ir
             if (!(son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS)) {
                 son_node = ir_visit_ast_node(son);
@@ -539,6 +540,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
             } else {
                 // 遍历Block的每个语句，进行显示或者运算
                 // ast_node * temp = ir_visit_ast_node(son);
+                // son_node->val = temp->val;
                 if (!son_node) {
                     return false;
                 }
@@ -1088,14 +1090,14 @@ bool IRGenerator::ir_and(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     ///检查操作数是否是数组，若是需要load
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     auto neqInst1 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1119,13 +1121,13 @@ bool IRGenerator::ir_and(ast_node * node)
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     auto neqInst2 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1219,14 +1221,14 @@ bool IRGenerator::ir_or(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     ///检查操作数是否是数组，若是需要load
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     auto neqInst1 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1250,13 +1252,13 @@ bool IRGenerator::ir_or(ast_node * node)
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     auto neqInst2 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1946,13 +1948,13 @@ bool IRGenerator::ir_pos(ast_node * node)
     node->blockInsts.addInst(expr->blockInsts);
     Value * lhs = expr->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(expr->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(expr->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     // 设置当前节点的计算结果
     node->val = lhs;
@@ -2826,7 +2828,9 @@ bool IRGenerator::ir_array_access(ast_node * node)
         // gepPtr->setType(loadInst->getType()->getPointeeType())                   //
         gepType = gepPtr->getType(); // 更新 gepType 为加载后的类型
                                      // 获取指向的类型
+        std::cout << "gepPtr(ptr) type: " << gepPtr->getType()->toString() << std::endl;
     }
+
     // 逐层调用getelementptr
     for (int i = 0; i < accessDims; ++i) {
         // 先处理索引表达式，转换成Value*
@@ -2840,7 +2844,7 @@ bool IRGenerator::ir_array_access(ast_node * node)
         // 生成getelementptr指令：
         // 类型：gepType是当前的数组类型，如 [5 x [6 x i32]] 或 [6 x i32]
         // 返回的类型是当前维度元素的指针类型，比如 [6 x i32]* 的元素是 i32
-        if (type->isPointerType()) {
+        if (type->isPointerType() && i == 0) {
             // 如果是指针类型，只取一维
             auto gepInst =
                 new GetElementPtrInst(module->getCurrentFunction(), gepPtr, gepType, std::vector<Value *>{indexVal});
