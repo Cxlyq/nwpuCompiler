@@ -3865,10 +3865,11 @@ bool IRGenerator::init_array_flattened(
     // 2. 拉平成一维值数组
     std::vector<ast_node *> * flat_list = new std::vector<ast_node *>;
     flatten_init_node(initNode, dims, 0, *flat_list);
-
+    std::cout << (int) flat_list->size() << std::endl;
     // 3. 填充 IR
     for (int i = 0; i < total_elems; ++i) {
         ast_node * val_node = (i < flat_list->size()) ? (*flat_list)[i] : nullptr;
+        // std::cout<<"node val"<< node
 
         Value * val = nullptr;
         if (val_node) {
@@ -4080,8 +4081,20 @@ bool IRGenerator::init_constarray_flattened(
 void IRGenerator::flatten_init_node(
     ast_node * node, const std::vector<int> & dims, int depth, std::vector<ast_node *> & flat_list)
 {
-    if (!node)
+    if (!node) {
+        // 补零逻辑
+        if (depth == (int) dims.size() - 1) {
+            ast_node * zero = new ast_node(ast_operator_type::AST_OP_LEAF_LITERAL_UINT);
+            zero->integer_val = 0;
+            zero->val = module->newConstInt(0);
+            flat_list.push_back(zero);
+        } else {
+            for (int i = 0; i < dims[depth + 1]; ++i) {
+                flatten_init_node(nullptr, dims, depth + 1, flat_list);
+            }
+        }
         return;
+    }
 
     if (node->node_type == ast_operator_type::AST_OP_INIT_VAL) {
         int i = 0;
@@ -4098,7 +4111,9 @@ void IRGenerator::flatten_init_node(
                 zero->val = module->newConstInt(0);
                 flat_list.push_back(zero);
             } else {
-                flatten_init_node(nullptr, dims, depth + 1, flat_list);
+                for (int i = 0; i < dims[depth + 1]; ++i) {
+                    flatten_init_node(nullptr, dims, depth + 1, flat_list);
+                }
             }
         }
     } else {
@@ -4313,7 +4328,7 @@ bool IRGenerator::getConstVal(std::string name, std::vector<int> & dims, double 
             return false;
         }
     } else {
-        std::cerr << "Error: Variable '" << name << "' is not a constant or not initialized." << std::endl;
+        std::cerr << "Error: Variable '" << name << "' is not a constant or not initialized in array." << std::endl;
         return false;
     }
     return false;
