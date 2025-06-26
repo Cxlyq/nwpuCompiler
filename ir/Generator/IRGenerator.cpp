@@ -340,6 +340,9 @@ bool IRGenerator::ir_function_define(ast_node * node)
 
     // 函数出口指令
     if (!type_node->type->isVoidType()) {
+        if (!block_node->returnedBlock) {
+            irCode.addInst(new GotoInstruction(newFunc, exitLabelInst));
+        }
         irCode.addInst(exitLabelInst);
         auto * loadExit = new LoadInstruction(newFunc, newFunc->getReturnValue());
         irCode.addInst(loadExit);
