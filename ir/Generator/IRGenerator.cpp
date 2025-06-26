@@ -300,7 +300,17 @@ bool IRGenerator::ir_function_define(ast_node * node)
         // 保存函数返回值变量到函数信息中，在return语句翻译时需要设置值到这个变量中
         retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type, "ret"));
         // XXX: 初步完成：这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
-        node->blockInsts.addInst(new StoreInstruction(newFunc, retValue, module->newConstInt(0)));
+        if (type_node->type->isIntegerType()) {
+            // 整型返回值，设置初始值为0
+            node->blockInsts.addInst(new StoreInstruction(newFunc, retValue, module->newConstInt(0)));
+        } else if (type_node->type->isFloatType()) {
+            // 浮点型返回值，设置初始值为0.0
+            node->blockInsts.addInst(new StoreInstruction(newFunc, retValue, module->newConstFloat(0.0f)));
+        } else {
+            std::cerr << "Function define: return type \"" << type_node->type->toString() << "\" is not supported!"
+                      << std::endl;
+        }
+
     } else {
         retValue = new Value(type_node->type);
     }
@@ -2165,23 +2175,22 @@ bool IRGenerator::ir_return(ast_node * node)
         node->blockInsts.addInst(right->blockInsts);
 
         // 返回值赋值到函数返回值变量上，然后跳转到函数的尾部
-        // node->blockInsts.addInst(new MoveInstruction(currentFunc, currentFunc->getReturnValue(), right->val));
+
+        // 操作数不同时进行类型转换
+        auto returnTyID = currentFunc->getReturnType()->getTypeID();
+        auto rTyID = right->val->getType()->getTypeID();
+        if (returnTyID != rTyID) {
+            CastInstruction * castInst =
+                new CastInstruction(module->getCurrentFunction(), right->val, currentFunc->getReturnType());
+            node->blockInsts.addInst(castInst);
+            right->val = castInst;
+        }
+        // store返回值
         node->blockInsts.addInst(new StoreInstruction(
             currentFunc,
             currentFunc->getReturnValue(),
             right->val)); // 将返回值存储到函数的返回值变量中
-
-        // auto * loadInst = new LoadInstruction(currentFunc,
-        //                                       right->val); // 加载返回值变量的值到当前节点
-        // node->blockInsts.addInst(loadInst);                // 加载返回值变量的值到当前节点
-
-        // auto * returnvar = new LoadInstruction(currentFunc, currentFunc->getReturnValue());
         node->val = right->val;
-        // node->val = right->val;                  // 设置当前节点的值为函数返回值变量
-        // currentFunc->setReturnValue(right->val); // 更新函数的返回值为加载后的值
-
-        // TODO:返回值类型检查
-
     } else {
         // 没有返回值
         node->val = nullptr;

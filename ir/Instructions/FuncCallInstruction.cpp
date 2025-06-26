@@ -21,10 +21,8 @@
 /// @brief 含有参数的函数调用
 /// @param srcVal 函数的实参Value
 /// @param result 保存返回值的Value
-FuncCallInstruction::FuncCallInstruction(Function * _func,
-                                         Function * calledFunc,
-                                         std::vector<Value *> & _srcVal,
-                                         Type * _type)
+FuncCallInstruction::FuncCallInstruction(
+    Function * _func, Function * calledFunc, std::vector<Value *> & _srcVal, Type * _type)
     : Instruction(_func, IRInstOperator::IRINST_OP_FUNC_CALL, _type), calledFunction(calledFunc)
 {
     name = calledFunc->getName();
@@ -60,7 +58,7 @@ void FuncCallInstruction::toString(std::string & str)
     } else {
 
         // 函数有返回值要设置到结果变量中
-        str = getIRName() + " = call i32 " + calledFunction->getIRName() + "(";
+        str = getIRName() + " = call " + type->toString() + " " + calledFunction->getIRName() + "(";
     }
 
     if (argCount == 0) {
