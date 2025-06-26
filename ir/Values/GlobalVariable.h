@@ -98,18 +98,24 @@ public:
     ///
     void toDeclareString(std::string & str)
     {
-        // LLVM IR 中，全局变量必须以 `@` 开头
-        str = getIRName() + " = global " + getType()->toString() + " ";
+        // 添加全局常数判断
+        if (this->valueCategory == ValueCategory::CONSTANT) {
+            // LLVM IR 中，全局变量必须以 `@` 开头
+            str = getIRName() + " = dso_local constant " + getType()->toString() + " ";
+        } else {
+            // LLVM IR 中，全局变量必须以 `@` 开头
+            str = getIRName() + " = global " + getType()->toString() + " ";
+        }
 
         if (isInited) {
             if (getType()->isArrayType()) {
                 // 数组类型的初始值需要特殊处理
                 str += "[";
                 if (getType()->getBaseElementType()->isFloatType()) {
-                    std::vector<float> * floatList = initVal.array_float_init_list;
+                    std::vector<double> * floatList = initVal.array_float_init_list;
 
                     for (size_t i = 0; i < floatList->size(); ++i) {
-                        float val = (*floatList)[i];
+                        double val = (*floatList)[i];
                         str += "float " + std::to_string(val);
                         if (i != floatList->size() - 1)
                             str += ", ";

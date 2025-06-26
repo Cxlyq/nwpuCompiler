@@ -302,7 +302,17 @@ bool IRGenerator::ir_function_define(ast_node * node)
         //这个变量的名字不能太大众，否则可能会和后续冲突
         retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type, "ret_of_phm"));
         // XXX: 初步完成：这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
-        node->blockInsts.addInst(new StoreInstruction(newFunc, retValue, module->newConstInt(0)));
+        if (type_node->type->isIntegerType()) {
+            // 整型返回值，设置初始值为0
+            node->blockInsts.addInst(new StoreInstruction(newFunc, retValue, module->newConstInt(0)));
+        } else if (type_node->type->isFloatType()) {
+            // 浮点型返回值，设置初始值为0.0
+            node->blockInsts.addInst(new StoreInstruction(newFunc, retValue, module->newConstFloat(0.0f)));
+        } else {
+            std::cerr << "Function define: return type \"" << type_node->type->toString() << "\" is not supported!"
+                      << std::endl;
+        }
+
     } else {
         retValue = new Value(type_node->type);
     }
@@ -326,16 +336,20 @@ bool IRGenerator::ir_function_define(ast_node * node)
     // node节点的指令移动到函数的IR指令列表中
     irCode.addInst(node->blockInsts);
 
-    // XXX:取消了出口指令，但上述似乎有一处添加了
     //  添加函数出口Label指令，主要用于return语句跳转到这里进行函数的退出
-    irCode.addInst(exitLabelInst);
 
     // 函数出口指令
     if (!type_node->type->isVoidType()) {
+        if (!block_node->returnedBlock) {
+            irCode.addInst(new GotoInstruction(newFunc, exitLabelInst));
+        }
+        irCode.addInst(exitLabelInst);
         auto * loadExit = new LoadInstruction(newFunc, newFunc->getReturnValue());
         irCode.addInst(loadExit);
         irCode.addInst(new ExitInstruction(newFunc, loadExit));
     } else {
+        irCode.addInst(new GotoInstruction(newFunc, exitLabelInst));
+        irCode.addInst(exitLabelInst);
         irCode.addInst(new ExitInstruction(newFunc, nullptr));
     }
 
@@ -474,7 +488,6 @@ bool IRGenerator::ir_function_call(ast_node * node)
     // 第二个节点：实参列表节点
 
     std::string funcName = node->sons[0]->name;
-    int64_t     lineno = node->sons[0]->line_no;
 
     ast_node * paramsNode = node->sons[1];
 
@@ -485,7 +498,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
         minic_log(LOG_ERROR, "函数(%s)未定义或声明", funcName.c_str());
         return false;
     }
-
+    auto formalParams = calledFunction->getParams();
     // 当前函数存在函数调用
     currentFunc->setExistFuncCall(true);
 
@@ -552,20 +565,24 @@ bool IRGenerator::ir_function_call(ast_node * node)
         }
     }
 
-    // TODO 这里请追加函数调用的语义错误检查，这里只进行了函数参数的个数检查等，其它请自行追加。
-    if (realParams.size() != calledFunction->getParams().size()) {
+    if (realParams.size() != formalParams.size()) {
         // 函数参数的个数不一致，语义错误
-        std::cout << realParams.size() << " " << calledFunction->getParams().size() << std::endl;
-        minic_log(LOG_ERROR, "第%lld行的被调用函数(%s)未定义或声明", (long long) lineno, funcName.c_str());
+        std::cout << realParams.size() << " " << formalParams.size() << std::endl;
+        std::cerr << "Function call: Function '" << funcName << "' called with " << realParams.size()
+                  << " arguments, but expected " << formalParams.size() << " parameters." << std::endl;
         return false;
     } else {
-        // for (int paramNo = 0; paramNo < realParams.size(); paramNo++) {
-        //     if (realParams[paramNo]->getType() != calledFunction->getParams()[paramNo]->getType()) {
-        //         // 参数类型不匹配
-        //         minic_log(LOG_ERROR, "函数(%s)的第%d个参数类型不匹配", funcName.c_str(), paramNo + 1);
-        //         return false;
-        //     }
-        // }
+        // 检查实参类型和形参类型是否匹配, 对int<--->float做自动转换
+        for (size_t i = 0; i < formalParams.size(); ++i) {
+            auto realTyID = realParams[i]->getType()->getTypeID();
+            auto formalTyID = formalParams[i]->getType()->getTypeID();
+            if (realTyID != formalTyID) {
+                CastInstruction * castInst =
+                    new CastInstruction(module->getCurrentFunction(), realParams[i], formalParams[i]->getType());
+                node->blockInsts.addInst(castInst);
+                realParams[i] = castInst;
+            }
+        }
     }
     calledFunction->realParams = realParams;
     // 返回调用有返回值，则需要分配临时变量，用于保存函数调用的返回值
@@ -2169,23 +2186,22 @@ bool IRGenerator::ir_return(ast_node * node)
         node->blockInsts.addInst(right->blockInsts);
 
         // 返回值赋值到函数返回值变量上，然后跳转到函数的尾部
-        // node->blockInsts.addInst(new MoveInstruction(currentFunc, currentFunc->getReturnValue(), right->val));
+
+        // 操作数不同时进行类型转换
+        auto returnTyID = currentFunc->getReturnType()->getTypeID();
+        auto rTyID = right->val->getType()->getTypeID();
+        if (returnTyID != rTyID) {
+            CastInstruction * castInst =
+                new CastInstruction(module->getCurrentFunction(), right->val, currentFunc->getReturnType());
+            node->blockInsts.addInst(castInst);
+            right->val = castInst;
+        }
+        // store返回值
         node->blockInsts.addInst(new StoreInstruction(
             currentFunc,
             currentFunc->getReturnValue(),
             right->val)); // 将返回值存储到函数的返回值变量中
-
-        // auto * loadInst = new LoadInstruction(currentFunc,
-        //                                       right->val); // 加载返回值变量的值到当前节点
-        // node->blockInsts.addInst(loadInst);                // 加载返回值变量的值到当前节点
-
-        // auto * returnvar = new LoadInstruction(currentFunc, currentFunc->getReturnValue());
         node->val = right->val;
-        // node->val = right->val;                  // 设置当前节点的值为函数返回值变量
-        // currentFunc->setReturnValue(right->val); // 更新函数的返回值为加载后的值
-
-        // TODO:返回值类型检查
-
     } else {
         // 没有返回值
         node->val = nullptr;
@@ -3365,7 +3381,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         // 解析维度表达式为实际的常数
         std::vector<int> dims;
         for (auto * expr_node: array_dims) {
-            float dim_size;
+            double dim_size;
             if (!evaluateConstExpr(expr_node, &dim_size)) {
                 std::cerr << "Const declare: Failed to evaluate constant expression for array dimension." << std::endl;
                 return false;
@@ -3392,7 +3408,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
             // }
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
-                auto float_init_list = new std::vector<float>;
+                auto float_init_list = new std::vector<double>;
 
                 for (auto init_num: init_list) {
                     if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
@@ -3403,7 +3419,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                                       << "\"." << std::endl;
                         }
                         // TODO 增加类型转化指令
-                        float_init_list->push_back((float) init_num->integer_val);
+                        float_init_list->push_back((double) init_num->integer_val);
                     } else {
                         std::cerr << "ERROR(const declare): No match type for  float array " << array_name << "."
                                   << std::endl;
@@ -3449,10 +3465,23 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         if (init_val_node) {
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
-                node->val =
-                    module->newVarValueWithFloat(var_type, var_name, init_val_node->float_val, ValueCategory::VARIABLE);
+                double result;
+                if (evaluateConstExpr(init_val_node, &result)) { // 尝试计算初值结点
+                    init_val_node->float_val = result;
+                    init_val_node->float_bits = Value::bitcast<double, uint64_t>(result);
+                }
+
+                node->val = module->newVarValueWithFloat(
+                    var_type,
+                    var_name,
+                    {init_val_node->float_val, init_val_node->float_bits},
+                    ValueCategory::VARIABLE);
             } else {
                 // 整数类型
+                double result;
+                if (evaluateConstExpr(init_val_node, &result)) { // 尝试计算初值结点
+                    init_val_node->integer_val = (int) result;
+                }
                 node->val =
                     module->newVarValueWithInt(var_type, var_name, init_val_node->integer_val, ValueCategory::VARIABLE);
             }
@@ -3516,7 +3545,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
         // 解析维度表达式为实际的常数
         std::vector<int> dims;
         for (auto * expr_node: array_dims) {
-            float dim_size;
+            double dim_size;
             if (!evaluateConstExpr(expr_node, &dim_size)) {
                 std::cerr << "Const declare: Failed to evaluate constant expression for array dimension." << std::endl;
                 return false;
@@ -3539,7 +3568,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
             // 存储初值
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
-                auto float_init_list = new std::vector<float>;
+                auto float_init_list = new std::vector<double>;
                 for (auto init_num: init_list) {
                     if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
                         float_init_list->push_back(init_num->float_val);
@@ -3591,10 +3620,12 @@ bool IRGenerator::ir_const_declare(ast_node * node)
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
                 if (init_val_node->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                    double   int_to_double = (double) init_val_node->integer_val;
+                    uint64_t integer_bits = Value::bitcast<double, uint64_t>(int_to_double);
                     node->val = module->newVarValueWithFloat(
                         var_type,
                         var_name,
-                        (float) init_val_node->integer_val,
+                        {(float) init_val_node->integer_val, integer_bits},
                         ValueCategory::CONSTANT);
                     if (init_val_node->integer_val != 0) {
                         std::cerr << "Warning: Auto transform type \"int\" to \"float\" at variable \"" << var_name
@@ -3604,17 +3635,22 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                     node->val = module->newVarValueWithFloat(
                         var_type,
                         var_name,
-                        init_val_node->float_val,
+                        {init_val_node->float_val, init_val_node->float_bits},
                         ValueCategory::CONSTANT);
                 } else {
-                    float init_num;
+                    double init_num;
                     if (!evaluateConstExpr(init_val_node, &init_num)) {
                         std::cerr << "ERROR(const declare): Cannot evaluate a non-const expression!" << var_name << "."
                                   << std::endl;
                         return false;
                     } else {
                         std::cout << "Evaluate successful with return value: " << init_num << std::endl;
-                        node->val = module->newVarValueWithFloat(var_type, var_name, init_num, ValueCategory::CONSTANT);
+                        uint64_t init_num_bits = Value::bitcast<double, uint64_t>(init_num);
+                        node->val = module->newVarValueWithFloat(
+                            var_type,
+                            var_name,
+                            {init_num, init_num_bits},
+                            ValueCategory::CONSTANT);
                     }
                 }
                 // 检查是否成功创建常量变量
@@ -3631,7 +3667,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                         init_val_node->integer_val,
                         ValueCategory::CONSTANT);
                 } else if (init_val_node->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
-                    node->val = module->newVarValueWithFloat(
+                    node->val = module->newVarValueWithInt(
                         var_type,
                         var_name,
                         (int) init_val_node->float_val,
@@ -3640,7 +3676,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                               << std::endl;
                     // TODO 增加类型转化指令
                 } else {
-                    float init_num;
+                    double init_num;
                     if (!evaluateConstExpr(init_val_node, &init_num)) {
                         std::cerr << "ERROR(const declare): Cannot evaluate a non-const expression!" << var_name << "."
                                   << std::endl;
@@ -3695,14 +3731,14 @@ bool IRGenerator::ir_const_declare(ast_node * node)
 }
 // TODO：验证计算功能（等待实现常量访问的方法）
 
-bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
+bool IRGenerator::evaluateConstExpr(ast_node * root, double * result)
 {
     if (!root || !result)
         return false;
 
     switch (root->node_type) {
         case ast_operator_type::AST_OP_LEAF_LITERAL_UINT:
-            *result = static_cast<float>(root->integer_val);
+            *result = static_cast<double>(root->integer_val);
             return true;
 
         case ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT:
@@ -3721,7 +3757,7 @@ bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
 
             std::vector<int> dims;
             for (size_t i = 1; i < root->sons.size(); ++i) {
-                float val;
+                double val;
                 if (!evaluateConstExpr(root->sons[i], &val))
                     return false;
                 dims.push_back(static_cast<int>(val));
@@ -3735,7 +3771,7 @@ bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
         case ast_operator_type::AST_OP_NOT: {
             if (root->sons.size() != 1)
                 return false;
-            float operand;
+            double operand;
             if (!evaluateConstExpr(root->sons[0], &operand))
                 return false;
 
@@ -3759,7 +3795,7 @@ bool IRGenerator::evaluateConstExpr(ast_node * root, float * result)
         default: {
             if (root->sons.size() != 2)
                 return false;
-            float lhs, rhs;
+            double lhs, rhs;
             if (!evaluateConstExpr(root->sons[0], &lhs))
                 return false;
             if (!evaluateConstExpr(root->sons[1], &rhs))
@@ -3944,10 +3980,10 @@ bool IRGenerator::init_constarray_flattened(
         Value * val = nullptr;
         if (val_node) {
             if (!val_node->val) {
-                float * val_float = new float;
+                double * val_float = new double;
                 evaluateConstExpr(val_node, val_float);
                 if (val_type->isFloatType()) {
-                    float result = *val_float;
+                    double result = *val_float;
                     delete val_float;                              // 释放临时变量
                     val_node->val = module->newConstFloat(result); // 设置浮点值                  //
                     val_node->node_type = ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT; // 设置节点类型为浮点数
@@ -4228,7 +4264,7 @@ bool IRGenerator::gen_condition_branch(
 }
 
 // TODO:验证获取常量是否正常
-bool IRGenerator::getConstVal(std::string name, float * val)
+bool IRGenerator::getConstVal(std::string name, double * val)
 {
     Value * var = module->findVarValue(name);
     if (!var) {
@@ -4240,7 +4276,7 @@ bool IRGenerator::getConstVal(std::string name, float * val)
             *val = var->getFloatInitVal();
             return true;
         } else if (var->getType()->isIntegerType()) {
-            *val = (float) var->getIntInitVal();
+            *val = (double) var->getIntInitVal();
             return true;
         } else {
             return false;
@@ -4250,7 +4286,7 @@ bool IRGenerator::getConstVal(std::string name, float * val)
         return false;
     }
 }
-bool IRGenerator::getConstVal(std::string name, std::vector<int> & dims, float * val)
+bool IRGenerator::getConstVal(std::string name, std::vector<int> & dims, double * val)
 {
     Value * var = module->findVarValue(name);
     if (!var) {

@@ -971,9 +971,11 @@ std::any MiniCCSTVisitor::visitNumber(MiniCParser::NumberContext * ctx)
         int64_t  lineNo = (int64_t) ctx->T_INT_DIGIT()->getSymbol()->getLine();
         numberNode = ast_node::New(digit_int_attr{val, lineNo});
     } else if (ctx->T_FLOAT_DIGIT()) {
-        float_t val = (float_t) stof(ctx->T_FLOAT_DIGIT()->getText());
+        double_t value = std::stod(ctx->T_FLOAT_DIGIT()->getText()); // 高精度值
+        uint64_t float_bits;
+        std::memcpy(&float_bits, &value, sizeof(double));
         int64_t lineNo = (int64_t) ctx->T_FLOAT_DIGIT()->getSymbol()->getLine();
-        numberNode = ast_node::New(digit_float_attr{val, lineNo});
+        numberNode = ast_node::New(digit_float_attr{value, float_bits, lineNo});
     }
     return numberNode;
 }

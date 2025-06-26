@@ -98,10 +98,10 @@ void CodeGeneratorRiscV64::genDataSection()
             fprintf(fp, "%s:\n", name.c_str());
 
             if (var->getType()->isIntegerType()) {
-                fprintf(fp, "\t.word\t%d\n", var->getIntVal()); // 你需要提供这个方法返回初始化值
+                fprintf(fp, "\t.word\t%d\n", var->getIntInitVal()); // 你需要提供这个方法返回初始化值
             } else if (var->getType()->isFloatType()) {
                 //使用union，输出float型变量的IEEE 754 二进制形式
-                float fval = var->getFloatVal();
+                float fval = var->getFloatInitVal();
                 union {
                     float    f;
                     uint32_t u;

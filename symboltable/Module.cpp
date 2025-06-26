@@ -360,11 +360,10 @@ Value * Module::newVarValue(Type * type, std::string name)
     return retVal;
 }
 
-Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVal, ValueCategory valueCategory)
+Value * Module::newVarValueWithFloat(Type * type, std::string name, FloatNum initVal, ValueCategory valueCategory)
 {
     Value *     retVal;
     std::string varName;
-
     // 若变量名有效，检查当前作用域中是否存在变量，如存在则语义错误
     // 反之，因无效需创建新的变量名，肯定不现在的不同，不需要查找
     if (!name.empty()) {
@@ -400,7 +399,7 @@ Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVa
         GlobalVariable * gv = static_cast<GlobalVariable *>(retVal);
 
         const float EPSILON = 1e-6f;
-        if (std::fabs(initVal) > EPSILON) {
+        if (std::fabs(initVal.val) > EPSILON) {
             gv->setFasle_inBSSSection();
         }
 
@@ -418,11 +417,11 @@ Value * Module::newVarValueWithFloat(Type * type, std::string name, float initVa
     return retVal;
 }
 
-Value * Module::newVarValueWithInt(Type * type, std::string name, uint32_t initVal, ValueCategory valueCategory)
+Value * Module::newVarValueWithInt(Type * type, std::string name, int initVal, ValueCategory valueCategory)
 {
     Value *     retVal;
     std::string varName;
-
+    std::cout << initVal << std::endl;
     // 若变量名有效，检查当前作用域中是否存在变量，如存在则语义错误
     // 反之，因无效需创建新的变量名，肯定不现在的不同，不需要查找
     if (!name.empty()) {

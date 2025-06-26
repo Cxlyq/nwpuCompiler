@@ -54,6 +54,7 @@ ast_node::ast_node(digit_float_attr attr)
     : ast_node(ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT, FloatType::getType(), attr.lineno)
 {
     float_val = attr.val;
+    float_bits = attr.float_bits;
 }
 
 /// @brief 针对标识符ID的叶子构造函数

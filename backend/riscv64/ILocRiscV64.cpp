@@ -261,7 +261,7 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
     }
     if (constant <= 2047 && constant >= -2048) {
         // 如果常量在 -2048 到 2047 之间，可以直接使用 addi 指令
-        emit("addi", PlatformRiscV64::regName[rs_reg_no], "zero", std::to_string(constant));
+        emit("addiw", PlatformRiscV64::regName[rs_reg_no], "zero", std::to_string(constant));
     } else if (constant && 0xFFFFF000 == 0) {
         // 如果常量是 0xFFF00000 的倍数，可以直接使用 lui 指令
         emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant >> 12));
@@ -273,7 +273,7 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
         emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(upper));
         if (lower != 0) {
             emit(
-                "addi",
+                "addiw",
                 PlatformRiscV64::regName[rs_reg_no],
                 PlatformRiscV64::regName[rs_reg_no],
                 std::to_string(lower));
@@ -302,7 +302,11 @@ void ILocRiscV64::load_imm(int rs_reg_no, float num, int32_t tmp_reg_no)
     uint32_t lower = numofINT & 0xFFF;
     emit("lui", PlatformRiscV64::regName[tmp_reg_no], std::to_string(upper));
     if (lower != 0) {
-        emit("addi", PlatformRiscV64::regName[tmp_reg_no], PlatformRiscV64::regName[tmp_reg_no], std::to_string(lower));
+        emit(
+            "addiw",
+            PlatformRiscV64::regName[tmp_reg_no],
+            PlatformRiscV64::regName[tmp_reg_no],
+            std::to_string(lower));
     }
     emit("fmv.w.x", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[tmp_reg_no]);
 }
