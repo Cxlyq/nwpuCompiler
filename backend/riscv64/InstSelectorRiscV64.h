@@ -185,10 +185,10 @@ protected:
     /// @param operator_name 操作码
     void translate_two_operator(Instruction * inst, string operator_name);
 
-    // /// @brief 一元操作指令翻译成RISCV64汇编
-    // /// @param inst IR指令
-    // /// @param operator_name 操作码
-    // void translate_one_operator(Instruction * inst, string operator_name);
+    /// @brief 一元操作指令翻译成RISCV64汇编
+    /// @param inst IR指令
+    /// @param operator_name 操作码
+    void translate_one_operator(Instruction * inst, string operator_name);
 
     /// @brief 函数调用指令翻译成RISCV64汇编
     /// @param inst IR指令

@@ -427,7 +427,7 @@ int GraphColoringRegisterAllocator::Allocate(Value * var)
                 return regno;
             }
         }
-    } else if (std::find(spilledInt.begin(), spilledInt.end(), var) != spilledInt.end()) {
+    } else if (var->getType()->isIntegerType()) {
         int32_t regno = -1;
         int     regIndex = -1;
         // 查询空闲的整数寄存器
@@ -455,7 +455,7 @@ int GraphColoringRegisterAllocator::Allocate(Value * var)
         var->setRegId(regno);
         intRegValues.push_back(var);
         return regno; // 返回物理寄存器编号
-    } else if (std::find(spilledFloat.begin(), spilledFloat.end(), var) != spilledFloat.end()) {
+    } else if (var->getType()->isFloatType()) {
         int32_t regno = -1;
         int     regIndex = -1;
 
@@ -631,6 +631,7 @@ void GraphColoringRegisterAllocator::free(Value * var)
 ///
 void GraphColoringRegisterAllocator::free(int32_t no)
 {
+
     if (no == -1) {
         return;
     }
@@ -642,17 +643,23 @@ void GraphColoringRegisterAllocator::free(int32_t no)
 
     if (no >= 32) {
         floatRegBitmap.reset(regIndex);
-        auto pIter =
-            std::find_if(floatRegValues.begin(), floatRegValues.end(), [=](auto val) { return val->getRegId() == no; });
+        auto pIter = std::find_if(floatRegValues.begin(), floatRegValues.end(), [=](Value * val) {
+            return val->getRegId() == no;
+        });
+
         if (pIter != floatRegValues.end()) {
             (*pIter)->setRegId(-1);
             floatRegValues.erase(pIter);
         }
     } else {
+
         intRegBitmap.reset(regIndex);
+
         auto pIter =
-            std::find_if(intRegValues.begin(), intRegValues.end(), [=](auto val) { return val->getRegId() == no; });
+            std::find_if(intRegValues.begin(), intRegValues.end(), [=](Value * val) { return val->getRegId() == no; });
+
         if (pIter != intRegValues.end()) {
+
             (*pIter)->setRegId(-1);
             intRegValues.erase(pIter);
         }
