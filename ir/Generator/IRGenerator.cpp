@@ -482,7 +482,6 @@ bool IRGenerator::ir_function_call(ast_node * node)
     // 第二个节点：实参列表节点
 
     std::string funcName = node->sons[0]->name;
-    int64_t     lineno = node->sons[0]->line_no;
 
     ast_node * paramsNode = node->sons[1];
 
@@ -493,7 +492,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
         minic_log(LOG_ERROR, "函数(%s)未定义或声明", funcName.c_str());
         return false;
     }
-
+    auto formalParams = calledFunction->getParams();
     // 当前函数存在函数调用
     currentFunc->setExistFuncCall(true);
 
@@ -558,20 +557,24 @@ bool IRGenerator::ir_function_call(ast_node * node)
         }
     }
 
-    // TODO 这里请追加函数调用的语义错误检查，这里只进行了函数参数的个数检查等，其它请自行追加。
-    if (realParams.size() != calledFunction->getParams().size()) {
+    if (realParams.size() != formalParams.size()) {
         // 函数参数的个数不一致，语义错误
-        std::cout << realParams.size() << " " << calledFunction->getParams().size() << std::endl;
-        minic_log(LOG_ERROR, "第%lld行的被调用函数(%s)未定义或声明", (long long) lineno, funcName.c_str());
+        std::cout << realParams.size() << " " << formalParams.size() << std::endl;
+        std::cerr << "Function call: Function '" << funcName << "' called with " << realParams.size()
+                  << " arguments, but expected " << formalParams.size() << " parameters." << std::endl;
         return false;
     } else {
-        // for (int paramNo = 0; paramNo < realParams.size(); paramNo++) {
-        //     if (realParams[paramNo]->getType() != calledFunction->getParams()[paramNo]->getType()) {
-        //         // 参数类型不匹配
-        //         minic_log(LOG_ERROR, "函数(%s)的第%d个参数类型不匹配", funcName.c_str(), paramNo + 1);
-        //         return false;
-        //     }
-        // }
+        // 检查实参类型和形参类型是否匹配, 对int<--->float做自动转换
+        for (size_t i = 0; i < formalParams.size(); ++i) {
+            auto realTyID = realParams[i]->getType()->getTypeID();
+            auto formalTyID = formalParams[i]->getType()->getTypeID();
+            if (realTyID != formalTyID) {
+                CastInstruction * castInst =
+                    new CastInstruction(module->getCurrentFunction(), realParams[i], formalParams[i]->getType());
+                node->blockInsts.addInst(castInst);
+                realParams[i] = castInst;
+            }
+        }
     }
     calledFunction->realParams = realParams;
     // 返回调用有返回值，则需要分配临时变量，用于保存函数调用的返回值
