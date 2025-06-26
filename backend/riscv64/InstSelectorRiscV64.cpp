@@ -612,7 +612,7 @@ void InstSelectorRiscV64::translate_not_int32(Instruction * inst)
 {
     // 逻辑非操作，直接翻译成seqz指令
     // 即如果结果为0，则返回1，否则返回0
-    translate_two_operator(inst, "seqz");
+    translate_one_operator(inst, "seqz");
 }
 
 /// @brief 浮点数加法指令翻译成RISCV64汇编
@@ -1058,6 +1058,35 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
 void InstSelectorRiscV64::translate_cast(Instruction * inst)
 {
     // TODO: @JEV055 [指令指派] 需要实现类型转换
+    Value * src = inst->getOperand(0);
+    Type *  srcType = src->getType();
+    Type *  dstType = inst->getType();
+    if (srcType->isInt1Byte() && dstType->isInt32Type()) {
+        // zext i1 → i32，委托给已有的 zext 处理逻辑
+        int dstReg = simpleRegisterAllocator.Allocate(inst);
+        int srcReg = simpleRegisterAllocator.Allocate(src);
+        iloc.inst("andi", PlatformRiscV64::regName[dstReg], PlatformRiscV64::regName[srcReg], "1");
+    } else if (
+        (srcType->getTypeID() == Type::IntegerTyID && dstType->getTypeID() == Type::FloatTyID) ||
+        (srcType->getTypeID() == Type::IntegerTyID && dstType->getPointeeType()->getTypeID() == Type::FloatTyID)) {
+        translate_one_operator(inst, "fcvt.s.w");
+    } else if (
+        (srcType->getTypeID() == Type::FloatTyID && dstType->getTypeID() == Type::IntegerTyID) ||
+        (srcType->getTypeID() == Type::FloatTyID && dstType->getPointeeType()->getTypeID() == Type::IntegerTyID)) {
+        // float → i32
+        translate_one_operator(inst, "fcvt.w.s");
+    } else if (srcType->isInt32Type() && dstType->isInt1Byte()) {
+        // i32 → i1（截断）
+        int dstFReg = simpleRegisterAllocator.Allocate(inst);
+        int srcReg = simpleRegisterAllocator.Allocate(src);
+        iloc.inst(
+            "sltu",
+            PlatformRiscV64::regName[dstFReg],
+            PlatformRiscV64::regName[0],
+            PlatformRiscV64::regName[srcReg]);
+    } else {
+        std::cerr << "[ERROR] Unsupported cast: " << srcType->toString() << " → " << dstType->toString() << std::endl;
+    }
 }
 
 /// @brief GEP指令翻译成RISCV64汇编
