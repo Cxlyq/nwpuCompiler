@@ -255,45 +255,56 @@ void ILocRiscV64::comment(std::string str)
 /// @param constant 立即数
 void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
 {
-    // if (constant <= 2047 && constant >= -2048) {
-    //     // 如果常量在 -2048 到 2047 之间，可以直接使用 addi 指令
-    //     emit("addi", PlatformRiscV64::regName[rs_reg_no], "zero", std::to_string(constant));
-    // } else if (constant && 0xFFFFF000 == 0) {
-    //     // 如果常量是 0xFFF00000 的倍数，可以直接使用 lui 指令
-    //     emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant >> 12));
-    //     return;
-    // } else {
-    //     int upper = constant >> 12;
-    //     int lower = constant & 0xFFF;
-
-    //     emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(upper));
-    //     if (lower != 0) {
-    //         emit(
-    //             "addi",
-    //             PlatformRiscV64::regName[rs_reg_no],
-    //             PlatformRiscV64::regName[rs_reg_no],
-    //             std::to_string(lower));
-    //     }
-    // }
     if (rs_reg_no == -1) {
         minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
         return;
     }
-    emit("li", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant));
+    if (constant <= 2047 && constant >= -2048) {
+        // 如果常量在 -2048 到 2047 之间，可以直接使用 addi 指令
+        emit("addi", PlatformRiscV64::regName[rs_reg_no], "zero", std::to_string(constant));
+    } else if (constant && 0xFFFFF000 == 0) {
+        // 如果常量是 0xFFF00000 的倍数，可以直接使用 lui 指令
+        emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant >> 12));
+        return;
+    } else {
+        uint32_t upper = (constant >> 12) & 0xFFFFF;
+        uint32_t lower = constant & 0xFFF;
+
+        emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(upper));
+        if (lower != 0) {
+            emit(
+                "addi",
+                PlatformRiscV64::regName[rs_reg_no],
+                PlatformRiscV64::regName[rs_reg_no],
+                std::to_string(lower));
+        }
+    }
+
+    // emit("li", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant));
 }
 
 /// @brief 加载立即数 li r0,100.0
 /// @param rs_reg_no 结果寄存器号
 /// @param constant 立即数
-void ILocRiscV64::load_imm(int rs_reg_no, float constant)
+void ILocRiscV64::load_imm(int rs_reg_no, float num, int32_t tmp_reg_no)
 {
-    // // TODO:[浮点数] 加载浮点立即数到寄存器，需要分配中间寄存器
-    // if (rs_reg_no == -1) {
-    //     minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
-    //     return;
-    // }
-    // emit("li", std::to_string(constant));
-    // emit("fmv.w.x", PlatformRiscV64::regName[rs_reg_no]); //中间寄存器;
+    uint32_t numofINT = float2int(num);
+    // TODO:[浮点数] 加载浮点立即数到寄存器，需要分配中间寄存器
+    if (rs_reg_no == -1) {
+        minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
+        return;
+    }
+    if (tmp_reg_no == -1) {
+        minic_log(LOG_ERROR, "BUG: Invalid register number for tempInt register: %d", tmp_reg_no);
+        return;
+    }
+    uint32_t upper = (numofINT >> 12) & 0xFFFFF;
+    uint32_t lower = numofINT & 0xFFF;
+    emit("lui", PlatformRiscV64::regName[tmp_reg_no], std::to_string(upper));
+    if (lower != 0) {
+        emit("addi", PlatformRiscV64::regName[tmp_reg_no], PlatformRiscV64::regName[tmp_reg_no], std::to_string(lower));
+    }
+    emit("fmv.w.x", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[tmp_reg_no]);
 }
 /// @brief 基址寻址 lw rd, offset(base)
 /// @param rs_reg_no 结果寄存器编号
@@ -406,7 +417,7 @@ void ILocRiscV64::store_var(int src_reg_no, GlobalVariable * dest_var, int addr_
 /// @param src_reg_no 源寄存器
 /// @param dest_var  变量
 /// @param tmp_reg_no 基址寄存器
-void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int addr_reg_no)
+void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
 {
     // 被保存目标变量肯定不是常量
 
@@ -416,7 +427,7 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int addr_reg_no)
     } else if (Instanceof(instVar, Instruction *, dest_var)) {
         store_var(src_reg_no, instVar);
     } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
-        store_var(src_reg_no, globalVar, addr_reg_no);
+        store_var(src_reg_no, globalVar, tmp_reg_no);
     } else {
         // TODO: [寻址]目前只实现了局部变量和全局变量
         std::cout << "[ILocRiscV64::store_var]被保存目标变量不是局部变量或全局变量\n";
@@ -426,20 +437,20 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int addr_reg_no)
 /// @brief 加载变量到寄存器，保证将变量放到reg中
 /// @param rs_reg_no 结果寄存器
 /// @param src_var 源操作数
-void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int addr_reg_no)
+void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int tmp_reg_no)
 {
     if (Instanceof(constVal, ConstInt *, src_var)) {
         // 整型常量
         load_imm(rs_reg_no, constVal->getVal());
     } else if (Instanceof(constVal, ConstFloat *, src_var)) {
         // 浮点型常量
-        load_imm(rs_reg_no, constVal->getVal());
+        load_imm(rs_reg_no, constVal->getVal(), tmp_reg_no);
     } else if (Instanceof(instVar, Instruction *, src_var)) {
         load_var(rs_reg_no, instVar);
     } else if (Instanceof(localVar, LocalVariable *, src_var)) {
         load_var(rs_reg_no, localVar);
     } else if (Instanceof(globalVar, GlobalVariable *, src_var)) {
-        load_var(rs_reg_no, globalVar, addr_reg_no);
+        load_var(rs_reg_no, globalVar, tmp_reg_no);
     } else {
         std::cout << "[ILocRiscV64::load_var]被保存目标变量不是局部变量或全局变量或临时变量\n";
         emit("lw", "?", "?");
