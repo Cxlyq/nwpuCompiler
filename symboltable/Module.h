@@ -174,6 +174,11 @@ public:
     /// @brief 在当前的作用域中查找，若没有查找到则创建数组变量
     Value * newArrayVarValue(Type * type, std::string array_name, std::vector<int> dims, ValueCategory valueCategory);
 
+    /// @brief 根据变量名获取当前符号（只管理全局变量）
+    /// \param name 变量名
+    /// \return 变量对应的值
+    GlobalVariable * findGlobalVariable(std::string name);
+
 protected:
     /// @brief 根据整数值获取当前符号
     /// \param name 变量名
@@ -193,10 +198,10 @@ protected:
     ///
     GlobalVariable * newGlobalVariable(Type * type, std::string name);
 
-    /// @brief 根据变量名获取当前符号（只管理全局变量）
-    /// \param name 变量名
-    /// \return 变量对应的值
-    GlobalVariable * findGlobalVariable(std::string name);
+    // /// @brief 根据变量名获取当前符号（只管理全局变量）
+    // /// \param name 变量名
+    // /// \return 变量对应的值
+    // GlobalVariable * findGlobalVariable(std::string name);
 
     /// @brief 直接插入函数到符号表中，不考虑现有的表中是否存在
     /// @param func 函数对象

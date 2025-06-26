@@ -3406,52 +3406,72 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
             // 	std::cerr << "Error: Global variable \"" << array_name << "\" already exists." << std::endl;
             // 	return false;
             // }
-            if (type_node->type->isFloatType()) {
-                // 浮点数类型
-                auto float_init_list = new std::vector<double>;
+            ///如果是全局数组
+            if (auto gval = module->findGlobalVariable(array_name)) {
+                if (type_node->type->isFloatType()) {
+                    // 浮点数类型
+                    auto float_init_list = new std::vector<double>;
 
-                for (auto init_num: init_list) {
-                    if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
-                        float_init_list->push_back(init_num->float_val);
-                    } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
-                        if (init_num->integer_val != 0) {
-                            std::cerr << "Warning: Auto transform type \"int\" to \"float\" at \"" << array_name
-                                      << "\"." << std::endl;
+                    for (auto init_num: init_list) {
+                        // if (init_num->float_val > 0.0f || init_num->float_val < 0.0f) {
+                        //     gval->set_non_zero();
+                        // }
+                        if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                            // if (init_num->float_val > 0.0f || init_num->float_val < 0.0f) {
+                            //     gval->set_non_zero();
+                            // }
+                            float_init_list->push_back(init_num->float_val);
+                        } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                            if (init_num->integer_val != 0) {
+                                // gval->set_non_zero();
+                                std::cerr << "Warning: Auto transform type \"int\" to \"float\" at \"" << array_name
+                                          << "\"." << std::endl;
+                            }
+                            // TODO 增加类型转化指令
+                            float_init_list->push_back((double) init_num->integer_val);
+                        } else {
+                            std::cerr << "ERROR(const declare): No match type for  float array " << array_name << "."
+                                      << std::endl;
+                            return false;
                         }
-                        // TODO 增加类型转化指令
-                        float_init_list->push_back((double) init_num->integer_val);
-                    } else {
-                        std::cerr << "ERROR(const declare): No match type for  float array " << array_name << "."
-                                  << std::endl;
-                        return false;
+                        // std::cout << "init_num : " << init_num->float_val << std::endl;
                     }
-                    // std::cout << "init_num : " << init_num->float_val << std::endl;
-                }
 
-                node->val->setInitVal(float_init_list);
-                node->val->isInited = true; // 标记数组已初始化
-            } else {
-                // 整数类型
-                auto int_init_list = new std::vector<int>;
+                    node->val->setInitVal(float_init_list);
+                    node->val->isInited = true; // 标记数组已初始化
+                } else {
+                    // 整数类型
+                    auto int_init_list = new std::vector<int>;
 
-                for (auto init_num: init_list) {
-                    if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
-                        int_init_list->push_back((int) init_num->float_val);
-                        std::cerr << "Warning: Auto transform type \"float\" to \"int\" at \"" << array_name << "\"."
-                                  << std::endl;
-                        // TODO 增加类型转化指令
-                    } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
-                        int_init_list->push_back((float) init_num->integer_val);
-                    } else {
-                        std::cerr << "ERROR(const declare): No matched type for const float array " << array_name << "."
-                                  << std::endl;
-                        return false;
+                    for (auto init_num: init_list) {
+
+                        if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                            int_init_list->push_back((int) init_num->float_val);
+                            // if ((int) init_num->float_val) {
+                            //     gval->set_non_zero();
+                            // }
+                            std::cerr << "Warning: Auto transform type \"float\" to \"int\" at \"" << array_name
+                                      << "\"." << std::endl;
+                            // TODO 增加类型转化指令
+                        } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                            // std::cout << init_num->integer_val << std::endl;
+                            // if ((int) init_num->integer_val != 0) {
+                            //     std::cout << "here" << std::endl;
+                            //     gval->set_non_zero();
+                            // }
+                            int_init_list->push_back(init_num->integer_val);
+                        } else {
+                            std::cerr << "ERROR(const declare): No matched type for const float array " << array_name
+                                      << "." << std::endl;
+                            return false;
+                        }
+                        // std::cout << "init_num : " << init_num->integer_val << std::endl;
                     }
-                    // std::cout << "init_num : " << init_num->integer_val << std::endl;
+                    node->val->setInitVal(int_init_list);
+                    node->val->isInited = true; // 标记数组已初始化
                 }
-                node->val->setInitVal(int_init_list);
-                node->val->isInited = true; // 标记数组已初始化
             }
+
             // for (auto inst: *insts) {
             //     node->blockInsts.addInst(inst);
             // }
@@ -3902,60 +3922,67 @@ bool IRGenerator::init_array_flattened(
             // TODO：有待检查此处补0在多维数组情况下是否逻辑正确
             auto tempNode = new ast_node(digit_int_attr{0, 0});
             flat_list->push_back(tempNode);
+            tempNode->isadd_zero = true;
+            val_node = tempNode;
             val = module->newConstInt(0); // 默认补零
         }
 
-        std::vector<int> multi_indices;
-        int              temp = i;
-        for (int d = dims.size() - 1; d >= 0; --d) {
-            multi_indices.insert(multi_indices.begin(), temp % dims[d]);
-            temp /= dims[d];
-        }
-
-        // 逐层调用 GEP 构造地址
-        Value * gepPtr = arrayVar;
-        Type *  gepType = arrayVar->getType();
-        if (gepType->isPointerType()) {
-            gepType = const_cast<Type *>(static_cast<PointerType *>(gepType)->getPointeeType());
-        }
-
-        for (int dim: multi_indices) {
-            Value * zero = module->newConstInt(0);
-            Value * index = module->newConstInt(dim);
-
-            GetElementPtrInst * gepInst;
-
-            if (gepType->isArrayType()) {
-                gepInst = new GetElementPtrInst(
-                    module->getCurrentFunction(),
-                    gepPtr,
-                    gepType,
-                    std::vector<Value *>{zero, index});
-                gepType = static_cast<ArrayType *>(gepType)->getElementType();
-            } else if (gepType->isPointerType()) {
-                gepInst =
-                    new GetElementPtrInst(module->getCurrentFunction(), gepPtr, gepType, std::vector<Value *>{index});
-                gepType = const_cast<Type *>(static_cast<PointerType *>(gepType)->getPointeeType());
-            } else {
-                std::cerr << "GEP error: unexpected type." << std::endl;
-                return false;
+        if (!(val_node->isadd_zero)) {
+            std::vector<int> multi_indices;
+            int              temp = i;
+            for (int d = dims.size() - 1; d >= 0; --d) {
+                multi_indices.insert(multi_indices.begin(), temp % dims[d]);
+                temp /= dims[d];
             }
 
-            // Insts.push_back(gepInst);
-            initNode->blockInsts.addInst(gepInst);
-            gepPtr = gepInst;
-            gepPtr->setType(gepType); // 确保地址的类型正确
+            // 逐层调用 GEP 构造地址
+            Value * gepPtr = arrayVar;
+            Type *  gepType = arrayVar->getType();
+            if (gepType->isPointerType()) {
+                gepType = const_cast<Type *>(static_cast<PointerType *>(gepType)->getPointeeType());
+            }
+
+            for (int dim: multi_indices) {
+                Value * zero = module->newConstInt(0);
+                Value * index = module->newConstInt(dim);
+
+                GetElementPtrInst * gepInst;
+
+                if (gepType->isArrayType()) {
+                    gepInst = new GetElementPtrInst(
+                        module->getCurrentFunction(),
+                        gepPtr,
+                        gepType,
+                        std::vector<Value *>{zero, index});
+                    gepType = static_cast<ArrayType *>(gepType)->getElementType();
+                } else if (gepType->isPointerType()) {
+                    gepInst = new GetElementPtrInst(
+                        module->getCurrentFunction(),
+                        gepPtr,
+                        gepType,
+                        std::vector<Value *>{index});
+                    gepType = const_cast<Type *>(static_cast<PointerType *>(gepType)->getPointeeType());
+                } else {
+                    std::cerr << "GEP error: unexpected type." << std::endl;
+                    return false;
+                }
+
+                // Insts.push_back(gepInst);
+                initNode->blockInsts.addInst(gepInst);
+                gepPtr = gepInst;
+                gepPtr->setType(gepType); // 确保地址的类型正确
+            }
+
+            Value * addr = gepPtr;
+            // addr->setType(gepType); // 确保地址的类型正确
+
+            // std::cout << "here: " << addr->getType()->toString() << std::endl;
+            //  5. 生成 store 指令
+            StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
+            // addr->setIRName(std::to_string(addr->getIntVal()));
+            // Insts.push_back(storeInst);
+            initNode->blockInsts.addInst(storeInst);
         }
-
-        Value * addr = gepPtr;
-        // addr->setType(gepType); // 确保地址的类型正确
-
-        // std::cout << "here: " << addr->getType()->toString() << std::endl;
-        //  5. 生成 store 指令
-        StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
-        // addr->setIRName(std::to_string(addr->getIntVal()));
-        // Insts.push_back(storeInst);
-        initNode->blockInsts.addInst(storeInst);
     }
     init_list = *flat_list;
     return true;
@@ -4086,6 +4113,7 @@ void IRGenerator::flatten_init_node(
         if (depth == (int) dims.size() - 1) {
             ast_node * zero = new ast_node(ast_operator_type::AST_OP_LEAF_LITERAL_UINT);
             zero->integer_val = 0;
+            zero->isadd_zero = true;
             zero->val = module->newConstInt(0);
             flat_list.push_back(zero);
         } else {
@@ -4108,6 +4136,7 @@ void IRGenerator::flatten_init_node(
                 // 到达标量层，补0
                 ast_node * zero = new ast_node(ast_operator_type::AST_OP_LEAF_LITERAL_UINT);
                 zero->integer_val = 0;
+                zero->isadd_zero = true;
                 zero->val = module->newConstInt(0);
                 flat_list.push_back(zero);
             } else {
