@@ -2840,6 +2840,13 @@ bool IRGenerator::ir_array_access(ast_node * node)
         Value *    indexVal = idxNode->val;
         node->blockInsts.addInst(idxNode->blockInsts);
 
+        if (indexVal->getType()->isInt32Type()) {
+            // 如果索引是浮点数，转换为整数
+            auto indexCast = new CastInstruction(module->getCurrentFunction(), indexVal, IntegerType::getTypeInt64());
+            node->blockInsts.addInst(indexCast);
+            indexVal = indexCast;
+        }
+
         // getelementptr第一个索引固定为0
         Value * zero = module->newConstInt(0);
 
@@ -2914,10 +2921,24 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
     if (!tempVal) {
         std::cerr << "Function call - array: Cannot find array!" << std::endl;
     }
-    Type * type = tempVal->getType();
+    Type *  type = tempVal->getType();
+    Value * zero = module->newConstInt(0);
     // std::cout << "array type  " << type->toString() << std::endl;
     if (type->isArrayType()) {
         int accessDims = array_dims.size();
+        // if (type->isPointerType()) {
+        //     Type * elementType = type->getPointeeType(); // [59 x i32]
+
+        //     if (elementType->isArrayType()) {
+        //         auto * arrayType = static_cast<ArrayType *>(elementType);
+        //         int    ori_dims = arrayType->getDimensions().size();
+
+        //         ...
+        //     } else {
+        //         std::cerr << "Error: not an array pointer" << std::endl;
+        //         return nullptr;
+        //     }
+        // }
         int ori_dims = static_cast<ArrayType *>(type)->getDimensions().size();
         std::cout << "array access dims: " << accessDims << std::endl;
         // 起始指针
@@ -2926,7 +2947,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
         Type * gepType = type;
         if (accessDims == 0) {
             // getelementptr 0, 0
-            Value * zero = module->newConstInt(0);
+            // Value * zero = module->newConstInt(0);
 
             // GEP 获取数组首地址，模仿数组 decay 成指针的行为
             auto gepInst = new GetElementPtrInst(
@@ -2948,7 +2969,14 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                 Value *    indexVal = idxNode->val;
                 node->blockInsts.addInst(idxNode->blockInsts);
                 // getelementptr第一个索引固定为0
-                Value * zero = module->newConstInt(0);
+                // Value * zero = module->newConstInt(0);
+                if (indexVal->getType()->isInt32Type()) {
+                    // 如果索引是浮点数，转换为整数
+                    auto indexCast =
+                        new CastInstruction(module->getCurrentFunction(), indexVal, IntegerType::getTypeInt64());
+                    node->blockInsts.addInst(indexCast);
+                    indexVal = indexCast;
+                }
 
                 // 生成getelementptr指令：
                 // 类型：gepType是当前的数组类型，如 [5 x [6 x i32]] 或 [6 x i32]
@@ -2988,7 +3016,14 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                 Value *    indexVal = idxNode->val;
                 node->blockInsts.addInst(idxNode->blockInsts);
                 // getelementptr第一个索引固定为0
-                Value * zero = module->newConstInt(0);
+                // Value * zero = module->newConstInt(0);
+                if (indexVal->getType()->isInt32Type()) {
+                    // 如果索引是浮点数，转换为整数
+                    auto indexCast =
+                        new CastInstruction(module->getCurrentFunction(), indexVal, IntegerType::getTypeInt64());
+                    node->blockInsts.addInst(indexCast);
+                    indexVal = indexCast;
+                }
 
                 // 生成getelementptr指令：
                 // 类型：gepType是当前的数组类型，如 [5 x [6 x i32]] 或 [6 x i32]
@@ -3009,7 +3044,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                 }
             }
             // getelementptr 0, 0
-            Value * zero = module->newConstInt(0);
+            // Value * zero = module->newConstInt(0);
 
             // GEP 获取数组首地址，模仿数组 decay 成指针的行为
             auto final_gepInst = new GetElementPtrInst(
@@ -3035,6 +3070,105 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
             // // node->val = castInst; // 最终的 gep 指令 Value*
             return node->val; // 返回最终的 gep 指令 Value*
         }
+    } else if (type->isPointerType()) {
+        if (type->isPointerType()) {
+
+            int accessDims = array_dims.size();
+            // 起始指针
+            Value *           gepPtr = tempVal;
+            Type *            gepType = type;
+            LoadInstruction * loadInst = nullptr;
+
+            //如果是指针类型，直接获取指向的类型
+            PointerType * pointerType = new PointerType(type);
+
+            gepPtr->setType(pointerType);
+            loadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr);
+            node->blockInsts.addInst(loadInst);
+
+            tempVal->setType(type); // 还原
+            gepPtr = loadInst;      // 更新 gepPtr 为加载后的值
+                                    ///
+            // gepPtr->setType(loadInst->getType()->getPointeeType())                   //
+            gepType = gepPtr->getType(); // 更新 gepType 为加载后的类型
+                                         // 获取指向的类型
+            std::cout << "gepPtr(ptr) type: " << gepPtr->getType()->toString() << std::endl; // 逐层调用getelementptr
+
+            for (int i = 0; i < accessDims; ++i) {
+                // 先处理索引表达式，转换成Value*
+                ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
+                Value *    indexVal = idxNode->val;
+                node->blockInsts.addInst(idxNode->blockInsts);
+
+                if (indexVal->getType()->isInt32Type()) {
+                    // 如果索引是浮点数，转换为整数
+                    auto indexCast =
+                        new CastInstruction(module->getCurrentFunction(), indexVal, IntegerType::getTypeInt64());
+                    node->blockInsts.addInst(indexCast);
+                    indexVal = indexCast;
+                }
+
+                // getelementptr第一个索引固定为0
+                // Value * zero = module->newConstInt(0);
+
+                // 生成getelementptr指令：
+                // 类型：gepType是当前的数组类型，如 [5 x [6 x i32]] 或 [6 x i32]
+                // 返回的类型是当前维度元素的指针类型，比如 [6 x i32]* 的元素是 i32
+                if (type->isPointerType() && i == 0) {
+                    // 如果是指针类型，只取一维
+                    auto gepInst = new GetElementPtrInst(
+                        module->getCurrentFunction(),
+                        gepPtr,
+                        gepType,
+                        std::vector<Value *>{indexVal});
+                    node->blockInsts.addInst(gepInst);
+
+                    gepPtr = gepInst;
+                } else {
+                    auto gepInst = new GetElementPtrInst(
+                        module->getCurrentFunction(),
+                        gepPtr,
+                        gepType,
+                        std::vector<Value *>{zero, indexVal});
+
+                    node->blockInsts.addInst(gepInst);
+
+                    gepPtr = gepInst;
+                }
+
+                // 更新类型为下一维
+                if (gepType->isArrayType()) {
+                    auto * arrTy = static_cast<ArrayType *>(gepType);
+                    gepType = arrTy->getElementType();
+                } else if (gepType->isPointerType()) {
+                    // PointerType * pointerType = new PointerType(gepType->getPointeeType()->getPointeeType());
+                    PointerType * pointeeType =
+                        const_cast<PointerType *>(static_cast<const PointerType *>(gepType->getPointeeType()));
+                    gepType = pointeeType;
+                } else {
+                    // 否则，不能进一步推进，退出
+                    break;
+                }
+                gepPtr->setType(gepType);
+            }
+            std::cout << "gepType" << gepType->toString() << std::endl;
+            if (gepType->isArrayType()) {
+                auto getelementptr = new GetElementPtrInst(
+                    module->getCurrentFunction(),
+                    gepPtr,
+                    gepType,
+                    std::vector<Value *>{zero, zero});
+                node->val = getelementptr;
+                node->blockInsts.addInst(getelementptr);
+
+                return node->val;
+            }
+            gepPtr->setType(gepType); // 设置 gepPtr 的类型为最终的元素指针类型
+            auto lastloadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr);
+            node->blockInsts.addInst(lastloadInst);
+            node->val = lastloadInst; // 设置为加载后的值
+        }
+
     } else {
         // 处理错误情况
         std::cerr << "Error: Expected an array type." << std::endl;

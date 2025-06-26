@@ -133,6 +133,11 @@ public:
         return false;
     }
 
+    [[nodiscard]] virtual bool isInt64Type() const
+    {
+        return false;
+    }
+
     ///
     /// @brief 是否是指针类型
     /// @return true 是

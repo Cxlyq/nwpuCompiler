@@ -50,7 +50,7 @@ void GetElementPtrInst::toString(std::string & str)
             << getOperand(0)->getIRName();
     }
     for (size_t i = 1; i < getOperands().size(); ++i) {
-        oss << ", i32 " << getOperand(i)->getIRName();
+        oss << ", i64 " << getOperand(i)->getIRName();
     }
 
     str = oss.str();
