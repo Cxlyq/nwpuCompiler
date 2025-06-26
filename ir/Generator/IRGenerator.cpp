@@ -3398,8 +3398,8 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 return false;
             }
             // 在这里使用 GlobalVariable* 临时变量来访问子类方法
-            // GlobalVariable * gv = module->findGlobalVariable(array_name);
-            // gv->setFasle_inBSSSection();
+            GlobalVariable * gv = static_cast<GlobalVariable *>(node->val);
+            gv->setFasle_inBSSSection();
             // // 数组初始化后，不属于ibss段，不论局部变量和全局变量
             // // // 存储初值
             // if() {
