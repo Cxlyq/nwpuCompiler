@@ -160,7 +160,7 @@ double Value::getFloatInitVal()
 {
     return initVal.floatVal.val;
 }
-uint32_t Value::getIntInitVal()
+int Value::getIntInitVal()
 {
     return initVal.intVal;
 }
@@ -190,7 +190,7 @@ bool Value::setInitVal(FloatNum val)
     isInited = true;
     return true;
 }
-bool Value::setInitVal(uint32_t val)
+bool Value::setInitVal(int val)
 {
     // if (valueCategory != ValueCategory::CONSTANT) {
     //     std::cerr << "Error: setInitVal to a not-constant variable." << std::endl;

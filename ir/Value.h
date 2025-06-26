@@ -63,7 +63,7 @@ protected:
     enum ValueType { NONE, INT, FLOAT, ARRAY_INT, ARRAY_FLOAT };
 
     union InitVal {
-        uint32_t              intVal;
+        int                   intVal;
         FloatNum              floatVal;
         std::vector<int> *    array_int_init_list;
         std::vector<double> * array_float_init_list;
@@ -127,11 +127,11 @@ public:
     /// @return 变量尚存的被使用个数
     int32_t getUserNum();
 
-	///
-	/// @brief 取得变量所在的作用域层级
-	/// @return int32_t 层级
-	///
-	virtual int32_t getScopeLevel();
+    ///
+    /// @brief 取得变量所在的作用域层级
+    /// @return int32_t 层级
+    ///
+    virtual int32_t getScopeLevel();
 
     ///
     /// @brief 获得分配的寄存器编号或ID
@@ -156,22 +156,23 @@ public:
 
     // 为value赋初值
 
-    double               getFloatInitVal();
-    uint32_t             getIntInitVal();
-    ValueType            getValueType();
-    ValueCategory        getValueCategory();             //获取值的类别（常量或变量）
-    void                 setCategory(ValueCategory cat); //设置值的类别（常量或变量）
-    bool                 setInitVal(FloatNum val);
-    bool                 setInitVal(uint32_t val);
-    bool                 setInitVal(std::vector<int> * arrayVal);
-    bool                 setInitVal(std::vector<double> * arrayVal);
-    std::vector<int> *   getInitIntVal();
+    double                getFloatInitVal();
+    int                   getIntInitVal();
+    ValueType             getValueType();
+    ValueCategory         getValueCategory();             //获取值的类别（常量或变量）
+    void                  setCategory(ValueCategory cat); //设置值的类别（常量或变量）
+    bool                  setInitVal(FloatNum val);
+    bool                  setInitVal(int val);
+    bool                  setInitVal(std::vector<int> * arrayVal);
+    bool                  setInitVal(std::vector<double> * arrayVal);
+    std::vector<int> *    getInitIntVal();
     std::vector<double> * getInitFloatVal();
-    std::string          getInitValStr();
-    bool                 getArrayValByIndex(std::vector<int> & indexs, double * val);
+    std::string           getInitValStr();
+    bool                  getArrayValByIndex(std::vector<int> & indexs, double * val);
 
     template <typename T, typename U>
-    static U bitcast(T value){
+    static U bitcast(T value)
+    {
         static_assert(sizeof(T) == sizeof(U), "Size mismatch");
         U result;
         std::memcpy(&result, &value, sizeof(T));
