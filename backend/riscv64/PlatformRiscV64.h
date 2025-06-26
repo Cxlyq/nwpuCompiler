@@ -15,6 +15,7 @@
 // 函数跳转寄存器
 #define RISCV64_RA_REG_NO 1 // ra = x1
 
+#define RISCV64
 /// @brief RISCV64平台信息
 class PlatformRiscV64 {
 

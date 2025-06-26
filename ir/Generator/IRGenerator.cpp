@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <ostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -298,7 +299,8 @@ bool IRGenerator::ir_function_define(ast_node * node)
 
     if (!type_node->type->isVoidType()) {
         // 保存函数返回值变量到函数信息中，在return语句翻译时需要设置值到这个变量中
-        retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type, "ret"));
+        //这个变量的名字不能太大众，否则可能会和后续冲突
+        retValue = static_cast<LocalVariable *>(module->newVarValue(type_node->type, "ret_of_phm"));
         // XXX: 初步完成：这里最好设置返回值变量的初值为0，以便在没有返回值时能够返回0
         if (type_node->type->isIntegerType()) {
             // 整型返回值，设置初始值为0
@@ -515,6 +517,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
             ast_node * son_node;
             Type *     son_type = son->type;
             // std::cout << "Function call(Real Param): son type is " << son_type->toString() << std::endl;
+            // std::cout << "Function call(Real Param): son type is " << (int) son->node_type << std::endl;
             ///因为如果是数组访问，走专门的函数，所以不能visit，否则会额外生成ir
             if (!(son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS)) {
                 son_node = ir_visit_ast_node(son);
@@ -548,6 +551,7 @@ bool IRGenerator::ir_function_call(ast_node * node)
             } else {
                 // 遍历Block的每个语句，进行显示或者运算
                 // ast_node * temp = ir_visit_ast_node(son);
+                // son_node->val = temp->val;
                 if (!son_node) {
                     return false;
                 }
@@ -1101,14 +1105,14 @@ bool IRGenerator::ir_and(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     ///检查操作数是否是数组，若是需要load
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     auto neqInst1 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1132,13 +1136,13 @@ bool IRGenerator::ir_and(ast_node * node)
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     auto neqInst2 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1232,14 +1236,14 @@ bool IRGenerator::ir_or(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     ///检查操作数是否是数组，若是需要load
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(left->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(left->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     auto neqInst1 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1263,13 +1267,13 @@ bool IRGenerator::ir_or(ast_node * node)
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,right\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-        rhs = LoadInst;
-        rhs->setType(module->findVarValue(right->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,right\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
+    //     rhs = LoadInst;
+    //     rhs->setType(module->findVarValue(right->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     auto neqInst2 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1959,13 +1963,13 @@ bool IRGenerator::ir_pos(ast_node * node)
     node->blockInsts.addInst(expr->blockInsts);
     Value * lhs = expr->val;
     // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-        // printf("yes,left\n");
-        LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
-        lhs = LoadInst;
-        lhs->setType(module->findVarValue(expr->name)->getType());
-        node->blockInsts.addInst(LoadInst);
-    }
+    // if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
+    //     // printf("yes,left\n");
+    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
+    //     lhs = LoadInst;
+    //     lhs->setType(module->findVarValue(expr->name)->getType());
+    //     node->blockInsts.addInst(LoadInst);
+    // }
 
     // 设置当前节点的计算结果
     node->val = lhs;
@@ -2812,7 +2816,7 @@ bool IRGenerator::ir_array_access(ast_node * node)
 
     Value * tempVal = module->findVarValue(array_name);
     Type *  type = tempVal->getType();
-    std::cout << " type  " << type->toString() << std::endl;
+    // std::cout << " type  " << type->toString() << std::endl;
     if ((!type->isArrayType()) && (!type->isPointerType())) {
         std::cerr << "Array access: Error: Expected an array type." << std::endl;
         return false;
@@ -2838,7 +2842,9 @@ bool IRGenerator::ir_array_access(ast_node * node)
         // gepPtr->setType(loadInst->getType()->getPointeeType())                   //
         gepType = gepPtr->getType(); // 更新 gepType 为加载后的类型
                                      // 获取指向的类型
+        std::cout << "gepPtr(ptr) type: " << gepPtr->getType()->toString() << std::endl;
     }
+
     // 逐层调用getelementptr
     for (int i = 0; i < accessDims; ++i) {
         // 先处理索引表达式，转换成Value*
@@ -2852,7 +2858,7 @@ bool IRGenerator::ir_array_access(ast_node * node)
         // 生成getelementptr指令：
         // 类型：gepType是当前的数组类型，如 [5 x [6 x i32]] 或 [6 x i32]
         // 返回的类型是当前维度元素的指针类型，比如 [6 x i32]* 的元素是 i32
-        if (type->isPointerType()) {
+        if (type->isPointerType() && i == 0) {
             // 如果是指针类型，只取一维
             auto gepInst =
                 new GetElementPtrInst(module->getCurrentFunction(), gepPtr, gepType, std::vector<Value *>{indexVal});
@@ -3254,51 +3260,60 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 return false;
             }
             // 在这里使用 GlobalVariable* 临时变量来访问子类方法
-            // GlobalVariable * gv = static_cast<GlobalVariable *>(node->val);
+            // GlobalVariable * gv = module->findGlobalVariable(array_name);
             // gv->setFasle_inBSSSection();
             // // 数组初始化后，不属于ibss段，不论局部变量和全局变量
-            // // 存储初值
-            // if (type_node->type->isFloatType()) {
-            //     // 浮点数类型
-            //     auto float_init_list = new std::vector<float>;
-            //     for (auto init_num: init_list) {
-            //         if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
-            //             float_init_list->push_back(init_num->float_val);
-            //         } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
-            //             if (init_num->integer_val != 0) {
-            //                 std::cerr << "Warning: Auto transform type \"int\" to \"float\" at \"" << array_name
-            //                           << "\"." << std::endl;
-            //             }
-            //             // TODO 增加类型转化指令
-            //             float_init_list->push_back((float) init_num->integer_val);
-            //         } else {
-            //             std::cerr << "ERROR(const declare): No match type for  float array " << array_name << "."
-            //                       << std::endl;
-            //             return false;
-            //         }
-            //     }
-
-            //     node->val->setInitVal(float_init_list);
-            // } else {
-            //     // 整数类型
-            //     auto int_init_list = new std::vector<int>;
-            //     for (auto init_num: init_list) {
-            //         if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
-            //             int_init_list->push_back(init_num->float_val);
-            //             std::cerr << "Warning: Auto transform type \"float\" to \"int\" at \"" << array_name << "\"."
-            //                       << std::endl;
-            //             // TODO 增加类型转化指令
-            //         } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
-            //             int_init_list->push_back((float) init_num->integer_val);
-            //         } else {
-            //             std::cerr << "ERROR(const declare): No matched type for const float array " << array_name <<
-            //             "."
-            //                       << std::endl;
-            //             return false;
-            //         }
-            //     }
-            //     node->val->setInitVal(int_init_list);
+            // // // 存储初值
+            // if() {
+            // 	std::cerr << "Error: Global variable \"" << array_name << "\" already exists." << std::endl;
+            // 	return false;
             // }
+            if (type_node->type->isFloatType()) {
+                // 浮点数类型
+                auto float_init_list = new std::vector<double>;
+
+                for (auto init_num: init_list) {
+                    if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                        float_init_list->push_back(init_num->float_val);
+                    } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                        if (init_num->integer_val != 0) {
+                            std::cerr << "Warning: Auto transform type \"int\" to \"float\" at \"" << array_name
+                                      << "\"." << std::endl;
+                        }
+                        // TODO 增加类型转化指令
+                        float_init_list->push_back((double) init_num->integer_val);
+                    } else {
+                        std::cerr << "ERROR(const declare): No match type for  float array " << array_name << "."
+                                  << std::endl;
+                        return false;
+                    }
+                    // std::cout << "init_num : " << init_num->float_val << std::endl;
+                }
+
+                node->val->setInitVal(float_init_list);
+                node->val->isInited = true; // 标记数组已初始化
+            } else {
+                // 整数类型
+                auto int_init_list = new std::vector<int>;
+
+                for (auto init_num: init_list) {
+                    if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
+                        int_init_list->push_back((int) init_num->float_val);
+                        std::cerr << "Warning: Auto transform type \"float\" to \"int\" at \"" << array_name << "\"."
+                                  << std::endl;
+                        // TODO 增加类型转化指令
+                    } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
+                        int_init_list->push_back((float) init_num->integer_val);
+                    } else {
+                        std::cerr << "ERROR(const declare): No matched type for const float array " << array_name << "."
+                                  << std::endl;
+                        return false;
+                    }
+                    // std::cout << "init_num : " << init_num->integer_val << std::endl;
+                }
+                node->val->setInitVal(int_init_list);
+                node->val->isInited = true; // 标记数组已初始化
+            }
             // for (auto inst: *insts) {
             //     node->blockInsts.addInst(inst);
             // }

@@ -102,6 +102,13 @@ void Value::removeUse(Use * use)
     }
 }
 
+/// @brief 清点使用该Value的use
+/// @return 变量尚存的被使用个数
+int32_t Value::getUserNum()
+{
+	return (int32_t) uses.size();
+}
+
 ///
 /// @brief 取得变量所在的作用域层级
 /// @return int32_t 层级

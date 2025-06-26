@@ -1,0 +1,1 @@
+llc -march=riscv64 -mattr=+m,+a,+f,+c -o tests/test1-1-3.s tests/test1-1-0.ll

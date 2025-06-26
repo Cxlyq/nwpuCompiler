@@ -20,6 +20,7 @@
 #include "IntegerType.h"
 #include "FloatType.h"
 #include "VoidType.h"
+#include <iostream>
 
 ///@brief 选择一个一元操作指令
 /// @param func 函数对象
@@ -31,13 +32,19 @@
 UnaryInstruction * UnaryInstruction::createAutoTyped(
     Function * func, Value * hs, IRInstOperator intOp, IRInstOperator floatOp, bool isBoolType)
 {
+    std::cout << 5 << std::endl;
+
     // bool isFloat = hs->getType()->isFloatType();
     bool isFloat =
         hs->getType()->isArrayType() ? hs->getType()->getElementType()->isFloatType() : hs->getType()->isFloatType();
+    std::cout << 6 << std::endl;
+
     IRInstOperator op = isFloat ? floatOp : intOp;
+
     Type *         floatTy = FloatType::getType();
     Type *         intTy = IntegerType::getTypeInt();
     Type *         type = isFloat ? floatTy : intTy;
+    std::cout<<4<<std::endl;
     if (isBoolType) {
         type = IntegerType::getTypeBool();
     }

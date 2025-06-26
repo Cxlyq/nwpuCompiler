@@ -123,11 +123,15 @@ public:
     ///
     void removeUse(Use * use);
 
-    ///
-    /// @brief 取得变量所在的作用域层级
-    /// @return int32_t 层级
-    ///
-    virtual int32_t getScopeLevel();
+    /// @brief 清点使用该Value的use
+    /// @return 变量尚存的被使用个数
+    int32_t getUserNum();
+
+	///
+	/// @brief 取得变量所在的作用域层级
+	/// @return int32_t 层级
+	///
+	virtual int32_t getScopeLevel();
 
     ///
     /// @brief 获得分配的寄存器编号或ID

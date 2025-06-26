@@ -14,6 +14,7 @@
 /// </table>
 ///
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <iostream>
 
@@ -35,6 +36,19 @@ string int2str(uint64_t num)
 string double2str(double num)
 {
     return std::to_string(num);
+}
+
+/// @brief 浮点数变同二进制定点数
+/// @param num 浮点数
+/// @return 对应定点数
+uint32_t float2int(float num)
+{
+    const float f = num;
+    uint32_t     result;
+    // 将float的4字节内存复制到int32_t中
+    memcpy(&result, &f, sizeof(float));
+    std::cout<<"[Common::float2int] origin is"<<num<<", resultINT is"<<result<<"\n";
+    return result;
 }
 
 /// @brief 检查字符是否是字母（大小写字母）
