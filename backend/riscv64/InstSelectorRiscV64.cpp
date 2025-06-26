@@ -14,6 +14,7 @@
 /// </table>
 ///
 #include <cstdio>
+#include <iostream>
 #include <string>
 #include <typeinfo>
 #include "Common.h"
@@ -28,13 +29,14 @@
 #include "PointerType.h"
 #include "RegVariable.h"
 #include "Function.h"
-
+#include "UnaryInstruction.h"
 #include "LabelInstruction.h"
 #include "GotoInstruction.h"
 #include "FuncCallInstruction.h"
 #include "MoveInstruction.h"
-
-/// @brief 构造函数
+#include "ConditionalBranchInstruction.h" /// @brief 构造函数
+#include "BinaryInstruction.h"
+#include "Value.h"
 /// @param _irCode 指令
 /// @param _iloc ILoc
 /// @param _func 函数
@@ -248,7 +250,6 @@ void InstSelectorRiscV64::translate_label(Instruction * inst)
 void InstSelectorRiscV64::translate_goto(Instruction * inst)
 {
     Instanceof(gotoInst, GotoInstruction *, inst);
-
     // 无条件跳转
     iloc.jump(gotoInst->getTarget()->getName());
 }
@@ -258,53 +259,27 @@ void InstSelectorRiscV64::translate_goto(Instruction * inst)
 void InstSelectorRiscV64::translate_br_cond(Instruction * inst)
 {
     // TODO: @JEV055 这里是AI编写，需要修改实现条件跳转
-    // Instanceof(brCondInst, BranchCondInstruction *, inst);
-    // Value * cond = brCondInst->getCondition();
-    // Value * trueTarget = brCondInst->getTrueTarget();
-    // Value * falseTarget = brCondInst->getFalseTarget();
-    // int32_t cond_reg_no = cond->getRegId();
-    // int32_t true_target_reg_no = trueTarget->getRegId();
-    // int32_t false_target_reg_no = falseTarget->getRegId();
-    // int32_t load_cond_reg_no, load_true_target_reg_no, load_false_target_reg_no;
-    // // 看条件变量是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
-    // if (cond_reg_no == -1) {
-    //     // 分配一个寄存器r8
-    //     load_cond_reg_no = simpleRegisterAllocator.Allocate(cond);
+    Instanceof(brCondInst, ConditionalInstruction *, inst);
+    Value * cond = brCondInst->getOperand(0);
+    Instanceof(trueTarget, LabelInstruction *, brCondInst->getOperand(1));
+    Instanceof(falseTarget, LabelInstruction *, brCondInst->getOperand(2));
 
-    // 	// cond -> r8，这里可能由于偏移不满足指令的要求，需要额外分配寄存器
-    // 	iloc.load_var(load_cond_reg_no, cond);
-    // } else {
-    // 	load_cond_reg_no = cond_reg_no;
-    // }
-    // // 看真分支目标是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
-    // if (true_target_reg_no == -1) {
-    //     // 分配一个寄存器r9
-    //     load_true_target_reg_no = simpleRegisterAllocator.Allocate(trueTarget);
+    int32_t cond_reg_no = cond->getRegId();
+    int32_t load_cond_reg_no;
+    // 看条件变量是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
+    if (cond_reg_no == -1) {
+        // 分配一个寄存器r8
+        load_cond_reg_no = simpleRegisterAllocator.Allocate(cond);
 
-    // 	// trueTarget -> r9
-    // 	iloc.load_var(load_true_target_reg_no, trueTarget);
-    // } else {
-    // 	load_true_target_reg_no = true_target_reg_no;
-    // }
-    // // 看假分支目标是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
-    // if (false_target_reg_no == -1) {
-    //     // 分配一个寄存器r10
-    //     load_false_target_reg_no = simpleRegisterAllocator.Allocate(falseTarget);
-    //     // falseTarget -> r10
-    //     iloc.load_var(load_false_target_reg_no, falseTarget);
-    // } else {
-    //     load_false_target_reg_no = false_target_reg_no;
-    // }
-    // // 条件寄存器r8的值为0，则跳转到假分支，否则跳转到真分支
-    // iloc.inst(
-    //     "beqz",
-    //     PlatformRiscV64::regName[load cond_reg_no],
-    //     PlatformRiscV64::regName[load_false_target_reg_no],
-    //     PlatformRiscV64::regName[load_true_target_reg_no]);
-    // // 释放寄存器
-    // simpleRegisterAllocator.free(cond);
-    // simpleRegisterAllocator.free(trueTarget);
-    // simpleRegisterAllocator.free(falseTarget);
+        // cond -> r8，这里可能由于偏移不满足指令的要求，需要额外分配寄存器
+        iloc.load_var(load_cond_reg_no, cond);
+    } else {
+        load_cond_reg_no = cond_reg_no;
+    }
+    // 条件寄存器r8的值为0，则跳转到假分支，否则跳转到真分支
+    iloc.inst("beqz", PlatformRiscV64::regName[load_cond_reg_no], falseTarget->getName());
+    iloc.inst("j", trueTarget->getName());
+    // 释放寄存器
 }
 
 /// @brief 二元操作指令翻译成RISCV64汇编
@@ -318,21 +293,22 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
     // IR: result = op nsw(?) arg1,arg2;
     // result: Instruction(必reg)
     // arg1/arg2: Instruction(必reg) / LocalVariable(可能reg) / ConstInt/Float(必非reg) /
-    int32_t arg1_reg_no = -1;
-    int32_t arg2_reg_no = -1;
+    int32_t       arg1_reg_no = -1;
+    int32_t       arg2_reg_no = -1;
     Instruction * result = inst;
-    Value * arg1 = inst->getOperand(0);
-    Value * arg2 = inst->getOperand(1);
+    Value *       arg1 = inst->getOperand(0);
+    Value *       arg2 = inst->getOperand(1);
     if (Instanceof(instArg1, Instruction *, arg1)) {
         arg1_reg_no = instArg1->getRegId();
     } else if (Instanceof(LVArg1, LocalVariable *, arg1)) {
         arg1_reg_no = LVArg1->getRegId();
     } else if (Instanceof(immIntArg1, ConstInt *, arg1)) {
-		arg1_reg_no = immIntArg1->getRegId();
+        arg1_reg_no = immIntArg1->getRegId();
     } else if (Instanceof(immFloatArg1, ConstFloat *, arg1)) {
         arg1_reg_no = immFloatArg1->getRegId();
     } else {
-        std::cout << "[InstSelectorRiscV64::translate_two_operator]:arg1 is not Inst / LocalVariable / ConstInt/Float\n";
+        std::cout
+            << "[InstSelectorRiscV64::translate_two_operator]:arg1 is not Inst / LocalVariable / ConstInt/Float\n";
     }
     if (Instanceof(instArg2, Instruction *, arg2)) {
         arg2_reg_no = instArg2->getRegId();
@@ -343,8 +319,10 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
     } else if (Instanceof(immFloatArg2, ConstFloat *, arg2)) {
         arg2_reg_no = immFloatArg2->getRegId();
     } else {
-        std::cout << "[InstSelectorRiscV64::translate_two_operator]:arg2 is not Inst / LocalVariable / ConstInt/Float\n";
+        std::cout
+            << "[InstSelectorRiscV64::translate_two_operator]:arg2 is not Inst / LocalVariable / ConstInt/Float\n";
     }
+
     int32_t result_reg_no = simpleRegisterAllocator.Allocate(result);
     int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no, tmp_reg_no=-1;
     // 看arg1是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
@@ -353,7 +331,7 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
         // 分配一个寄存器r8
         if (arg1->getType()->isIntegerType()) {
             load_arg1_reg_no = simpleRegisterAllocator.AllocateTempInt();
-        } else if (arg1->getType()->isFloatType()){
+        } else if (arg1->getType()->isFloatType()) {
             load_arg1_reg_no = simpleRegisterAllocator.AllocateTempFloat();
             if (Instanceof(immFloatArg1, ConstFloat *, arg1)) {
                 tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
@@ -361,7 +339,7 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
             }
         } else {
             load_arg1_reg_no = -1;
-		}
+        }
         // arg1 -> r8，这里可能由于偏移不满足指令的要求，需要额外分配寄存器
         iloc.load_var(load_arg1_reg_no, arg1,tmp_reg_no);
 		simpleRegisterAllocator.free(tmp_reg_no);
@@ -395,8 +373,9 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
     // } else {
     //     load_result_reg_no = result_reg_no;
     // }
-	load_result_reg_no=result_reg_no;
+    load_result_reg_no = result_reg_no;
     // r8 + r9 -> r10
+
     iloc.inst(
         operator_name,
         PlatformRiscV64::regName[load_result_reg_no],
@@ -529,28 +508,100 @@ void InstSelectorRiscV64::translate_mod_int32(Instruction * inst)
 /// @param inst IR指令
 void InstSelectorRiscV64::translate_eq_int32(Instruction * inst)
 {
-    translate_two_operator(inst, "seqz");
+    // 获取两个操作数
+    Value * lhs = inst->getOperand(0);
+    Value * rhs = inst->getOperand(1);
+    auto    subInst = BinaryInstruction::createAutoTyped(
+        func,
+        lhs,
+        rhs,
+        IRInstOperator::IRINST_OP_SUB_I,
+        IRInstOperator::IRINST_OP_SUB_F);
+    // sub temp, lhs, rhs
+    translate_sub_int32(subInst);
+
+    // delete subInst;
+    // seqz result, temp
+    inst->clearOperands();
+    inst->addOperand(subInst);
+    translate_one_operator(inst, "seqz");
 }
 
 /// @brief 整数不等指令翻译成RISCV64汇编
 /// @param inst IR指令
 void InstSelectorRiscV64::translate_neq_int32(Instruction * inst)
 {
-    translate_two_operator(inst, "snez");
+    // 获取两个操作数
+    Value * lhs = inst->getOperand(0);
+    Value * rhs = inst->getOperand(1);
+    auto    subInst = BinaryInstruction::createAutoTyped(
+        func,
+        lhs,
+        rhs,
+        IRInstOperator::IRINST_OP_SUB_I,
+        IRInstOperator::IRINST_OP_SUB_F);
+    // sub temp, lhs, rhs
+    translate_sub_int32(subInst);
+
+    // delete subInst;
+    // seqz result, temp
+    inst->clearOperands();
+    inst->addOperand(subInst);
+    translate_one_operator(inst, "snez");
 }
 
 /// @brief 整数小于等于指令翻译成RISCV64汇编
 /// @param inst IR指令
 void InstSelectorRiscV64::translate_le_int32(Instruction * inst)
 {
-    translate_two_operator(inst, "sle");
+    // 获取两个操作数
+    Value * lhs = inst->getOperand(0); // a
+    Value * rhs = inst->getOperand(1); // b
+
+    // 创建 slt 临时指令：t = b < a
+    auto sltInst = BinaryInstruction::createAutoTyped(
+        func,
+        rhs,
+        lhs,
+        IRInstOperator::IRINST_OP_LNE_I,
+        IRInstOperator::IRINST_OP_LNE_F); // 注意顺序是 b < a
+
+    // 执行 slt
+    translate_lne_int32(sltInst); // 你需要已有 translate_lt_int32()
+
+    // 替换 inst 的操作数为 sltInst 的结果
+    inst->clearOperands();
+    inst->addOperand(sltInst);
+
+    // 执行 seqz：result = !(b < a) ==> a <= b
+    translate_one_operator(inst, "seqz");
 }
 
 /// @brief 整数大于等于指令翻译成RISCV64汇编
 /// @param inst IR指令
 void InstSelectorRiscV64::translate_ge_int32(Instruction * inst)
 {
-    translate_two_operator(inst, "sge");
+    // 获取两个操作数
+    Value * lhs = inst->getOperand(0); // a
+    Value * rhs = inst->getOperand(1); // b
+
+    // 创建 slt 临时指令：t = b < a
+    auto sltInst = BinaryInstruction::createAutoTyped(
+        func,
+        lhs,
+        rhs,
+        IRInstOperator::IRINST_OP_LNE_I,
+        IRInstOperator::IRINST_OP_LNE_F); // 注意顺序是 b < a
+
+    // 执行 slt
+    translate_lne_int32(sltInst); // 你需要已有 translate_lt_int32()
+
+    // 替换 inst 的操作数为 sltInst 的结果
+    inst->clearOperands();
+    inst->addOperand(sltInst);
+
+    // 执行 seqz：result = !(b < a) ==> a <= b
+    translate_one_operator(inst, "seqz");
 }
 
 /// @brief 整数小于指令翻译成RISCV64汇编
@@ -564,7 +615,12 @@ void InstSelectorRiscV64::translate_lne_int32(Instruction * inst)
 /// @param inst IR指令
 void InstSelectorRiscV64::translate_gne_int32(Instruction * inst)
 {
-    translate_two_operator(inst, "sgt");
+    Value * arg1 = inst->getOperand(0);
+    Value * arg2 = inst->getOperand(1);
+    inst->clearOperands();
+    inst->addOperand(arg2);
+    inst->addOperand(arg1);
+    translate_two_operator(inst, "slt");
 }
 
 /// @brief 整数取正指令翻译成RISCV64汇编
@@ -885,10 +941,19 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
         } else {
             int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
             int32_t data_regno = simpleRegisterAllocator.AllocateTempInt();
+            std::cout << 2 << endl;
+
             iloc.load_imm(data_regno, ConstIntSrc->getVal());
+            std::cout << 3 << endl;
+
             iloc.store_var(data_regno, dst, addr_regno);
+            std::cout << 4 << endl;
+
             simpleRegisterAllocator.free(data_regno);
+            std::cout << 5 << endl;
+
             simpleRegisterAllocator.free(addr_regno);
+            std::cout << 6 << endl;
         }
     } else if (Instanceof(ConstFloatSrc, ConstFloat *, src)) {
         // 源操作数是立即数
@@ -953,8 +1018,8 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
             iloc.store_var(src_regId, dst, addr_regno); // XXX: 考虑修改函数，看是否需要额外指派地址寄存器
         } else {
             // 源操作数是内存变量，则需要先load到寄存器中
-			int32_t data_regno = -1;
-            if (src->getType()->isIntegerType()){
+            int32_t data_regno = -1;
+            if (src->getType()->isIntegerType()) {
                 data_regno = simpleRegisterAllocator.AllocateTempInt(); // FIXME:考虑溢出情况
             } else if (src->getType()->isFloatType()) {
                 data_regno = simpleRegisterAllocator.AllocateTempFloat();
@@ -977,9 +1042,9 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
 {
     // IR dst:result=load (type) src:operand[0]
     // 可能的情况分析：dst:Instruction(必定reg)src:GlobalVariable(必定mem),LocalVariable(可能reg)
-    int32_t src_regId = -1;
-    int32_t dst_regId = -1;
-    Value * src = inst->getOperand(0);
+    int32_t       src_regId = -1;
+    int32_t       dst_regId = -1;
+    Value *       src = inst->getOperand(0);
     Instruction * dst = inst;
     std::cout << "[InstSelectorRiscV64::translate_load] srctype:" << typeid(inst->getOperand(1)).name() << "\n"
               << "[InstSelectorRiscV64::translate_load] dsttype:" << typeid(inst->getOperand(0)).name() << "\n";
@@ -1031,6 +1096,35 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
 void InstSelectorRiscV64::translate_cast(Instruction * inst)
 {
     // TODO: @JEV055 [指令指派] 需要实现类型转换
+    Value * src = inst->getOperand(0);
+    Type *  srcType = src->getType();
+    Type *  dstType = inst->getType();
+    if (srcType->isInt1Byte() && dstType->isInt32Type()) {
+        // zext i1 → i32，委托给已有的 zext 处理逻辑
+        int dstReg = simpleRegisterAllocator.Allocate(inst);
+        int srcReg = simpleRegisterAllocator.Allocate(src);
+        iloc.inst("andi", PlatformRiscV64::regName[dstReg], PlatformRiscV64::regName[srcReg], "1");
+    } else if (
+        (srcType->getTypeID() == Type::IntegerTyID && dstType->getTypeID() == Type::FloatTyID) ||
+        (srcType->getTypeID() == Type::IntegerTyID && dstType->getPointeeType()->getTypeID() == Type::FloatTyID)) {
+        translate_one_operator(inst, "fcvt.s.w");
+    } else if (
+        (srcType->getTypeID() == Type::FloatTyID && dstType->getTypeID() == Type::IntegerTyID) ||
+        (srcType->getTypeID() == Type::FloatTyID && dstType->getPointeeType()->getTypeID() == Type::IntegerTyID)) {
+        // float → i32
+        translate_one_operator(inst, "fcvt.w.s");
+    } else if (srcType->isInt32Type() && dstType->isInt1Byte()) {
+        // i32 → i1（截断）
+        int dstFReg = simpleRegisterAllocator.Allocate(inst);
+        int srcReg = simpleRegisterAllocator.Allocate(src);
+        iloc.inst(
+            "sltu",
+            PlatformRiscV64::regName[dstFReg],
+            PlatformRiscV64::regName[0],
+            PlatformRiscV64::regName[srcReg]);
+    } else {
+        std::cerr << "[ERROR] Unsupported cast: " << srcType->toString() << " → " << dstType->toString() << std::endl;
+    }
 }
 
 /// @brief GEP指令翻译成RISCV64汇编

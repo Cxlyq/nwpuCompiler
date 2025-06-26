@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include "LocalVariable.h"
 #include "Value.h"
 #include "cmath"
 #include "Function.h"
@@ -511,7 +512,14 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
     // 这里对临时变量和局部变量都在栈上进行分配，采用FP+偏移的寻址方式，偏移为负数
 
-    int32_t sp_esp = 0;
+    int32_t sp_esp = 16;
+    struct VarOffset {
+        Value * value;
+        int32_t offsetFromSp; // 以 sp 向下增长的偏移
+        int32_t size;
+    };
+
+    std::vector<VarOffset> varOffsets;
 
     // 遍历函数变量列表
     for (auto var: func->getVarValues()) {
@@ -540,7 +548,7 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
             // 之后需要对所有使用到该Value的指令在寄存器分配前要变换。
 
             // 局部变量偏移设置
-            var->setMemoryAddr(RISCV64_FP_REG_NO, -sp_esp);
+            varOffsets.push_back({var, sp_esp, size});
         }
     }
 
@@ -564,7 +572,7 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
             // 之后需要对所有使用到该Value的指令在寄存器分配前要变换。
 
             // 局部变量偏移设置
-            inst->setMemoryAddr(RISCV64_FP_REG_NO, -sp_esp);
+            varOffsets.push_back({inst, sp_esp, size});
         }
     }
 
@@ -579,4 +587,18 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
     // 设置函数的最大栈帧深度，没有考虑寄存器保护的空间大小
     func->setMaxDep(sp_esp);
+
+    // 设置所有变量的地址（相对于 FP）
+    for (auto & entry: varOffsets) {
+        int offsetFromFp = entry.offsetFromSp - sp_esp;
+
+        if (auto var = dynamic_cast<LocalVariable *>(entry.value)) {
+            var->setMemoryAddr(RISCV64_FP_REG_NO, offsetFromFp);
+        } else if (auto inst = dynamic_cast<Instruction *>(entry.value)) {
+            inst->setMemoryAddr(RISCV64_FP_REG_NO, offsetFromFp);
+        } else {
+            // 处理不了的类型（安全起见）
+            assert(false && "Unsupported Value* type for stack allocation");
+        }
+    }
 }
