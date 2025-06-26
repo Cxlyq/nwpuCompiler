@@ -154,6 +154,11 @@ void InstSelectorRiscV64::translate(Instruction * inst)
     }
 
     (this->*(pIter->second))(inst);
+    for (auto inst: ir) {
+        if (inst->getUserNum() == 0) {
+            simpleRegisterAllocator.free(inst);
+		}
+	}
 }
 
 ///
@@ -341,7 +346,7 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
         std::cout << "[InstSelectorRiscV64::translate_two_operator]:arg2 is not Inst / LocalVariable / ConstInt/Float\n";
     }
     int32_t result_reg_no = simpleRegisterAllocator.Allocate(result);
-    int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no;
+    int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no, tmp_reg_no=-1;
     // 看arg1是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
     if (arg1_reg_no == -1) {
 
@@ -350,12 +355,16 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
             load_arg1_reg_no = simpleRegisterAllocator.AllocateTempInt();
         } else if (arg1->getType()->isFloatType()){
             load_arg1_reg_no = simpleRegisterAllocator.AllocateTempFloat();
+            if (Instanceof(immFloatArg1, ConstFloat *, arg1)) {
+                tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+				std::cout<<immFloatArg1->getIRName()<<"is a Float immediate, which takes one more int register.\n";
+            }
         } else {
             load_arg1_reg_no = -1;
 		}
         // arg1 -> r8，这里可能由于偏移不满足指令的要求，需要额外分配寄存器
-        iloc.load_var(load_arg1_reg_no, arg1);
-
+        iloc.load_var(load_arg1_reg_no, arg1,tmp_reg_no);
+		simpleRegisterAllocator.free(tmp_reg_no);
     } else {
         load_arg1_reg_no = arg1_reg_no;
     }
@@ -367,10 +376,15 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
             load_arg2_reg_no = simpleRegisterAllocator.AllocateTempInt();
         } else if (arg2->getType()->isFloatType()) {
             load_arg2_reg_no = simpleRegisterAllocator.AllocateTempFloat();
+            if (Instanceof(immFloatArg2, ConstFloat *, arg2)) {
+                tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+                std::cout << immFloatArg2->getIRName() << "is a Float immediate, which takes one more int register.\n";
+            }
         } else {
             load_arg2_reg_no = -1;
         }
         iloc.load_var(load_arg2_reg_no, arg2);
+        simpleRegisterAllocator.free(tmp_reg_no);
     } else {
         load_arg2_reg_no = arg2_reg_no;
     }
@@ -401,58 +415,80 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
     // 释放寄存器
     simpleRegisterAllocator.free(arg1);
     simpleRegisterAllocator.free(arg2);
+    inst->removeOperand(0);
+    inst->removeOperand(1);
     // simpleRegisterAllocator.free(result);
 }
 
-// /// @brief 一元操作指令翻译成RISCV64汇编
-// /// @param inst IR指令
-// /// @param operator_name 操作码
-// /// @param rs_reg_no 结果寄存器号
-// /// @param op1_reg_no 源操作数寄存器号
-// void InstSelectorRiscV64::translate_one_operator(Instruction * inst, string operator_name)
-// {
-//     Value * result = inst;
-//     Value * arg1 = inst->getOperand(0);
+/// @brief 一元操作指令翻译成RISCV64汇编
+/// @param inst IR指令
+/// @param operator_name 操作码
+/// @param rs_reg_no 结果寄存器号
+/// @param op1_reg_no 源操作数寄存器号
+void InstSelectorRiscV64::translate_one_operator(Instruction * inst, string operator_name)
+{
+    Instruction * result = inst;
+    Value * arg1 = inst->getOperand(0);
+    int32_t       arg1_reg_no = -1;
+    int32_t       result_reg_no = simpleRegisterAllocator.Allocate(result);
+    if (Instanceof(instArg1, Instruction *, arg1)) {
+        arg1_reg_no = instArg1->getRegId();
+    } else if (Instanceof(LVArg1, LocalVariable *, arg1)) {
+        arg1_reg_no = LVArg1->getRegId();
+    } else if (Instanceof(immIntArg1, ConstInt *, arg1)) {
+        arg1_reg_no = immIntArg1->getRegId();
+    } else if (Instanceof(immFloatArg1, ConstFloat *, arg1)) {
+        arg1_reg_no = immFloatArg1->getRegId();
+    } else {
+        std::cout
+            << "[InstSelectorRiscV64::translate_two_operator]:arg1 is not Inst / LocalVariable / ConstInt/Float\n";
+    }
+    int32_t load_arg1_reg_no, load_result_reg_no,tmp_reg_no=-1;
+    // 看arg1是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
+    if (arg1_reg_no == -1) {
+        if (arg1->getType()->isIntegerType()) {
+            load_arg1_reg_no = simpleRegisterAllocator.AllocateTempInt();
+        } else if (arg1->getType()->isFloatType()) {
+            load_arg1_reg_no = simpleRegisterAllocator.AllocateTempFloat();
+            if (Instanceof(immFloatArg1, ConstFloat *, arg1)) {
+                tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+                std::cout << immFloatArg1->getIRName() << "is a Float immediate, which takes one more int register.\n";
+            }
+        } else {
+            load_arg1_reg_no = -1;
+        }
+        // arg1 -> r8，这里可能由于偏移不满足指令的要求，需要额外分配寄存器
+        iloc.load_var(load_arg1_reg_no, arg1);
+        simpleRegisterAllocator.free(tmp_reg_no);
+    } else {
+        load_arg1_reg_no = arg1_reg_no;
+    }
+	load_result_reg_no=result_reg_no;
+    // // 看结果变量是否是寄存器，若不是则需要分配一个新的寄存器来保存运算的结果
+    // if (result_reg_no == -1) {
+    //     // 分配一个寄存器r10，用于暂存结果
+    //     load_result_reg_no = simpleRegisterAllocator.Allocate(result);
+    // } else {
+    //     load_result_reg_no = result_reg_no;
+    // }
 
-//     int32_t arg1_reg_no = arg1->getRegId();
-//     int32_t result_reg_no = inst->getRegId();
-//     int32_t load_arg1_reg_no, load_result_reg_no;
+    // 根据操作名称生成相应的一元运算指令
+    iloc.inst(operator_name, PlatformRiscV64::regName[load_result_reg_no],
+    PlatformRiscV64::regName[load_arg1_reg_no]);
 
-//     // 看arg1是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
-//     if (arg1_reg_no == -1) {
-//         // 分配一个寄存器r8
-//         load_arg1_reg_no = simpleRegisterAllocator.Allocate(arg1);
+    // // 结果不是寄存器，则需要把rs_reg_name保存到结果变量中
+    // if (result_reg_no == -1) {
+    //     // 这里使用预留的临时寄存器，因为立即数可能过大，必须借助寄存器才可操作。
+	// 	//TODO:[寄存器分配]无地可放运算结果则压栈，建议给予寄存器（因为通常紧接着就store了）
+    //     // r10 -> result
+    //     iloc.store_var(load_result_reg_no, result, RISCV64_TMP_REG_NO);
+    // }
 
-//         // arg1 -> r8，这里可能由于偏移不满足指令的要求，需要额外分配寄存器
-//         iloc.load_var(load_arg1_reg_no, arg1);
-//     } else {
-//         load_arg1_reg_no = arg1_reg_no;
-//     }
-
-//     // 看结果变量是否是寄存器，若不是则需要分配一个新的寄存器来保存运算的结果
-//     if (result_reg_no == -1) {
-//         // 分配一个寄存器r10，用于暂存结果
-//         load_result_reg_no = simpleRegisterAllocator.Allocate(result);
-//     } else {
-//         load_result_reg_no = result_reg_no;
-//     }
-
-//     // 根据操作名称生成相应的一元运算指令
-//     iloc.inst(operator_name, PlatformRiscV64::regName[load_result_reg_no],
-//     PlatformRiscV64::regName[load_arg1_reg_no]);
-
-//     // 结果不是寄存器，则需要把rs_reg_name保存到结果变量中
-//     if (result_reg_no == -1) {
-//         // 这里使用预留的临时寄存器，因为立即数可能过大，必须借助寄存器才可操作。
-// 		TODO:[寄存器分配]无地可放运算结果则压栈，建议给予寄存器（因为通常紧接着就store了）
-//         // r10 -> result
-//         iloc.store_var(load_result_reg_no, result, RISCV64_TMP_REG_NO);
-//     }
-
-//     // 释放寄存器
-//     simpleRegisterAllocator.free(arg1);
-//     simpleRegisterAllocator.free(result);
-// }
+    // 释放寄存器
+    simpleRegisterAllocator.free(arg1);
+    //simpleRegisterAllocator.free(result);
+    inst->removeOperand(0);
+}
 
 /// @brief 整数加法指令翻译成RISCV64汇编
 /// @param inst IR指令
@@ -535,7 +571,8 @@ void InstSelectorRiscV64::translate_gne_int32(Instruction * inst)
 /// @param inst IR指令
 void InstSelectorRiscV64::translate_pos_int32(Instruction * inst)
 {
-    //可以优化不需要操作
+    // 可以优化不需要操作
+    translate_nop(inst);
 }
 
 /// @brief 整数取负指令翻译成RISCV64汇编
@@ -543,7 +580,7 @@ void InstSelectorRiscV64::translate_pos_int32(Instruction * inst)
 void InstSelectorRiscV64::translate_neg_int32(Instruction * inst)
 {
     // FIXME: [指令指派补充] 需要处理立即数溢出问题
-    translate_two_operator(inst, "neg");
+    translate_one_operator(inst, "negw");
 }
 
 /// @brief 整数逻辑非指令翻译成RISCV64汇编
@@ -552,7 +589,7 @@ void InstSelectorRiscV64::translate_not_int32(Instruction * inst)
 {
     // 逻辑非操作，直接翻译成seqz指令
     // 即如果结果为0，则返回1，否则返回0
-    translate_two_operator(inst, "seqz");
+    translate_one_operator(inst, "seqz");
 }
 
 /// @brief 浮点数加法指令翻译成RISCV64汇编
@@ -629,7 +666,7 @@ void InstSelectorRiscV64::translate_gne_float32(Instruction * inst)
 /// @param inst IR指令
 void InstSelectorRiscV64::translate_pos_float32(Instruction * inst)
 {
-    // 置空 translate_nop()
+    translate_nop(inst);
 }
 
 /// @brief 浮点数取负指令翻译成RISCV64汇编
@@ -776,6 +813,7 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
 
 /// @brief 实参指令翻译成RISCV64汇编
 /// @param inst
+// TODO:考虑是否弃用
 void InstSelectorRiscV64::translate_arg(Instruction * inst)
 {
     // 翻译之前必须确保源操作数要么是寄存器，要么是内存，否则出错。
@@ -828,7 +866,7 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
     if (Instanceof(ConstIntSrc, ConstInt *, src)) {
         // 源操作数是立即数
         // FIXME: 目前只支持整数
-        std::cout << "[InstSelectorRiscV64::translate_store] src is ConstInt\n";
+        std::cout << "[InstSelectorRiscV64::translate_store] src is ConstInt, value= "<< ConstIntSrc->getVal() <<"\n";
         if (Instanceof(LVDst, LocalVariable *, dst)) {
             dst_regId = LVDst->getRegId();
             std::cout << "[InstSelectorRiscV64::translate_store] dst is LocalVariable, regid=" << dst_regId << "\t"
@@ -855,7 +893,7 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
     } else if (Instanceof(ConstFloatSrc, ConstFloat *, src)) {
         // 源操作数是立即数
         // FIXME: 目前只支持整数
-        std::cout << "[InstSelectorRiscV64::translate_store] src is ConstInt\n";
+        std::cout << "[InstSelectorRiscV64::translate_store] src is ConstFloat, originValue="<<ConstFloatSrc->getVal()<<", unionIntValue="<<float2int(ConstFloatSrc->getVal())<<"\n";
         if (Instanceof(LVDst, LocalVariable *, dst)) {
             dst_regId = LVDst->getRegId();
             std::cout << "[InstSelectorRiscV64::translate_store] dst is LocalVariable, regid=" << dst_regId << "\t"
@@ -870,14 +908,16 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
             return;
         }
         if (dst_regId != -1) {
-            iloc.load_imm(dst_regId, ConstFloatSrc->getVal());
+            int32_t tmp_regno = simpleRegisterAllocator.AllocateTempInt();
+            iloc.load_imm(dst_regId, ConstFloatSrc->getVal(), tmp_regno);
+            simpleRegisterAllocator.free(tmp_regno);
         } else {
-            int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
+            int32_t tmp_regno = simpleRegisterAllocator.AllocateTempInt();
             int32_t data_regno = simpleRegisterAllocator.AllocateTempFloat();
-            iloc.load_imm(data_regno, ConstFloatSrc->getVal());
-            iloc.store_var(data_regno, dst, addr_regno);
+            iloc.load_imm(data_regno, ConstFloatSrc->getVal(), tmp_regno);
+            iloc.store_var(data_regno, dst, tmp_regno);
             simpleRegisterAllocator.free(data_regno);
-            simpleRegisterAllocator.free(addr_regno);
+            simpleRegisterAllocator.free(tmp_regno);
         }
     } else {
         // 源变量是Instruction临时变量或Local局部变量的情况
@@ -927,6 +967,8 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
         }
         simpleRegisterAllocator.free(addr_regno);
     }
+    inst->removeOperand(0);
+    inst->removeOperand(1);
 }
 
 /// @brief 加载指令翻译成RISCV64汇编
@@ -981,6 +1023,7 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
         std::cout << "11\n";
         simpleRegisterAllocator.free(addr_regno);
     }
+    inst->removeOperand(0);
 }
 
 /// @brief Cast指令翻译成RISCV64汇编

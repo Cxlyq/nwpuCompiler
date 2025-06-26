@@ -129,7 +129,7 @@ public:
     /// @brief 加载立即数 li r0,100.0
     /// @param rs_reg_no 结果寄存器号
     /// @param constant 立即数
-    void load_imm(int rs_reg_no, float constant);
+    void load_imm(int rs_reg_no, float num, int32_t tmp_reg_no);
 
     /// @brief Load指令，基址寻址 lw xN, offset(base)
     /// @param rs_reg_no 结果寄存器
@@ -169,7 +169,7 @@ public:
     /// @brief 加载变量到寄存器
     /// @param rs_reg_no 结果寄存器
     /// @param var 变量
-    void load_var(int rs_reg_no, Value * var, int addr_reg_no = -1);
+    void load_var(int rs_reg_no, Value * var, int tmp_reg_no = -1);
     
     /// @brief 加载变量到寄存器
     /// @param rs_reg_no 结果寄存器
@@ -195,7 +195,7 @@ public:
     /// @param src_reg_no 源寄存器号
     /// @param var 变量
     /// @param addr_reg_no 地址寄存器号
-    void store_var(int src_reg_no, Value * var, int addr_reg_no = -1);
+    void store_var(int src_reg_no, Value * var, int tmp_reg_no = -1);
 
     /// @brief 保存寄存器到变量
     /// @param src_reg_no 源寄存器号
