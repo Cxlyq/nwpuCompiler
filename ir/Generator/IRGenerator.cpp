@@ -3300,10 +3300,19 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
         if (init_val_node) {
             if (type_node->type->isFloatType()) {
                 // 浮点数类型
+                float result;
+                if (evaluateConstExpr(init_val_node, &result)) { // 尝试计算初值结点
+                    init_val_node->float_val = result;
+                }
+
                 node->val =
                     module->newVarValueWithFloat(var_type, var_name, init_val_node->float_val, ValueCategory::VARIABLE);
             } else {
                 // 整数类型
+                float result;
+                if (evaluateConstExpr(init_val_node, &result)) { // 尝试计算初值结点
+                    init_val_node->integer_val = (int) result;
+                }
                 node->val =
                     module->newVarValueWithInt(var_type, var_name, init_val_node->integer_val, ValueCategory::VARIABLE);
             }
