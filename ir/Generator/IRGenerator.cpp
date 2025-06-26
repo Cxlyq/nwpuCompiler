@@ -336,16 +336,17 @@ bool IRGenerator::ir_function_define(ast_node * node)
     // node节点的指令移动到函数的IR指令列表中
     irCode.addInst(node->blockInsts);
 
-    // XXX:取消了出口指令，但上述似乎有一处添加了
     //  添加函数出口Label指令，主要用于return语句跳转到这里进行函数的退出
-    irCode.addInst(exitLabelInst);
 
     // 函数出口指令
     if (!type_node->type->isVoidType()) {
+        irCode.addInst(exitLabelInst);
         auto * loadExit = new LoadInstruction(newFunc, newFunc->getReturnValue());
         irCode.addInst(loadExit);
         irCode.addInst(new ExitInstruction(newFunc, loadExit));
     } else {
+        irCode.addInst(new GotoInstruction(newFunc, exitLabelInst));
+        irCode.addInst(exitLabelInst);
         irCode.addInst(new ExitInstruction(newFunc, nullptr));
     }
 
