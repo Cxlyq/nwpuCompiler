@@ -1,4 +1,5 @@
 #include "GetElementPtrInst.h"
+#include <iostream>
 #include <sstream>
 #include "ArrayType.h"
 #include "PointerType.h"
@@ -6,7 +7,7 @@
 
 /// 构造函数实现
 GetElementPtrInst::GetElementPtrInst(
-    Function * func, Value * base, Type * gepType, const std::vector<Value *> & indices)
+    Function * func, Value * base, Type * gepType, const std::vector<Value *> & indices, bool isGlobalArray)
     : Instruction(func, IRInstOperator::IRINST_OP_GEP, gepType)
 {
     // 设置操作数：第一个是 base，后面是 indices
@@ -34,6 +35,9 @@ GetElementPtrInst::GetElementPtrInst(
         // 如果 base 是指针类型，则设置为原始类型
         this->setType(gepType);
     }
+
+    this->isGlobalArray = isGlobalArray;
+    // std::cout << "theis" << this->isGlobalArray << std::endl;
 }
 
 /// toString 实现

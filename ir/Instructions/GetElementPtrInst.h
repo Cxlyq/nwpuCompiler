@@ -15,7 +15,7 @@ public:
     /// @param base 基础指针（数组变量）
     /// @param gepType 要访问的原始数组类型（如 [5 x [6 x i32]]）
     /// @param indices 多维索引值（通常是 {0, idx1, idx2, ...}）
-    GetElementPtrInst(Function * func, Value * base, Type * gepType, const std::vector<Value *> & indices);
+    GetElementPtrInst(Function * func, Value * base, Type * gepType, const std::vector<Value *> & indices,bool isGlobalArray);
 
     /// @brief 转换为 LLVM IR 字符串
     /// @param str 输出字符串
@@ -48,4 +48,5 @@ public:
     {
         return offset_;
     }
+    bool isGlobalArray = true;
 };
