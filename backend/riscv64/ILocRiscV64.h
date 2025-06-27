@@ -22,7 +22,7 @@
 #include "Instruction.h"
 #include "LocalVariable.h"
 #include "Module.h"
-
+#include "GetElementPtrInst.h"
 #define Instanceof(res, type, var) auto res = dynamic_cast<type>(var)
 
 /// @brief 底层汇编指令：RISCV64
@@ -98,9 +98,9 @@ class ILocRiscV64 {
     void leaStack(int rs_reg_no, int base_reg_no, int offset);
 
 public:
-	/// @brief 构造函数
-	/// @param _module 符号表-模块
-	ILocRiscV64(Module * _module);
+    /// @brief 构造函数
+    /// @param _module 符号表-模块
+    ILocRiscV64(Module * _module);
 
     /// @brief 析构函数
     ~ILocRiscV64();
@@ -170,21 +170,31 @@ public:
     /// @param rs_reg_no 结果寄存器
     /// @param var 变量
     void load_var(int rs_reg_no, Value * var, int tmp_reg_no = -1);
-    
+
     /// @brief 加载变量到寄存器
     /// @param rs_reg_no 结果寄存器
     /// @param var Instruction中间结果变量
     void load_var(int rs_reg_no, Instruction * var);
-    
+
     /// @brief 加载变量到寄存器
     /// @param rs_reg_no 结果寄存器
     /// @param var 局部变量
     void load_var(int rs_reg_no, LocalVariable * var);
-    
+
     /// @brief 加载变量到寄存器
     /// @param rs_reg_no 结果寄存器
     /// @param var 全局变量
     void load_var(int rs_reg_no, GlobalVariable * var, int addr_reg_no = -1);
+
+    /// @brief 加载变量到寄存器
+    /// @param rs_reg_no 结果寄存器
+    /// @param var 指针变量
+    void load_var(int rs_reg_no, GetElementPtrInst * src_var, int addr_reg_no);
+
+    /// @brief 加载变量到寄存器
+    /// @param rs_reg_no 结果寄存器
+    /// @param var 指针变量
+    void load_var(int rs_reg_no, GetElementPtrInst * src_var);
 
     /// @brief 加载变量地址到寄存器
     /// @param rs_reg_no 结果寄存器
@@ -214,6 +224,18 @@ public:
     /// @param var 变量
     /// @param addr_reg_no 地址寄存器号
     void store_var(int src_reg_no, Instruction * var);
+
+    /// @brief 保存寄存器到变量
+    /// @param src_reg_no 源寄存器号
+    /// @param var 变量
+    /// @param addr_reg_no 地址寄存器号
+    void store_var(int src_reg_no, GetElementPtrInst * dest_var, int addr_reg_no);
+
+    /// @brief 保存寄存器到变量
+    /// @param src_reg_no 源寄存器号
+    /// @param var 变量
+    /// @param addr_reg_no 地址寄存器号
+    void store_var(int src_reg_no, GetElementPtrInst * dest_var);
 
     /// @brief 寄存器Mov操作
     /// @param rs_reg_no 结果寄存器
