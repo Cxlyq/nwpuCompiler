@@ -410,12 +410,12 @@ void ILocRiscV64::store_var(int src_reg_no, LocalVariable * dest_var)
 void ILocRiscV64::store_var(int src_reg_no, Instruction * dest_var)
 {
     //在这里解决目的操作数是否为寄存器变量的问题
-    int dest_reg_id = dest_var->getRegId();
-    if (dest_reg_id != -1) {
-        if (src_reg_no != dest_reg_id) {
-            mov_reg(dest_reg_id, src_reg_no);
-        }
-    } else {
+    //int dest_reg_id = dest_var->getRegId();
+    // if (dest_reg_id != -1) {
+    //     if (src_reg_no != dest_reg_id) {
+    //         mov_reg(dest_reg_id, src_reg_no);
+    //     }
+    // } else {
         // 对于局部变量，则直接从栈基址+偏移寻址
         // 栈帧偏移
         int32_t dest_baseRegId = -1;
@@ -425,7 +425,7 @@ void ILocRiscV64::store_var(int src_reg_no, Instruction * dest_var)
             minic_log(LOG_ERROR, "BUG");
         }
         store_base(src_reg_no, dest_baseRegId, dest_offset);
-    }
+    // }
 }
 
 /// @brief 保存寄存器到变量，
@@ -513,6 +513,7 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
         // 寄存器变量
         store_var(src_reg_no, localVar);
     } else if (Instanceof(instVar, Instruction *, dest_var)) {
+        std::cout<<"92\n";
         store_var(src_reg_no, instVar);
     } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
         store_var(src_reg_no, globalVar, tmp_reg_no);
