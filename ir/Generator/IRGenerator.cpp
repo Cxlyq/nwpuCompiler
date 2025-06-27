@@ -4050,7 +4050,7 @@ bool IRGenerator::init_constarray_flattened(
                 return false;
             }
         } else {
-            // TODO：有待检查此处补0在多维数组情况下是否逻辑正确
+
             auto tempNode = new ast_node(digit_int_attr{0, 0});
             flat_list->push_back(tempNode);
             val = module->newConstInt(0); // 默认补零
