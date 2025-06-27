@@ -1251,7 +1251,7 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         // ---------- Step 2: 处理偏移量 index1 ----------
         int elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
         int offset = 0;
-        offset = (index * elementSize) + baseOffset;
+        offset = -(index * elementSize) + baseOffset;
         std::cout << "index:" << index << endl;
         std::cout << "baseOffset:" << baseOffset << endl;
         std::cout << "offset:" << offset << endl;
@@ -1282,7 +1282,11 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         // ---------- Step 2: 处理偏移量 index1 ----------
         int elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
         int offset = 0;
-        offset = (index * elementSize) + baseOffset;
+        if (baseOffset >= 0) {
+            offset = (index * elementSize) + baseOffset;
+        } else {
+            offset = -(index * elementSize) + baseOffset;
+        }
         std::cout << "index:" << index << endl;
         std::cout << "baseOffset:" << baseOffset << endl;
         std::cout << "offset:" << offset << endl;

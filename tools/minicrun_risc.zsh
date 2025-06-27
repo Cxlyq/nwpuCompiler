@@ -155,6 +155,8 @@ function dotestcase()
         OK_NUM=$(expr ${OK_NUM} + 1)
         echo "${CFILE} OK"
         rm -f ${RESULTFILE} ${SFILE} ${EXEFILE}
+		OK_LIST+=("${CFILE}")
+
     fi
 }
 
@@ -191,9 +193,9 @@ done
 
 echo "OK number=${OK_NUM}, NG number=${NG_NUM}"
 
-if [ ${NG_NUM} -ne 0 ]; then
-    echo "Failed test cases:"
-    for f in "${NG_LIST[@]}"; do
+if [ ${OK_NUM} -ne 0 ]; then
+    echo "OK test cases:"
+    for f in "${OK_LIST[@]}"; do
         echo "  $f"
     done
 fi

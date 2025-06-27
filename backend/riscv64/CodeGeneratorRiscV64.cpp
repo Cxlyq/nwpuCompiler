@@ -72,7 +72,7 @@ void CodeGeneratorRiscV64::genDataSection()
         if (var->isInBSSSection()) {
             // 未初始化的全局变量，放sbss段
             fprintf(fp, "\n\t.type\t%s,@object\n", name.c_str());
-            fprintf(fp, "\t.section\t.sbss,\"aw\",@nobits\n");
+            fprintf(fp, "\t.section\t.bss\n");
             fprintf(fp, "\t.globl\t%s\n", name.c_str());
             fprintf(fp, "\t.p2align\t%d\n", (int) std::log2(align));
             fprintf(fp, "%s:\n", name.c_str());
@@ -261,9 +261,9 @@ void CodeGeneratorRiscV64::genCodeSection(Function * func)
     simpleRegisterAllocator.buildGraph(lva); // 构建干涉图
     bool success = simpleRegisterAllocator.allocate();
     if (success) {
-        std::cout << "寄存器分配成功 ✅\n";
+        // std::cout << "寄存器分配成功 ✅\n";
     } else {
-        std::cout << "部分变量需要溢出 ❌\n";
+        // std::cout << "部分变量需要溢出 ❌\n";
     }
     // 指令选择生成汇编指令
     InstSelectorRiscV64 instSelector(IrInsts, iloc, func, simpleRegisterAllocator);
@@ -280,7 +280,6 @@ void CodeGeneratorRiscV64::genCodeSection(Function * func)
     fprintf(fp, ".type %s, @function\n", func->getName().c_str());
     fprintf(fp, "%s:\n", func->getName().c_str());
 
-    
     // 开启时输出IR指令作为注释
     if (this->showLinearIR) {
 
@@ -602,5 +601,6 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
             // 处理不了的类型（安全起见）
             assert(false && "Unsupported Value* type for stack allocation");
         }
+        std::cout << entry.value->getName() << "\t" << offsetFromFp << std::endl;
     }
 }
