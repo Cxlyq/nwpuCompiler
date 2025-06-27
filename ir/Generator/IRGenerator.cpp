@@ -398,7 +398,10 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             // 提取数组维度信息
             for (size_t i = 2; i < array_def_nodes.size(); ++i) {
                 ast_node * dim_node = array_def_nodes[i];
-                dims.push_back(dim_node->integer_val);
+                double     result;
+                evaluateConstExpr(dim_node, &result);
+                dims.push_back((int) result);
+                // dims.push_back(dim_node->integer_val);
             }
 
             dims[0] = 0; // 形参数组的第一个维度为0，表示形参数组的大小不确定
