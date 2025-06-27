@@ -1,4 +1,3 @@
-#!/usr/bin/bash
 APPFIX=""
 WINOS=0
 
@@ -91,7 +90,7 @@ NG_NUM=0
 # }
 function dotestcase()
 {
-    CFILELIST=$(ls tests/officals/2025_function/2025_func_${1}_*.c 2>/dev/null)
+    CFILELIST=$(ls tests/official/2025_function/2025_func_${1}_*.c 2>/dev/null)
 
     CFILE=""
     n=0
