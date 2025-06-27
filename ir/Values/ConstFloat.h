@@ -4,6 +4,7 @@
 #include "IRConstant.h"
 #include "FloatType.h"
 #include "Value.h"
+#include "sstream"
 ///
 /// @brief 浮点型常量类
 ///
@@ -16,10 +17,13 @@ public:
     explicit ConstFloat(float val) : Constant(FloatType::getType())
     {
         floatVal = val;
-        name = std::to_string(val);
         double   extend = static_cast<double>(val);
         uint64_t float_bits = bitcast<double, uint64_t>(extend);
         setInitVal({val, float_bits});
+        // name = std::to_string(val);
+        std::ostringstream oss;
+        oss << "0x" << std::hex << std::uppercase << float_bits;
+        name = oss.str();
     }
 
     /// @brief 获取名字
