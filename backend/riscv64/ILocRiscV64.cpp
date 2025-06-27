@@ -23,6 +23,7 @@
 #include "LocalVariable.h"
 #include "PlatformRiscV64.h"
 #include "Module.h"
+#include "LoadInstruction.h"
 #include "GetElementPtrInst.h"
 RiscInst::RiscInst(
     std::string _opcode, std::string _result, std::string _arg1, std::string _arg2, std::string _cond,
@@ -477,9 +478,14 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
         } else if (Instanceof(gepbase, GetElementPtrInst *, base)) {
             gepbase->getRegId();
             store_var(src_reg_no, GEP);
+        } else if (Instanceof(loadbase, LoadInstruction *, base)) {
+            loadbase->getRegId();
+            store_var(src_reg_no, GEP);
         } else {
-            std::cout << "[ILocRiscV64::store_var]->GetElementPtrInst:被保存目标变量不是局部变量、全局变量和GEP\n";
+            std::cout
+                << "[ILocRiscV64::store_var]->GetElementPtrInst:被保存目标变量不是局部变量、全局变量、GEP和Load\n";
         }
+        GEP->clearOperands();
     } else if (Instanceof(localVar, LocalVariable *, dest_var)) {
         // 寄存器变量
         store_var(src_reg_no, localVar);
@@ -509,9 +515,13 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int tmp_reg_no)
         } else if (Instanceof(gepbase, GetElementPtrInst *, base)) {
             gepbase->getRegId();
             load_var(rs_reg_no, GEP);
+        } else if (Instanceof(loadbase, LoadInstruction *, base)) {
+            loadbase->getRegId();
+            load_var(rs_reg_no, GEP);
         } else {
-            std::cout << "[ILocRiscV64::load_var]->GetElementPtrInst:被保存目标变量不是局部变量、全局变量和GEP\n";
+            std::cout << "[ILocRiscV64::load_var]->GetElementPtrInst:被保存目标变量不是局部变量、全局变量、GEP和Load\n";
         }
+        GEP->clearOperands();
     } else if (Instanceof(constVal, ConstInt *, src_var)) {
         // 整型常量
         load_imm(rs_reg_no, constVal->getVal());

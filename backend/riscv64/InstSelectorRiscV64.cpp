@@ -26,7 +26,7 @@
 #include "Instruction.h"
 #include "LocalVariable.h"
 #include "PlatformRiscV64.h"
-
+#include "LoadInstruction.h"
 #include "PointerType.h"
 #include "RegVariable.h"
 #include "Function.h"
@@ -215,6 +215,33 @@ void InstSelectorRiscV64::translate_entry(Instruction * inst)
         PlatformRiscV64::regName[RISCV64_FP_REG_NO],
         PlatformRiscV64::regName[RISCV64_SP_REG_NO],
         std::to_string(func->getMaxDep())); // fp = sp + frame_size
+                                            //
+                                            //
+    // 将传入的参数从寄存器保存到对应的栈位置（直接 sw / fsw）
+    int intRegIndex = 0;
+    int floatRegIndex = 0;
+    for (int i = 0; i < func->getParams().size(); i++) {
+        auto param = func->getParams()[i];
+        auto formalValue = func->getVarValues()[i];
+
+        int64_t offset = -1;
+        int     regId = -1;
+        formalValue->getMemoryAddr(&regId, &offset); // 相对于 fp 的偏移
+
+        if (param->getType()->isFloatType()) {
+            if (floatRegIndex < 8) {
+                int         freg = 42 + floatRegIndex++; // fa0 = 42
+                std::string fregName = PlatformRiscV64::regName[freg];
+                iloc.inst("fsw", fregName, std::to_string(offset) + "(" + PlatformRiscV64::regName[regId] + ")");
+            }
+        } else {
+            if (intRegIndex < 8) {
+                int         reg = 10 + intRegIndex++; // a0 = 10
+                std::string regName = PlatformRiscV64::regName[reg];
+                iloc.inst("sw", regName, std::to_string(offset) + "(" + PlatformRiscV64::regName[regId] + ")");
+            }
+        }
+    }
 }
 
 /// @brief 函数出口指令翻译成RISCV64汇编
@@ -862,7 +889,23 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                 // TODO:[数组实参]完善这种情况
                 std::cout << "尚未完成数组作为实参的函数调用\n";
                 if (intIndex < 8) {
+                    int int_reg_no = 10 + intIndex;
+                    simpleRegisterAllocator.Allocate(int_reg_no);
+
+                    int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+                    iloc.load_var(int_reg_no, arg, tmp_reg_no); // 关键：加载指针的地址
+                    simpleRegisterAllocator.free(tmp_reg_no);
+
+                    intIndex++;
                 } else {
+                    // 栈上传递指针
+                    const Type *  ptrType = PointerType::get(arg->getType());
+                    MemVariable * newVal = func->newMemVariable(const_cast<Type *>(ptrType));
+                    newVal->setMemoryAddr(RISCV64_SP_REG_NO, esp);
+                    esp += 8; // 指针默认按 8 字节处理
+                    Instruction * storeInst = new StoreInstruction(func, newVal, arg);
+                    translate_assign(storeInst);
+                    delete storeInst;
                 }
             } else {
                 std::cout << "函数调用参数非Array/Int/Float";
@@ -1150,6 +1193,7 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
         simpleRegisterAllocator.free(addr_regno);
     }
     inst->removeOperand(0);
+    std::cout << "12\n";
 }
 
 /// @brief Cast指令翻译成RISCV64汇编
@@ -1233,7 +1277,7 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         // ---------- Step 2: 处理偏移量 index1 ----------
         int elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
         int offset = 0;
-        offset = (index * elementSize) + baseOffset;
+        offset = -(index * elementSize) + baseOffset;
         std::cout << "index:" << index << endl;
         std::cout << "baseOffset:" << baseOffset << endl;
         std::cout << "offset:" << offset << endl;
@@ -1264,13 +1308,35 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         // ---------- Step 2: 处理偏移量 index1 ----------
         int elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
         int offset = 0;
-        offset = (index * elementSize) + baseOffset;
+        if (baseOffset >= 0) {
+            offset = (index * elementSize) + baseOffset;
+        } else {
+            offset = -(index * elementSize) + baseOffset;
+        }
         std::cout << "index:" << index << endl;
         std::cout << "baseOffset:" << baseOffset << endl;
+        std::cout << "offset:" << offset << endl;
+        gepInst->setAddressingInfo(baseRegId, offset);
+    } else if (Instanceof(base_load, LoadInstruction *, base)) {
+        std::cout << 24 << endl;
+
+        int32_t baseRegId = simpleRegisterAllocator.Allocate(base_load);
+        std::cout << 25 << endl;
+
+        // ---------- Step 2: 处理偏移量 index1 ----------
+
+        int elementSize = base_load->getType()->getPointeeType()->getSize(); // 比如 i32 -> 4
+        std::cout << "elementSize:" << elementSize << endl;
+
+        std::cout << 26 << endl;
+
+        int offset = 0;
+        offset = (index * elementSize);
+        std::cout << "index:" << index << endl;
         std::cout << "offset:" << offset << endl;
         gepInst->setAddressingInfo(baseRegId, offset);
     } else {
         std::cout << "[InstSelectorRiscV64::translate_gep] src is not a Global/Local variable\n";
     }
-    inst->clearOperands();
+    std::cout << 21 << endl;
 }

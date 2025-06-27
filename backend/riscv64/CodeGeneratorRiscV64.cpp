@@ -47,8 +47,8 @@ void CodeGeneratorRiscV64::genHeader()
 {
     // 设置 RISC-V 架构：64-bit, 包含整数、乘法、原子、浮点、压缩指令扩展
     fprintf(fp, ".text\n");
-    fprintf(fp, ".attribute 4, 16\n"); // 16 表示 lp64f ABI，具体值可能因工具链略有差异
-    fprintf(fp, ".attribute 5, \"rv64i2p0_m2p0_a2p0_f2p0_c2p0\"\n");
+    fprintf(fp, ".attribute 4, 15\n"); // lp64d ABI，或者根据你的工具链确认
+    fprintf(fp, ".attribute 5, \"rv64i2p0_m2p0_a2p0_f2p0_d2p0_c2p0\"\n"); // 包含 d 扩展
     // TODO 是否需要输出源文件
     //  fprintf(fp, ".file \"generated_code.c\"\n");
 }
@@ -72,7 +72,7 @@ void CodeGeneratorRiscV64::genDataSection()
         if (var->isInBSSSection()) {
             // 未初始化的全局变量，放sbss段
             fprintf(fp, "\n\t.type\t%s,@object\n", name.c_str());
-            fprintf(fp, "\t.section\t.sbss,\"aw\",@nobits\n");
+            fprintf(fp, "\t.section\t.bss\n");
             fprintf(fp, "\t.globl\t%s\n", name.c_str());
             fprintf(fp, "\t.p2align\t%d\n", (int) std::log2(align));
             fprintf(fp, "%s:\n", name.c_str());
@@ -261,9 +261,9 @@ void CodeGeneratorRiscV64::genCodeSection(Function * func)
     simpleRegisterAllocator.buildGraph(lva); // 构建干涉图
     bool success = simpleRegisterAllocator.allocate();
     if (success) {
-        std::cout << "寄存器分配成功 ✅\n";
+        // std::cout << "寄存器分配成功 ✅\n";
     } else {
-        std::cout << "部分变量需要溢出 ❌\n";
+        // std::cout << "部分变量需要溢出 ❌\n";
     }
     // 指令选择生成汇编指令
     InstSelectorRiscV64 instSelector(IrInsts, iloc, func, simpleRegisterAllocator);
@@ -614,5 +614,6 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
             // 处理不了的类型（安全起见）
             assert(false && "Unsupported Value* type for stack allocation");
         }
+        std::cout << entry.value->getName() << "\t" << offsetFromFp << std::endl;
     }
 }

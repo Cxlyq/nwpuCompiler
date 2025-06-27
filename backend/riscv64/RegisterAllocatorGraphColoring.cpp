@@ -71,26 +71,26 @@ bool GraphColoringRegisterAllocator::allocate()
     assignColors(floatInterferenceGraph, simplifyFloatStack);
 
     // 输出寄存器分配映射
-    std::cout << "=== Register Allocation Result ===\n";
-    for (const auto & entry: colorMap) {
-        Value * val = entry.first;
-        int     regIndex = entry.second;
-        std::cout << val->getIRName() << " -> r" << regIndex << "\n";
-    }
+    // std::cout << "=== Register Allocation Result ===\n";
+    // for (const auto & entry: colorMap) {
+    //     Value * val = entry.first;
+    //     int     regIndex = entry.second;
+    //     std::cout << val->getIRName() << " -> r" << regIndex << "\n";
+    // }
 
-    if (!spilledInt.empty()) {
-        std::cout << "=== Spilled Int Variables ===\n";
-        for (auto * val: spilledInt) {
-            std::cout << val->getIRName() << "\n";
-        }
-    }
+    // if (!spilledInt.empty()) {
+    //     std::cout << "=== Spilled Int Variables ===\n";
+    //     for (auto * val: spilledInt) {
+    //         std::cout << val->getIRName() << "\n";
+    //     }
+    // }
 
-    if (!spilledFloat.empty()) {
-        std::cout << "=== Spilled Float Variables ===\n";
-        for (auto * val: spilledFloat) {
-            std::cout << val->getIRName() << "\n";
-        }
-    }
+    // if (!spilledFloat.empty()) {
+    //     std::cout << "=== Spilled Float Variables ===\n";
+    //     for (auto * val: spilledFloat) {
+    //         std::cout << val->getIRName() << "\n";
+    //     }
+    // }
     return spilledInt.empty() && spilledFloat.empty();
 }
 
@@ -181,7 +181,7 @@ void GraphColoringRegisterAllocator::assignColors(
     while (!stack.empty()) {
         Value * node = stack.top();
         stack.pop();
-        std::cout << "Assigning color to variable " << node->getIRName() << "\n";
+        // std::cout << "Assigning color to variable " << node->getIRName() << "\n";
 
         std::unordered_set<int> usedColors;
         for (Value * neighbor: graph.at(node)) { // <<< 改为当前图graph
@@ -247,7 +247,7 @@ void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva
     const auto & stackVars = lva.getStackVars(); // <<< 获取栈变量集合
     for (auto * block: lva.getBasicBlocks()) {
         std::unordered_set<Value *> live;
-        std::cout << "\n>>> BasicBlock: " << block->label << "\n";
+        // std::cout << "\n>>> BasicBlock: " << block->label << "\n";
 
         for (auto * v: lva.getLiveOut(block->label)) {
             if (!stackVars.count(v)) // <<< 过滤掉栈变量
@@ -316,22 +316,22 @@ void GraphColoringRegisterAllocator::buildGraph(const LiveVariableAnalysis & lva
         // std::cout << "\n\n";
     }
 
-    //输出最终干涉图
-    std::cout << "=== intInterference Graph ===\n";
-    for (auto & [v, neighbors]: intInterferenceGraph) {
-        std::cout << v->getIRName() << " : ";
-        for (auto * n: neighbors)
-            std::cout << n->getIRName() << " ";
-        std::cout << "\n";
-    }
-    std::cout << "=== floatInterference Graph ===\n";
+    // //输出最终干涉图
+    // std::cout << "=== intInterference Graph ===\n";
+    // for (auto & [v, neighbors]: intInterferenceGraph) {
+    //     std::cout << v->getIRName() << " : ";
+    //     for (auto * n: neighbors)
+    //         std::cout << n->getIRName() << " ";
+    //     std::cout << "\n";
+    // }
+    // std::cout << "=== floatInterference Graph ===\n";
 
-    for (auto & [v, neighbors]: floatInterferenceGraph) {
-        std::cout << v->getIRName() << " : ";
-        for (auto * n: neighbors)
-            std::cout << n->getIRName() << " ";
-        std::cout << "\n";
-    }
+    // for (auto & [v, neighbors]: floatInterferenceGraph) {
+    //     std::cout << v->getIRName() << " : ";
+    //     for (auto * n: neighbors)
+    //         std::cout << n->getIRName() << " ";
+    //     std::cout << "\n";
+    // }
 }
 
 /// @brief 获取所有变量的寄存器分配映射

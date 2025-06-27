@@ -1,0 +1,23 @@
+tests/official/2023_function/2023_func_00_main.c
+  tests/official/2023_function/2023_func_01_var_defn2.c
+  tests/official/2023_function/2023_func_02_var_defn3.c
+  tests/official/2023_function/2023_func_06_const_var_defn2.c
+  tests/official/2023_function/2023_func_07_const_var_defn3.c
+  tests/official/2023_function/2023_func_12_addc.c
+  tests/official/2023_function/2023_func_13_sub2.c
+  tests/official/2023_function/2023_func_14_subc.c
+  tests/official/2023_function/2023_func_15_mul.c
+  tests/official/2023_function/2023_func_16_mulc.c
+  tests/official/2023_function/2023_func_17_div.c
+  tests/official/2023_function/2023_func_18_divc.c
+  tests/official/2023_function/2023_func_19_mod.c
+  tests/official/2023_function/2023_func_20_rem.c
+  tests/official/2023_function/2023_func_29_break.c
+  tests/official/2023_function/2023_func_30_continue.c
+  tests/official/2023_function/2023_func_33_while_if_test3.c
+  tests/official/2023_function/2023_func_35_op_priority1.c
+  tests/official/2023_function/2023_func_36_op_priority2.c
+  tests/official/2023_function/2023_func_37_op_priority3.c
+  tests/official/2023_function/2023_func_42_empty_stmt.c
+  tests/official/2023_function/2023_func_47_hex_oct_add.c
+  tests/official/2023_function/2023_func_52_scope.c
