@@ -2867,7 +2867,13 @@ bool IRGenerator::ir_array_access(ast_node * node)
     node->name = array_name;
 
     Value * tempVal = module->findVarValue(array_name);
-    Type *  type = tempVal->getType();
+    bool    isGlobalArray = false;
+
+    if (Instanceof(res, GlobalVariable *, tempVal)) {
+        isGlobalArray = true;
+    }
+
+    Type * type = tempVal->getType();
     // std::cout << " type  " << type->toString() << std::endl;
     if ((!type->isArrayType()) && (!type->isPointerType())) {
         std::cerr << "Array access: Error: Expected an array type." << std::endl;
@@ -2919,8 +2925,12 @@ bool IRGenerator::ir_array_access(ast_node * node)
         // 返回的类型是当前维度元素的指针类型，比如 [6 x i32]* 的元素是 i32
         if (type->isPointerType() && i == 0) {
             // 如果是指针类型，只取一维
-            auto gepInst =
-                new GetElementPtrInst(module->getCurrentFunction(), gepPtr, gepType, std::vector<Value *>{indexVal});
+            auto gepInst = new GetElementPtrInst(
+                module->getCurrentFunction(),
+                gepPtr,
+                gepType,
+                std::vector<Value *>{indexVal},
+                isGlobalArray);
             node->blockInsts.addInst(gepInst);
 
             gepPtr = gepInst;
@@ -2929,7 +2939,8 @@ bool IRGenerator::ir_array_access(ast_node * node)
                 module->getCurrentFunction(),
                 gepPtr,
                 gepType,
-                std::vector<Value *>{zero, indexVal});
+                std::vector<Value *>{zero, indexVal},
+                isGlobalArray);
 
             node->blockInsts.addInst(gepInst);
 
@@ -2985,6 +2996,11 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
     if (!tempVal) {
         std::cerr << "Function call - array: Cannot find array!" << std::endl;
     }
+    bool isGlobalArray = false;
+
+    if (Instanceof(res, GlobalVariable *, tempVal)) {
+        isGlobalArray = true;
+    }
     Type *  type = tempVal->getType();
     Value * zero = module->newConstInt(0);
     // std::cout << "array type  " << type->toString() << std::endl;
@@ -3016,9 +3032,10 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
             // GEP 获取数组首地址，模仿数组 decay 成指针的行为
             auto gepInst = new GetElementPtrInst(
                 module->getCurrentFunction(),
-                tempVal,                           // 原始数组变量 Value*，类型如 [5 x i32]*
-                gepType,                           // 类型是 [5 x i32]*
-                std::vector<Value *>{zero, zero}); // GEP 0, 0 => 获取 a[0]
+                tempVal, // 原始数组变量 Value*，类型如 [5 x i32]*
+                gepType, // 类型是 [5 x i32]*
+                std::vector<Value *>{zero, zero},
+                isGlobalArray); // GEP 0, 0 => 获取 a[0]
 
             node->blockInsts.addInst(gepInst);
             node->val = gepInst;
@@ -3049,7 +3066,8 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                     module->getCurrentFunction(),
                     gepPtr,
                     gepType,
-                    std::vector<Value *>{zero, indexVal});
+                    std::vector<Value *>{zero, indexVal},
+                    isGlobalArray);
                 node->blockInsts.addInst(gepInst);
                 // 更新类型为下一维
                 if (gepType->isArrayType()) {
@@ -3096,7 +3114,8 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                     module->getCurrentFunction(),
                     gepPtr,
                     gepType,
-                    std::vector<Value *>{zero, indexVal});
+                    std::vector<Value *>{zero, indexVal},
+                    isGlobalArray);
                 node->blockInsts.addInst(gepInst);
                 // 更新类型为下一维
                 if (gepType->isArrayType()) {
@@ -3113,9 +3132,10 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
             // GEP 获取数组首地址，模仿数组 decay 成指针的行为
             auto final_gepInst = new GetElementPtrInst(
                 module->getCurrentFunction(),
-                gepPtr,                            // 原始数组变量 Value*，类型如 [5 x i32]*
-                gepType,                           // 类型是 [5 x i32]*
-                std::vector<Value *>{zero, zero}); // GEP 0, 0 => 获取 a[0]
+                gepPtr,  // 原始数组变量 Value*，类型如 [5 x i32]*
+                gepType, // 类型是 [5 x i32]*
+                std::vector<Value *>{zero, zero},
+                isGlobalArray); // GEP 0, 0 => 获取 a[0]
             // std::cout << "final_gepinst type: " << final_gepInst->getType()->toString() << std::endl;
             // std::cout << "final_gepPtr type: " << gepPtr->getType()->toString() << std::endl;
             // std::cout << "final_gep type: " << gepType->toString() << std::endl;
@@ -3184,7 +3204,8 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                         module->getCurrentFunction(),
                         gepPtr,
                         gepType,
-                        std::vector<Value *>{indexVal});
+                        std::vector<Value *>{indexVal},
+                        isGlobalArray);
                     node->blockInsts.addInst(gepInst);
 
                     gepPtr = gepInst;
@@ -3193,7 +3214,8 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                         module->getCurrentFunction(),
                         gepPtr,
                         gepType,
-                        std::vector<Value *>{zero, indexVal});
+                        std::vector<Value *>{zero, indexVal},
+                        isGlobalArray);
 
                     node->blockInsts.addInst(gepInst);
 
@@ -3221,7 +3243,8 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                     module->getCurrentFunction(),
                     gepPtr,
                     gepType,
-                    std::vector<Value *>{zero, zero});
+                    std::vector<Value *>{zero, zero},
+                    isGlobalArray);
                 node->val = getelementptr;
                 node->blockInsts.addInst(getelementptr);
 
@@ -3904,7 +3927,12 @@ bool IRGenerator::evaluateConstExpr(ast_node * root, double * result)
 bool IRGenerator::init_array_flattened(
     Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts,
     std::vector<ast_node *> & init_list, Type * val_type)
+
 {
+    bool isGlobalArray = false;
+    if (Instanceof(res, GlobalVariable *, arrayVar)) {
+        isGlobalArray = true;
+    }
     // 1. 计算总元素数
     int total_elems = 1;
     for (int d: dims)
@@ -3978,11 +4006,16 @@ bool IRGenerator::init_array_flattened(
                     module->getCurrentFunction(),
                     gepPtr,
                     gepType,
-                    std::vector<Value *>{zero, index});
+                    std::vector<Value *>{zero, index},
+                    isGlobalArray);
                 gepType = static_cast<ArrayType *>(gepType)->getElementType();
             } else if (gepType->isPointerType()) {
-                gepInst =
-                    new GetElementPtrInst(module->getCurrentFunction(), gepPtr, gepType, std::vector<Value *>{index});
+                gepInst = new GetElementPtrInst(
+                    module->getCurrentFunction(),
+                    gepPtr,
+                    gepType,
+                    std::vector<Value *>{index},
+                    isGlobalArray);
                 gepType = const_cast<Type *>(static_cast<PointerType *>(gepType)->getPointeeType());
             } else {
                 std::cerr << "GEP error: unexpected type." << std::endl;
@@ -4013,6 +4046,10 @@ bool IRGenerator::init_constarray_flattened(
     Value * arrayVar, const std::vector<int> & dims, ast_node * initNode, std::vector<Instruction *> & Insts,
     std::vector<ast_node *> & init_list, Type * val_type)
 {
+    bool isGlobalArray = false;
+    if (Instanceof(res, GlobalVariable *, arrayVar)) {
+        isGlobalArray = true;
+    }
     // 1. 计算总元素数
     int total_elems = 1;
     for (int d: dims)
@@ -4099,11 +4136,16 @@ bool IRGenerator::init_constarray_flattened(
                     module->getCurrentFunction(),
                     gepPtr,
                     gepType,
-                    std::vector<Value *>{zero, index});
+                    std::vector<Value *>{zero, index},
+                    isGlobalArray);
                 gepType = static_cast<ArrayType *>(gepType)->getElementType();
             } else if (gepType->isPointerType()) {
-                gepInst =
-                    new GetElementPtrInst(module->getCurrentFunction(), gepPtr, gepType, std::vector<Value *>{index});
+                gepInst = new GetElementPtrInst(
+                    module->getCurrentFunction(),
+                    gepPtr,
+                    gepType,
+                    std::vector<Value *>{index},
+                    isGlobalArray);
                 gepType = const_cast<Type *>(static_cast<PointerType *>(gepType)->getPointeeType());
             } else {
                 std::cerr << "GEP error: unexpected type." << std::endl;
