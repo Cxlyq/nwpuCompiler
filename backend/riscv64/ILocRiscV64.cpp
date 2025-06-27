@@ -436,12 +436,8 @@ void ILocRiscV64::store_var(int src_reg_no, GetElementPtrInst * dest_var)
     } else {
         // 对于局部变量，则直接从栈基址+偏移寻址
         // 栈帧偏移
-        int32_t dest_baseRegId = -1;
-        int64_t dest_offset = -1;
-        bool    result = dest_var->getMemoryAddr(&dest_baseRegId, &dest_offset);
-        if (!result) {
-            minic_log(LOG_ERROR, "BUG");
-        }
+        int32_t dest_baseRegId = dest_var->getBaseRegId();
+        int64_t dest_offset = dest_var->getOffset();
         store_base(src_reg_no, dest_baseRegId, dest_offset);
     }
 }
@@ -452,23 +448,14 @@ void ILocRiscV64::store_var(int src_reg_no, GetElementPtrInst * dest_var)
 void ILocRiscV64::store_var(int src_reg_no, GetElementPtrInst * dest_var, int addr_reg_no)
 {
     if (addr_reg_no == -1) {
-        std::cout << "BUG[ILocRiscV64::store_var]:addr_reg_no can't be -1 when dealing with GetElementPtrInst.\n";
+        std::cout << "BUG[ILocRiscV64::store_var]:addr_reg_no can't be -1 when dealing with globalvariable.\n";
     }
     std::string name = dest_var->getName();
-    Value *     base = dest_var->getOperand(0);
-    Instanceof(index1, Instruction *, dest_var->getOperand(2)); // 数组偏移量
-    Instanceof(index2, ConstInt *, index1->getOperand(0));
-    int elementSize = base->getType()->getBaseElementType()->getSize(); // 比如 i32 -> 4
-    int offset = 0;
-    offset = (index2->getVal() * elementSize);
-    emit("lui", PlatformRiscV64::regName[addr_reg_no], std::string("%hi(" + base->getName() + ")"));
     // 再加载低位
     emit(
         "sw",
         PlatformRiscV64::regName[src_reg_no],
-        std::string(
-            "%lo(" + base->getName() + "+" + std::to_string(offset) + ")(" + PlatformRiscV64::regName[addr_reg_no] +
-            ")"));
+        std::to_string(dest_var->getOffset()) + "(" + PlatformRiscV64::regName[dest_var->getBaseRegId()] + ")");
 }
 
 /// @brief 保存寄存器到变量，保证将计算结果（r8）保存到变量
@@ -477,7 +464,9 @@ void ILocRiscV64::store_var(int src_reg_no, GetElementPtrInst * dest_var, int ad
 /// @param tmp_reg_no 基址寄存器
 void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
 {
-    //被保存目标变量肯定不是常量
+    // 被保存目标变量肯定不是常量
+    std::cout << 30 << std::endl;
+
     if (Instanceof(GEP, GetElementPtrInst *, dest_var)) {
         Value * base = GEP->getOperand(0); // GEP 的 base 是数组或结构体指针
         if (Instanceof(localbase, LocalVariable *, base)) {
@@ -489,6 +478,11 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
             std::cout << 32 << std::endl;
             store_var(src_reg_no, GEP, tmp_reg_no);
             std::cout << 33 << std::endl;
+        } else if (Instanceof(gepbase, GetElementPtrInst *, base)) {
+            gepbase->getRegId();
+            store_var(src_reg_no, GEP);
+        } else {
+            std::cout << "[ILocRiscV64::store_var]->GetElementPtrInst:被保存目标变量不是局部变量、全局变量和GEP\n";
         }
     } else if (Instanceof(localVar, LocalVariable *, dest_var)) {
         // 寄存器变量
@@ -519,6 +513,11 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int tmp_reg_no)
             std::cout << 32 << std::endl;
             load_var(rs_reg_no, GEP, tmp_reg_no);
             std::cout << 33 << std::endl;
+        } else if (Instanceof(gepbase, GetElementPtrInst *, base)) {
+            gepbase->getRegId();
+            load_var(rs_reg_no, GEP);
+        } else {
+            std::cout << "[ILocRiscV64::load_var]->GetElementPtrInst:被保存目标变量不是局部变量、全局变量和GEP\n";
         }
     } else if (Instanceof(constVal, ConstInt *, src_var)) {
         // 整型常量
@@ -550,12 +549,9 @@ void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var)
         }
     } else {
         // 栈+偏移的寻址方式
-        int32_t var_baseRegId = -1;
-        int64_t var_offset = -1;
-        bool    result = src_var->getMemoryAddr(&var_baseRegId, &var_offset);
-        if (!result) {
-            minic_log(LOG_ERROR, "BUG");
-        }
+        int32_t var_baseRegId = src_var->getRegId();
+        int64_t var_offset = src_var->getRegId();
+
         load_base(rs_reg_no, var_baseRegId, var_offset);
     }
 }
@@ -595,12 +591,8 @@ void ILocRiscV64::load_var(int rs_reg_no, GetElementPtrInst * src_var)
         }
     } else {
         // 栈+偏移的寻址方式
-        int32_t var_baseRegId = -1;
-        int64_t var_offset = -1;
-        bool    result = src_var->getMemoryAddr(&var_baseRegId, &var_offset);
-        if (!result) {
-            minic_log(LOG_ERROR, "BUG");
-        }
+        int32_t var_baseRegId = src_var->getBaseRegId();
+        int64_t var_offset = src_var->getOffset();
         load_base(rs_reg_no, var_baseRegId, var_offset);
     }
 }
@@ -626,21 +618,14 @@ void ILocRiscV64::load_var(int rs_reg_no, GlobalVariable * src_var, int addr_reg
 void ILocRiscV64::load_var(int rs_reg_no, GetElementPtrInst * src_var, int addr_reg_no)
 {
     // xxx:可以做局部改进，将addr_reg_no与rs_reg_no设为同一寄存器
+    if (addr_reg_no == -1) {
+        std::cout << "BUG[ILocRiscV64::store_var]:addr_reg_no can't be -1 when dealing with globalvariable.\n";
+    }
     std::string name = src_var->getName();
-    Value *     base = src_var->getOperand(0);
-    Instanceof(index1, Instruction *, src_var->getOperand(2)); // 数组偏移量
-    Instanceof(index2, ConstInt *, index1->getOperand(0));
-    int elementSize = base->getType()->getBaseElementType()->getSize(); // 比如 i32 -> 4
-    int offset = 0;
-    offset = (index2->getVal() * elementSize);
-    emit("lui", PlatformRiscV64::regName[addr_reg_no], std::string("%hi(" + base->getName() + ")"));
-    // 再加载低位
     emit(
         "lw",
         PlatformRiscV64::regName[rs_reg_no],
-        std::string(
-            "%lo(" + base->getName() + "+" + std::to_string(offset) + ")(" + PlatformRiscV64::regName[addr_reg_no] +
-            ")"));
+        std::to_string(src_var->getOffset()) + "(" + PlatformRiscV64::regName[src_var->getBaseRegId()] + ")");
 }
 /// @brief 加载变量地址到寄存器
 /// @param rs_reg_no

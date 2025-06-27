@@ -92,6 +92,19 @@ public:
     ///
     void free(int32_t no);
 
+public:
+    // Getter for intRegValues
+    const std::vector<Value *> & getIntRegValues() const
+    {
+        return intRegValues;
+    }
+
+    // Getter for floatRegValues
+    const std::vector<Value *> & getFloatRegValues() const
+    {
+        return floatRegValues;
+    }
+
 private:
     bool simplify(
         const std::unordered_map<Value *, std::unordered_set<Value *>> & graph, std::stack<Value *> & stack,
