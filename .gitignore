@@ -14,6 +14,7 @@ doc/latex/
 
 # 忽略tests下的文件
 tests/test*
+tests/official/
 # Compiled Object files
 *.slo
 *.lo
