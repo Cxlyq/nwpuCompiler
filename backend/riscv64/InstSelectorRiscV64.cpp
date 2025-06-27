@@ -946,19 +946,14 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
         } else {
             int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
             int32_t data_regno = simpleRegisterAllocator.AllocateTempInt();
-            std::cout << 2 << endl;
 
             iloc.load_imm(data_regno, ConstIntSrc->getVal());
-            std::cout << 3 << endl;
 
             iloc.store_var(data_regno, dst, addr_regno);
-            std::cout << 4 << endl;
 
             simpleRegisterAllocator.free(data_regno);
-            std::cout << 5 << endl;
 
             simpleRegisterAllocator.free(addr_regno);
-            std::cout << 6 << endl;
         }
     } else if (Instanceof(ConstFloatSrc, ConstFloat *, src)) {
         // 源操作数是立即数
@@ -1128,6 +1123,12 @@ void InstSelectorRiscV64::translate_cast(Instruction * inst)
             PlatformRiscV64::regName[dstFReg],
             PlatformRiscV64::regName[0],
             PlatformRiscV64::regName[srcReg]);
+    } else if (srcType->isInt32Type() && dstType->isInt64Type()) {
+        // // i32->i64
+        // int dstReg = simpleRegisterAllocator.Allocate(inst);
+        // int srcReg = simpleRegisterAllocator.Allocate(src);
+        // iloc.inst("addiw", PlatformRiscV64::regName[dstReg], PlatformRiscV64::regName[srcReg], "0");
+        // FIXME: 对地址的处理是否要显示
     } else {
         std::cerr << "[ERROR] Unsupported cast: " << srcType->toString() << " → " << dstType->toString() << std::endl;
     }
@@ -1147,8 +1148,13 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
     // 变量，因此需要将结果存储到一个寄存器或内存变量
     // 中
     Value * base = inst->getOperand(0);
+    std::cout << 22 << endl;
+
     // Value * index0 = inst->getOperand(1); // 通常是常量 0
-    Instanceof(index1, ConstInt *, inst->getOperand(2)); // 数组偏移量
+    Instanceof(index1, Instruction *, inst->getOperand(2)); // 数组偏移量
+    Instanceof(index2, ConstInt *, index1->getOperand(0));
+
+    std::cout << 23 << endl;
 
     // ---------- Step 1: 处理 base 地址 ----------
     if (Instanceof(base_s0, LocalVariable *, base)) {
@@ -1161,22 +1167,17 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         // ---------- Step 2: 处理偏移量 index1 ----------
         int elementSize = base->getType()->getBaseElementType()->getSize(); // 比如 i32 -> 4
         int offset = 0;
-        offset = (index1->getVal() * elementSize) + baseOffset;
-        std::cout << "index1->getVal():" << index1->getVal() << endl;
+        offset = (index2->getVal() * elementSize) + baseOffset;
+        std::cout << "index1->getVal():" << index2->getVal() << endl;
         std::cout << "baseOffset:" << baseOffset << endl;
         std::cout << "offset:" << offset << endl;
         inst->setMemoryAddr(baseRegId, offset);
     } else if (Instanceof(base_gv, GlobalVariable *, base)) {
-        std::string label = base_gv->getName();                                     // 获取全局变量标签名
-        int         elementSize = base->getType()->getBaseElementType()->getSize(); // 比如 i32 -> 4
-        int         offset = 0;
-        offset = (index1->getVal() * elementSize);
-        if (offset != 0) {
-            inst->setName(label);
-        } else {
-            inst->setName(label + "+ offset");
-        }
+        base_gv->getRegId();
+    } else if (Instanceof(base_gep, GetElementPtrInst *, base)) {
+
     } else {
         std::cout << "[InstSelectorRiscV64::translate_gep] src is not a Global/Local variable\n";
     }
+    std::cout << 21 << endl;
 }
