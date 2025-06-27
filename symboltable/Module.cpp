@@ -568,7 +568,6 @@ void Module::outputIR(const std::string & filePath)
     for (auto var: globalVariableVector) {
 
         std::string str;
-        
         var->toDeclareString(str);
         fprintf(fp, "%s\n", str.c_str());
     }

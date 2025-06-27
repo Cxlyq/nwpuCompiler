@@ -75,7 +75,6 @@ protected:
 
 public:
     bool isInited;
-    //bool iszero;
 
     /// @brief 构造函数
     /// @param _type

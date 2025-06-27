@@ -106,8 +106,7 @@ public:
             // LLVM IR 中，全局变量必须以 `@` 开头
             str = getIRName() + " = global " + getType()->toString() + " ";
         }
-        //std::cout << this->iszero << std::endl;
-        ///被初始化且是非0值
+
         if (isInited) {
             if (getType()->isArrayType()) {
                 // 数组类型的初始值需要特殊处理
@@ -179,12 +178,6 @@ public:
         return getType()->isFloatType();
     }
 
-    //表示有非0值（用于数组）
-    void set_non_zero()
-    {
-        iszero = false;
-    }
-
 private:
     ///
     /// @brief 变量加载到寄存器中时对应的寄存器编号
@@ -195,7 +188,6 @@ private:
     /// @brief 默认全局变量在BSS段，没有初始化，或者即使初始化过，但都值都为0
     ///
     bool inBSSSection = true;
-    bool iszero = true;
 
     ///
     /// @brief 变量的初始值
