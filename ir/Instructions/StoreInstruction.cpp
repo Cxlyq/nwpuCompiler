@@ -1,5 +1,9 @@
 #include "StoreInstruction.h"
 #include "CastInstruction.h"
+#include "Value.h"
+#include <cstdint>
+#include <sstream> // std::ostringstream 定义在此头文件中
+#include <iomanip> // std::hexfloat 等格式操控器定义在这里
 
 /// @brief 构造函数，初始化目标地址和存储的值
 /// @param _func 所属的函数
@@ -45,7 +49,19 @@ void StoreInstruction::toString(std::string & str)
     if (addr->getType()->getTypeID() == Type::IntegerTyID) {
         str = "store i32 " + val->getIRName() + ", i32* " + addr->getIRName() + ", align 4";
     } else if (addr->getType()->getTypeID() == Type::FloatTyID) {
-        str = "store float " + val->getIRName() + ", float* " + addr->getIRName() + ", align 4";
+        if (val->getValueCategory() == ValueCategory::IMMEDIATE) {
+            double             floatVal = val->getFloatInitVal();
+            float              cut = (float) floatVal;
+            double             extend = (double) cut;
+            uint64_t           floatBits = bitcast<double, uint64_t>(extend);
+            std::ostringstream oss;
+            oss << "0x" << std::hex << std::uppercase << floatBits;
+            std::string floatStr = oss.str();
+            str = "store float " + floatStr + ", float* " + addr->getIRName() + ", align 4";
+        } else {
+            str = "store float " + val->getIRName() + ", float* " + addr->getIRName() + ", align 4";
+        }
+
     }
     ///对应两者都是指针
     else if (

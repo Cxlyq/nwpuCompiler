@@ -3,7 +3,7 @@
 #include "Constant.h"
 #include "IRConstant.h"
 #include "FloatType.h"
-
+#include "Value.h"
 ///
 /// @brief 浮点型常量类
 ///
@@ -17,6 +17,9 @@ public:
     {
         floatVal = val;
         name = std::to_string(val);
+        double   extend = static_cast<double>(val);
+        uint64_t float_bits = bitcast<double, uint64_t>(extend);
+        setInitVal({val, float_bits});
     }
 
     /// @brief 获取名字
@@ -66,5 +69,5 @@ private:
     float floatVal;
 
     /// @brief 变量加载到寄存器中时对应的寄存器编号
-    int32_t regId= -1;
+    int32_t regId = -1;
 };

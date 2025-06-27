@@ -34,6 +34,7 @@ public:
     {
         name = std::to_string(val);
         intVal = val;
+        setInitVal(val);
     }
 
     /// @brief 获取名字

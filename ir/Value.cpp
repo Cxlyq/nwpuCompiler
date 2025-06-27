@@ -160,6 +160,10 @@ double Value::getFloatInitVal()
 {
     return initVal.floatVal.val;
 }
+uint64_t Value::getInitFloatBits()
+{
+    return initVal.floatVal.float_bits;
+}
 int Value::getIntInitVal()
 {
     return initVal.intVal;

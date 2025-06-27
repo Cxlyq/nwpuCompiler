@@ -157,6 +157,7 @@ public:
     // 为value赋初值
 
     double                getFloatInitVal();
+    uint64_t              getInitFloatBits();
     int                   getIntInitVal();
     ValueType             getValueType();
     ValueCategory         getValueCategory();             //获取值的类别（常量或变量）
