@@ -230,17 +230,17 @@ void InstSelectorRiscV64::translate_entry(Instruction * inst)
 
         if (param->getType()->isFloatType()) {
             if (floatRegIndex < 8) {
-                int         freg = 42 + floatRegIndex++; // fa0 = 42
-                std::string fregName = PlatformRiscV64::regName[freg];
-                iloc.inst("fsw", fregName, std::to_string(offset) + "(" + PlatformRiscV64::regName[regId] + ")");
+                int         freg = 42 + floatRegIndex; // fa0 = 42
+				param->setRegId(freg);
+                floatRegIndex++;
             }
-        } else {
+        } else if (param->getType()->isInt32Type() || param->getType()->isPointerType()) {
             if (intRegIndex < 8) {
-                int         reg = 10 + intRegIndex++; // a0 = 10
-                std::string regName = PlatformRiscV64::regName[reg];
-                iloc.inst("sw", regName, std::to_string(offset) + "(" + PlatformRiscV64::regName[regId] + ")");
+                int         reg = 10 + intRegIndex; // a0 = 10
+                param->setRegId(reg);
+                intRegIndex++;
             }
-        }
+        } 
     }
 }
 

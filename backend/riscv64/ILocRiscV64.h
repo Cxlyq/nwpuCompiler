@@ -137,16 +137,29 @@ public:
     /// @param disp 偏移
     void load_base(int rs_reg_no, int base_reg_no, int offset);
 
-    /// @brief Store指令，基址寻址 sw xN, offset(base)
-    /// @param src_reg_no 源寄存器
+    /// @brief 基址寻址 lw rd, offset(base)
+    /// @param rs_reg_no 结果寄存器编号
+    /// @param base_reg_no 基址寄存器编号
+    /// @param offset 偏移
+    void load_base_64(int rs_reg_no, int base_reg_no, int offset);
+
+        /// @brief Store指令，基址寻址 sw xN, offset(base)
+        /// @param src_reg_no 源寄存器
+        /// @param base_reg_no 基址寄存器
+        /// @param disp 偏移
+        /// @param tmp_reg_no 可能需要临时寄存器编号
+        void store_base(int src_reg_no, int base_reg_no, int disp);
+
+    /// @brief 基址寻址
+    /// @param srcReg 源寄存器
     /// @param base_reg_no 基址寄存器
     /// @param disp 偏移
     /// @param tmp_reg_no 可能需要临时寄存器编号
-    void store_base(int src_reg_no, int base_reg_no, int disp);
+    void store_base_64(int src_reg_no, int base_reg_no, int offset);
 
-    /// @brief 标签指令
-    /// @param name
-    void label(std::string name);
+        /// @brief 标签指令
+        /// @param name
+        void label(std::string name);
 
     /// @brief 一个操作数指令
     /// @param op 操作码
