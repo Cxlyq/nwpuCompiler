@@ -330,6 +330,29 @@ void ILocRiscV64::load_base(int rs_reg_no, int base_reg_no, int offset)
         minic_log(LOG_ERROR, "BUG: Invalid register number for result register: %d", rs_reg_no);
     }
 }
+/// @brief 基址寻址 lw rd, offset(base)
+/// @param rs_reg_no 结果寄存器编号
+/// @param base_reg_no 基址寄存器编号
+/// @param offset 偏移
+void ILocRiscV64::load_base_64(int rs_reg_no, int base_reg_no, int offset)
+{
+    std::string rsReg = PlatformRiscV64::regName[rs_reg_no];
+    std::string base = PlatformRiscV64::regName[base_reg_no];
+    std::string offset_str = toStr(offset);
+    emit("ld", rsReg, offset_str + "(" + base + ")");
+}
+/// @brief 基址寻址
+/// @param srcReg 源寄存器
+/// @param base_reg_no 基址寄存器
+/// @param disp 偏移
+/// @param tmp_reg_no 可能需要临时寄存器编号
+void ILocRiscV64::store_base_64(int src_reg_no, int base_reg_no, int offset)
+{
+    std::string base = PlatformRiscV64::regName[base_reg_no];
+    std::string srcReg = PlatformRiscV64::regName[src_reg_no];
+    std::string offset_str = toStr(offset);
+    emit("sd", srcReg, offset_str + "(" + base + ")");
+}
 /// @brief 基址寻址
 /// @param srcReg 源寄存器
 /// @param base_reg_no 基址寄存器
@@ -381,7 +404,11 @@ void ILocRiscV64::store_var(int src_reg_no, LocalVariable * dest_var)
         if (!result) {
             minic_log(LOG_ERROR, "BUG");
         }
-        store_base(src_reg_no, dest_baseRegId, dest_offset);
+        if (dest_var->getType()->isPointerType()) {
+            store_base_64(src_reg_no, dest_baseRegId, dest_offset);
+        } else {
+            store_base(src_reg_no, dest_baseRegId, dest_offset);
+		}
     }
 }
 void ILocRiscV64::store_var(int src_reg_no, Instruction * dest_var)
@@ -580,7 +607,11 @@ void ILocRiscV64::load_var(int rs_reg_no, LocalVariable * src_var)
         if (!result) {
             minic_log(LOG_ERROR, "BUG");
         }
-        load_base(rs_reg_no, var_baseRegId, var_offset);
+        if (src_var->getType()->isPointerType()) {
+            load_base_64(rs_reg_no, var_baseRegId, var_offset);
+        } else {
+            load_base(rs_reg_no, var_baseRegId, var_offset);
+        }
     }
 }
 
