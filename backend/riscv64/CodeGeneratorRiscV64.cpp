@@ -280,6 +280,7 @@ void CodeGeneratorRiscV64::genCodeSection(Function * func)
     fprintf(fp, ".type %s, @function\n", func->getName().c_str());
     fprintf(fp, "%s:\n", func->getName().c_str());
 
+    
     // 开启时输出IR指令作为注释
     if (this->showLinearIR) {
 
