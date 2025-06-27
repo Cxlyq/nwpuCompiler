@@ -787,14 +787,14 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
 
     int32_t operandNum = callInst->getOperandsNum();
 
-    if (operandNum != realArgCount) {
+    // if (operandNum != realArgCount) {
 
-        // 两者不一致 也可能没有ARG指令，正常
-        if (realArgCount != 0) {
+    //     // 两者不一致 也可能没有ARG指令，正常
+    //     if (realArgCount != 0) {
 
-            minic_log(LOG_ERROR, "ARG指令的个数与调用函数个数不一致");
-        }
-    }
+    //         minic_log(LOG_ERROR, "ARG指令的个数与调用函数个数不一致");
+    //     }
+    // }
     int intIndex = 0;   // 对应 a0–a7（x10–x17）
     int floatIndex = 0; // 对应 fa0–fa7（f10–f17）
     if (operandNum) {
@@ -807,65 +807,83 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
 
             if (arg->getType()->isFloatType()) {
                 if (floatIndex < 8) {
-                    simpleRegisterAllocator.Allocate(42 + floatIndex); // 假设你有这个接口
-                    Instruction * assignInst =
-                        new MoveInstruction(func, PlatformRiscV64::floatRegVal[floatIndex + 10], arg);
-                    translate_assign(assignInst);
-                    delete assignInst;
+                    int float_reg_no = 42 + floatIndex; // 42号为fa0
+                    // TODO:[优化]在非全栈模式时需要对被占用的栈保护寄存器压栈
+                    // if(PlatformRiscV64::floatRegVal[float_reg_no]->)
+                    simpleRegisterAllocator.Allocate(float_reg_no); 
+                    int tmp_reg_no=simpleRegisterAllocator.AllocateTempInt();
+                    iloc.load_var(float_reg_no, arg, tmp_reg_no);
+                    simpleRegisterAllocator.free(tmp_reg_no);
                     floatIndex++;
                 } else {
                     // 栈上传递浮点数参数
                     MemVariable * newVal = func->newMemVariable((Type *) PointerType::get(arg->getType()));
                     newVal->setMemoryAddr(RISCV64_SP_REG_NO, esp);
-                    esp += 8; // 浮点数 8 字节
-                    Instruction * assignInst = new MoveInstruction(func, newVal, arg);
-                    translate_assign(assignInst);
-                    delete assignInst;
+                    esp += 4; // 浮点数 4 字节
+                    Instruction * storeInst = new StoreInstruction(func, newVal, arg);
+                    translate_assign(storeInst);
+                    delete storeInst;
+                    //floatIndex++;
                 }
-            } else {
+            } else if(arg->getType()->isInt32Type()) {
                 if (intIndex < 8) {
-                    simpleRegisterAllocator.Allocate(10 + intIndex);
-                    Instruction * assignInst =
-                        new MoveInstruction(func, PlatformRiscV64::intRegVal[10 + intIndex], arg);
-                    translate_assign(assignInst);
-                    delete assignInst;
+                    int int_reg_no = 10 + intIndex; // 10号为a0
+                    simpleRegisterAllocator.Allocate(int_reg_no);
+                    int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+                    iloc.load_var(int_reg_no, arg, tmp_reg_no);
+                    simpleRegisterAllocator.free(tmp_reg_no);
                     intIndex++;
                 } else {
                     // 栈上传递整数参数
                     MemVariable * newVal = func->newMemVariable((Type *) PointerType::get(arg->getType()));
                     newVal->setMemoryAddr(RISCV64_SP_REG_NO, esp);
                     esp += 4;
-                    Instruction * assignInst = new MoveInstruction(func, newVal, arg);
-                    translate_assign(assignInst);
-                    delete assignInst;
+                    Instruction * storeInst = new StoreInstruction(func, newVal, arg);
+                    translate_assign(storeInst);
+                    delete storeInst;
+                    //intIndex++;
                 }
-            }
+            } else if (arg->getType()->isPointerType()) {
+                // TODO:[数组实参]完善这种情况
+                std::cout<<"尚未完成数组作为实参的函数调用\n";
+                if (intIndex < 8) {
+                } else {
+                    
+				}
+            } else {
+                std::cout<<"函数调用参数非Array/Int/Float";
+			}
         }
     }
 
     iloc.call_fun(callInst->getName());
 
-    for (int i = 0; i < intIndex; ++i) {
-        simpleRegisterAllocator.free(10 + i); // 假设你实现了 freeFloat
+    for (int i = 1; i < intIndex; ++i) {
+        simpleRegisterAllocator.free(10 + i); //
     }
-    for (int i = 0; i < floatIndex; ++i) {
-        simpleRegisterAllocator.free(42 + i); // 假设你实现了 freeFloat
+    for (int i = 1; i < floatIndex; ++i) {
+        simpleRegisterAllocator.free(42 + i); //
     }
     // 赋值指令
     if (callInst->hasResultValue()) {
         if (callInst->getType()->isFloatType()) {
-            Instruction * assignInst = new MoveInstruction(func, callInst, PlatformRiscV64::floatRegVal[10]);
-            translate_assign(assignInst);
-            delete assignInst;
+            int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+            iloc.store_var(42, callInst, tmp_reg_no);
+            simpleRegisterAllocator.free(tmp_reg_no);
+        } else if (callInst->getType()->isInt32Type()) {
+            int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+            iloc.store_var(10, callInst, tmp_reg_no);
+            simpleRegisterAllocator.free(tmp_reg_no);
         } else {
-            Instruction * assignInst = new MoveInstruction(func, callInst, PlatformRiscV64::intRegVal[10]);
-            translate_assign(assignInst);
-            delete assignInst;
-        }
+            std::cout<<"调用函数实际返回值类型不是int32/float\n";
+		}
     }
+    simpleRegisterAllocator.free(10);
+    simpleRegisterAllocator.free(42);
 
+    callInst->clearOperands();
     // 函数调用后清零，使得下次可正常统计
-    realArgCount = 0;
+    //realArgCount = 0;
 }
 
 /// @brief 实参指令翻译成RISCV64汇编

@@ -274,9 +274,10 @@ void CodeGeneratorRiscV64::genCodeSection(Function * func)
     iloc.deleteUnusedLabel();
 
     // ILOC代码输出为汇编代码
-    fprintf(fp, ".align %d\n", func->getAlignment());
-    fprintf(fp, ".global %s\n", func->getName().c_str());
-    fprintf(fp, ".type %s, %%function\n", func->getName().c_str());
+
+    fprintf(fp, ".globl %s\n", func->getName().c_str());
+    fprintf(fp, ".p2align %d\n", func->getAlignment());
+    fprintf(fp, ".type %s, @function\n", func->getName().c_str());
     fprintf(fp, "%s:\n", func->getName().c_str());
 
     // 开启时输出IR指令作为注释
@@ -578,8 +579,8 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
     // 通过栈传递的实参，RISCV64的前四个通过寄存器传递
     int maxFuncCallArgCnt = func->getMaxFuncCallArgCnt();
-    if (maxFuncCallArgCnt > 4) {
-        sp_esp += (maxFuncCallArgCnt - 4) * 4;
+    if (maxFuncCallArgCnt > 8) {
+        sp_esp += (maxFuncCallArgCnt - 8) * 4;
     }
 
     // 只有int类型时可以4字节对齐，支持浮点或者向量运算时要16字节对齐

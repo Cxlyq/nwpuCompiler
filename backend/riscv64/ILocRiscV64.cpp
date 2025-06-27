@@ -354,7 +354,11 @@ void ILocRiscV64::store_base(int src_reg_no, int base_reg_no, int offset)
 /// @param src_reg_no 源寄存器
 void ILocRiscV64::mov_reg(int rs_reg_no, int src_reg_no)
 {
-    emit("mv", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[src_reg_no]);
+    if(rs_reg_no>=0&&rs_reg_no<32){
+        emit("mv", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[src_reg_no]);
+    } else if (rs_reg_no >= 32 && rs_reg_no < 64) {
+        emit("fmv.s", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[src_reg_no]);
+    }
 }
 /// @brief 保存寄存器到局部变量，
 /// @param src_reg_no 源寄存器
