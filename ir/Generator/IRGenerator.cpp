@@ -899,7 +899,6 @@ bool IRGenerator::ir_mul(ast_node * node)
     node->blockInsts.addInst(mulInst);
 
     node->val = mulInst;
-
     return true;
 }
 
@@ -927,11 +926,11 @@ bool IRGenerator::ir_div(ast_node * node)
         return false;
     }
 
-    if (((int) right->node_type) == 0 && !right->integer_val) {
+    if (right->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT && !right->integer_val) {
         //为整数0时报除数为0错误
         return false;
     }
-    if (((int) right->node_type) == 1 && !right->integer_val) {
+    if (right->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT && !right->float_val) {
 
         //为浮点数0时报除数为0.0错误
         return false;
