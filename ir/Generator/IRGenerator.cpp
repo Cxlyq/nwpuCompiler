@@ -420,9 +420,7 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
                 std::cerr << "Function formal params: Failer to generate Array Type!" << std::endl;
             }
             Type * eletype = arrayType->getElementType();
-            // std::cout << "Function formal params: Array type is " << arrayType->toString() << std::endl;
             PointerType * pointerType = new PointerType(eletype);
-            // std::cout << "Function formal params: Pointer type is " << pointerType->toString() << std::endl;
             //  PointerType * pointee = new PointerType(pointerType);
             //   创建一个数组局部变量
             Value * param_value = module->newVarValue(pointerType, array_name);
@@ -517,8 +515,6 @@ bool IRGenerator::ir_function_call(ast_node * node)
         for (auto son: paramsNode->sons) {
             ast_node * son_node;
             Type *     son_type = son->type;
-            // std::cout << "Function call(Real Param): son type is " << son_type->toString() << std::endl;
-            // std::cout << "Function call(Real Param): son type is " << (int) son->node_type << std::endl;
             ///因为如果是数组访问，走专门的函数，所以不能visit，否则会额外生成ir
             if (!(son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS)) {
                 son_node = ir_visit_ast_node(son);
@@ -526,18 +522,12 @@ bool IRGenerator::ir_function_call(ast_node * node)
 
             if (son->node_type == ast_operator_type::AST_OP_LEAF_VAR_ID) {
                 // 叶子节点是变量ID
-                // std::cout << "Function call(Real Param): son_node is " << son_node->name << std::endl;
                 son_type = module->findVarValue(son_node->name)->getType();
-            } // else {
-            //     // std::cout << "Function call(Real Param): son_node is not leaf node!" << std::endl;
-            // }
-            // std::cout << "type " << son_type->toString() << std::endl;
+            }
 
             ///如果是数组，就要走专门的函数
             if (son->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS || son_type->isArrayType()) {
-                // std::cout << "Function call(Real Param): arrayRParam is " << std::endl;
                 Value * arrayRParam = funcall_array_access(son);
-                // std::cout << "Function call(Real Param): arrayRParam is " << arrayRParam << std::endl;
                 //  if (!arrayRParam) {
                 //      std::cerr << "Function call(Real Param):Failed to array access!" << std::endl;
                 //      return false;
@@ -564,7 +554,6 @@ bool IRGenerator::ir_function_call(ast_node * node)
 
     if (realParams.size() != formalParams.size()) {
         // 函数参数的个数不一致，语义错误
-        std::cout << realParams.size() << " " << formalParams.size() << std::endl;
         std::cerr << "Function call: Function '" << funcName << "' called with " << realParams.size()
                   << " arguments, but expected " << formalParams.size() << " parameters." << std::endl;
         return false;
@@ -764,7 +753,6 @@ bool IRGenerator::ir_sub(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
     //     // printf("yes,left\n");
@@ -776,8 +764,6 @@ bool IRGenerator::ir_sub(ast_node * node)
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
     // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
     //     // printf("yes,right\n");
     //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
@@ -846,7 +832,6 @@ bool IRGenerator::ir_mul(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
     // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
     //     // printf("yes,left\n");
@@ -858,8 +843,6 @@ bool IRGenerator::ir_mul(ast_node * node)
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
     // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
     //     // printf("yes,right\n");
     //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
@@ -936,27 +919,9 @@ bool IRGenerator::ir_div(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,right\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-    //     rhs = LoadInst;
-    //     rhs->setType(module->findVarValue(right->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     /// 操作数不同时进行类型转换
     if (left->val->getType()->getTypeID() != right->val->getType()->getTypeID()) {
@@ -1014,30 +979,13 @@ bool IRGenerator::ir_mod(ast_node * node)
         // 某个变量没有定值
         return false;
     }
-    ///检查操作数是否是数组，若是需要load
+
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,right\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-    //     rhs = LoadInst;
-    //     rhs->setType(module->findVarValue(right->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
+
 
     //取余运算不支持float类型
     bool isFloat = (lhs->getType()->isArrayType() ? lhs->getType()->getElementType()->isFloatType()
@@ -1103,16 +1051,7 @@ bool IRGenerator::ir_and(ast_node * node)
 
     Value * lhs = left->val;
     node->blockInsts.addInst(left->blockInsts);
-    ///检查操作数是否是数组，若是需要load
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     auto neqInst1 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1159,17 +1098,7 @@ bool IRGenerator::ir_and(ast_node * node)
     // 添加标签
     node->blockInsts.addInst(store_true);
 
-    // // 2. 对左值做 icmp ne，判断是否为真
-    // Value * zero = module->newConstInt(0);
-    // Value * cmp1 = new ICmpInstruction(currentFunc, ICmpInstruction::ICMP_NE, lhs_val, zero);
-    // node->blockInsts.addInst(cmp1);
 
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-
-    // 创建临时变量保存IR的值，以及线性IR指令
-    // node->blockInsts.addInst(left->blockInsts);
-    // node->blockInsts.addInst(right->blockInsts);
 
     std::string tmpName = generateTempName("ValueOfLogic");
     Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
@@ -1234,16 +1163,7 @@ bool IRGenerator::ir_or(ast_node * node)
 
     Value * lhs = left->val;
     node->blockInsts.addInst(left->blockInsts);
-    ///检查操作数是否是数组，若是需要load
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     auto neqInst1 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
@@ -1290,17 +1210,6 @@ bool IRGenerator::ir_or(ast_node * node)
     // 添加标签
     node->blockInsts.addInst(store_true);
 
-    // // 2. 对左值做 icmp ne，判断是否为真
-    // Value * zero = module->newConstInt(0);
-    // Value * cmp1 = new ICmpInstruction(currentFunc, ICmpInstruction::ICMP_NE, lhs_val, zero);
-    // node->blockInsts.addInst(cmp1);
-
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-
-    // 创建临时变量保存IR的值，以及线性IR指令
-    // node->blockInsts.addInst(left->blockInsts);
-    // node->blockInsts.addInst(right->blockInsts);
 
     std::string tmpName = generateTempName("ValueOfLogic");
     Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
@@ -1368,27 +1277,10 @@ bool IRGenerator::ir_eq(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,right\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-    //     rhs = LoadInst;
-    //     rhs->setType(module->findVarValue(right->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     // 操作数不同时进行类型转换
     // 操作数不同时进行类型转换
@@ -1479,27 +1371,11 @@ bool IRGenerator::ir_neq(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,right\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-    //     rhs = LoadInst;
-    //     rhs->setType(module->findVarValue(right->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
+
 
     // 操作数不同时进行类型转换
 
@@ -1589,29 +1465,11 @@ bool IRGenerator::ir_ge(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,right\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-    //     rhs = LoadInst;
-    //     rhs->setType(module->findVarValue(right->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
-    // 操作数不同时进行类型转换
     // 操作数不同时进行类型转换
 
     auto lTyID = left->val->getType()->getTypeID();
@@ -1694,29 +1552,11 @@ bool IRGenerator::ir_le(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,right\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-    //     rhs = LoadInst;
-    //     rhs->setType(module->findVarValue(right->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
-    // 操作数不同时进行类型转换
     // 操作数不同时进行类型转换
 
     auto lTyID = left->val->getType()->getTypeID();
@@ -1806,29 +1646,11 @@ bool IRGenerator::ir_gne(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,right\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-    //     rhs = LoadInst;
-    //     rhs->setType(module->findVarValue(right->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
-    // 操作数不同时进行类型转换
     // 操作数不同时进行类型转换
 
     auto lTyID = left->val->getType()->getTypeID();
@@ -1916,29 +1738,11 @@ bool IRGenerator::ir_lne(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (left->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
 
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), left->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(left->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-    // std::cout << "right type: " << rhs->getType()->toString() << std::endl;
-    // std::cout << "right string: " << rhs->getIRName() << std::endl;
-    // if (right->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,right\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), right->val);
-    //     rhs = LoadInst;
-    //     rhs->setType(module->findVarValue(right->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
 
-    // 操作数不同时进行类型转换
     // 操作数不同时进行类型转换
 
     auto lTyID = left->val->getType()->getTypeID();
@@ -2010,14 +1814,7 @@ bool IRGenerator::ir_pos(ast_node * node)
 
     node->blockInsts.addInst(expr->blockInsts);
     Value * lhs = expr->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(expr->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
+
 
     // 设置当前节点的计算结果
     node->val = lhs;
@@ -2040,15 +1837,7 @@ bool IRGenerator::ir_neg(ast_node * node)
 
     node->blockInsts.addInst(expr->blockInsts);
     Value * rhs = expr->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(expr->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
-    //
+
     Value * zero;
 
     if (rhs->getType()->isIntegerType()) {
@@ -2088,14 +1877,7 @@ bool IRGenerator::ir_not(ast_node * node)
     }
     node->blockInsts.addInst(expr->blockInsts);
     Value * lhs = expr->val;
-    // std::cout << "left type: " << lhs->getType()->toString() << std::endl;
-    // if (expr->node_type == ast_operator_type::AST_OP_ARRAY_ACCESS) {
-    //     // printf("yes,left\n");
-    //     LoadInstruction * LoadInst = new LoadInstruction(module->getCurrentFunction(), expr->val);
-    //     lhs = LoadInst;
-    //     lhs->setType(module->findVarValue(expr->name)->getType());
-    //     node->blockInsts.addInst(LoadInst);
-    // }
+
     Value * zero;
 
     if (lhs->getType()->isIntegerType()) {
@@ -2638,8 +2420,6 @@ bool IRGenerator::ir_leaf_node_var_id(ast_node * node)
 
     val = module->findVarValue(node->name);
     Type * type = val->getType();
-    // std::cout << "the type in this var is " << type->toString() << std::endl;
-    //  std::cout << " " << node->is_lvar << type->isArrayType() << 'and ' << type->getTypeID() << std::endl;
     if (node->is_lvar || type->isArrayType()) {
         node->val = val;
     } else {
@@ -2647,18 +2427,13 @@ bool IRGenerator::ir_leaf_node_var_id(ast_node * node)
 
             auto LoadInst = new LoadInstruction(module->getCurrentFunction(), val);
             node->val = LoadInst;
-            // std::cout << node->getNodeName() << std::endl;
-            // std::cout << "var name " << node->getNodeName() << std::endl;
             node->val->setName(node->name); // 设置名称
                                             // node->val->setIRName(std::string _name)
             node->blockInsts.addInst(LoadInst);
         } else {
-            // std::cout << 'here' << std::endl;
             PointerType * pointerType = new PointerType(type);
 
             val->setType(pointerType);
-            // std::cout << "the point type" << pointerType->toString() << std::endl;
-            // std::cout << node->getNodeName() << std::endl;
             auto loadInst = new LoadInstruction(module->getCurrentFunction(), val);
             node->val = loadInst;
             node->blockInsts.addInst(loadInst);
@@ -2700,159 +2475,6 @@ bool IRGenerator::ir_leaf_node_float(ast_node * node)
     return true;
 }
 
-// bool IRGenerator::ir_array_access(ast_node * node)
-// {
-
-//     // 是数组变量，提取数组名和维度表达式
-//     std::string             array_name;
-//     std::vector<ast_node *> array_dims;
-//     extract_array_info(node, array_name, array_dims);
-
-//     ///设置name，否则作为左值会报错
-//     node->name = array_name;
-//     // 解析维度表达式为实际的常数
-//     // std::vector<int> dims;
-//     // for (auto * expr_node: array_dims) {
-//     //     int dim_size = evaluateConstExpr(expr_node); // 假设此函数返回维度大小
-//     //     dims.push_back(dim_size);
-//     // }
-
-//     ///使用tempVal获取之前生成的节点
-//     Value * tempVal = module->findVarValue(array_name);
-//     ///获取定义的时候，声明数组各维度
-//     Type * type = tempVal->getType();
-//     if (type->isArrayType()) {
-//         auto *           arrayType = static_cast<ArrayType *>(type);
-//         std::vector<int> ori_dims = arrayType->getDimensions();
-//         // int              offset_size = calcOffset(ori_dims, dims);
-//         //  int              offset = offset_size * 4;
-//         int d = ori_dims.size();
-//         int m = array_dims.size();
-
-//         // 从后往前构造偏移表达式
-//         Value * offset = nullptr;
-//         Value * stride = module->newConstInt(1); // 初始stride=1
-
-//         for (int i = d - 1; i >= d - m; --i) {
-//             ast_node * expr_node = ir_visit_ast_node(array_dims[i - (d - m)]);
-
-//             // 生成子表达式的 IR
-//             Value * indexVal = expr_node->val;
-//             node->blockInsts.addInst(expr_node->blockInsts);
-//             //  tmp = indexVal * stride
-//             auto term = new BinaryInstruction(
-//                 module->getCurrentFunction(),
-//                 IRInstOperator::IRINST_OP_MUL_I,
-//                 indexVal,
-//                 stride,
-//                 IntegerType::getTypeInt());
-//             node->blockInsts.addInst(term);
-
-//             // offset = offset + term
-//             if (offset == nullptr) {
-//                 offset = term;
-//             } else {
-//                 auto sum = new BinaryInstruction(
-//                     module->getCurrentFunction(),
-//                     IRInstOperator::IRINST_OP_ADD_I,
-//                     offset,
-//                     term,
-//                     IntegerType::getTypeInt());
-//                 node->blockInsts.addInst(sum);
-//                 offset = sum;
-//             }
-//             if (i - 1 >= d - m) {
-//                 // 更新stride *= ori_dims[i]
-//                 auto new_stride = new BinaryInstruction(
-//                     module->getCurrentFunction(),
-//                     IRInstOperator::IRINST_OP_MUL_I,
-//                     stride,
-//                     module->newConstInt(ori_dims[i]),
-//                     IntegerType::getTypeInt());
-//                 stride = new_stride;
-//                 node->blockInsts.addInst(new_stride);
-//             }
-//         }
-//         auto offest_size = new BinaryInstruction(
-//             module->getCurrentFunction(),
-//             IRInstOperator::IRINST_OP_MUL_I,
-//             offset,
-//             module->newConstInt(4),
-//             IntegerType::getTypeInt());
-//         node->blockInsts.addInst(offest_size);
-
-//         auto addr = new BinaryInstruction(
-//             module->getCurrentFunction(),
-//             IRInstOperator::IRINST_OP_ADD_I,
-//             tempVal,
-//             offest_size,
-//             IntegerType::getTypeInt());
-//         node->val = addr;
-//         // ///需要手动设置Type，否则addr默认是int类型的value
-//         // node->val->setType(type);
-//         // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
-//         node->blockInsts.addInst(addr);
-
-//     } else {
-//         // 处理错误情况
-//         std::cerr << "Array access: Error: Expected an array type." << std::endl;
-//         return false;
-//     }
-
-//     return true;
-// }
-
-///@brief 这个版本为zjl版本的LLVm
-// bool IRGenerator::ir_array_access(ast_node * node)
-// {
-//     std::string             array_name;
-//     std::vector<ast_node *> array_dims;
-//     extract_array_info(node, array_name, array_dims);
-
-//     node->name = array_name;
-
-//     Value * tempVal = module->findVarValue(array_name);
-//     Type *  type = tempVal->getType();
-//     if (!type->isArrayType()) {
-//         std::cerr << "Array access: Error: Expected an array type." << std::endl;
-//         return false;
-//     }
-
-//     // auto * arrayType = static_cast<ArrayType *>(type);
-//     // int    totalDims = arrayType->getDimensions().size();
-//     int accessDims = array_dims.size();
-
-//     // 构造 gep 索引：{i64 0, i64 idx1, i64 idx2, ...}
-//     std::vector<Value *> indices;
-//     indices.push_back(module->newConstInt(0)); // 第一个是0，表示起始
-
-//     Type * currType = type;
-//     for (int i = 0; i < accessDims; ++i) {
-//         ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
-//         Value *    indexVal = idxNode->val;
-
-//         node->blockInsts.addInst(idxNode->blockInsts);
-//         indices.push_back(indexVal);
-
-//         // 更新类型为当前维度的元素类型
-//         if (currType->isArrayType())
-//             currType = static_cast<ArrayType *>(currType)->getElementType();
-//     }
-
-//     // 构造 getelementptr 指令
-//     auto gepInst = new GetElementPtrInst(
-//         module->getCurrentFunction(),
-//         tempVal,  // 数组变量
-//         type,     // 原始数组类型（如 [5 x [6 x i32]]）
-//         indices); // 多级索引
-
-//     node->blockInsts.addInst(gepInst);
-//     node->val = gepInst;
-//     node->val->setType(currType); // 设置为最终指向类型（如 i32*）
-
-//     return true;
-// }
-
 ///@brief 这个版本为标准版本的LLVm
 bool IRGenerator::ir_array_access(ast_node * node)
 {
@@ -2870,7 +2492,6 @@ bool IRGenerator::ir_array_access(ast_node * node)
     }
 
     Type * type = tempVal->getType();
-    // std::cout << " type  " << type->toString() << std::endl;
     if ((!type->isArrayType()) && (!type->isPointerType())) {
         std::cerr << "Array access: Error: Expected an array type." << std::endl;
         return false;
@@ -2896,7 +2517,6 @@ bool IRGenerator::ir_array_access(ast_node * node)
         // gepPtr->setType(loadInst->getType()->getPointeeType())                   //
         gepType = gepPtr->getType(); // 更新 gepType 为加载后的类型
                                      // 获取指向的类型
-        // std::cout << "gepPtr(ptr) type: " << gepPtr->getType()->toString() << std::endl;
     }
 
     // 逐层调用getelementptr
@@ -2999,7 +2619,6 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
     }
     Type *  type = tempVal->getType();
     Value * zero = module->newConstInt(0);
-    // std::cout << "array type  " << type->toString() << std::endl;
     if (type->isArrayType()) {
         int accessDims = array_dims.size();
         // if (type->isPointerType()) {
@@ -3016,7 +2635,6 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
         //     }
         // }
         int ori_dims = static_cast<ArrayType *>(type)->getDimensions().size();
-        std::cout << "array access dims: " << accessDims << std::endl;
         // 起始指针
         Value * gepPtr = tempVal;
 
@@ -3035,11 +2653,9 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
 
             node->blockInsts.addInst(gepInst);
             node->val = gepInst;
-            // std::cout << "array type: " << node->val->getType()->toString() << std::endl;
             return node->val; // 返回最终的 gep 指令 Value*
         } else if (accessDims == ori_dims) {
             // 逐层调用getelementptr
-            // std::cout << "there is a array in function call  " << node->getNodeName() << std::endl;
             for (int i = 0; i < accessDims; ++i) {
                 // 先处理索引表达式，转换成Value*
                 ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
@@ -3082,12 +2698,10 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
             auto * loadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr); // 加载最终的指针值
             node->blockInsts.addInst(loadInst);
             node->val = loadInst; // 设置最终的值为加载后的指针
-            // std::cout << "array type: " << node->val->getType()->toString() << std::endl;
             return node->val; // 返回最终的加载指令 Value*
         } else {
             //说明是多重指针
             // 逐层调用getelementptr
-            // std::cout << "there is a array in function call  " << node->getNodeName() << std::endl;
             for (int i = 0; i < accessDims; ++i) {
                 // 先处理索引表达式，转换成Value*
                 ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
@@ -3132,9 +2746,6 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                 gepType, // 类型是 [5 x i32]*
                 std::vector<Value *>{zero, zero},
                 isGlobalArray); // GEP 0, 0 => 获取 a[0]
-            // std::cout << "final_gepinst type: " << final_gepInst->getType()->toString() << std::endl;
-            // std::cout << "final_gepPtr type: " << gepPtr->getType()->toString() << std::endl;
-            // std::cout << "final_gep type: " << gepType->toString() << std::endl;
             node->blockInsts.addInst(final_gepInst);
 
             node->val = final_gepInst; // 设置最终的 gep 指令 Value*
@@ -3144,9 +2755,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
             //     final_gepInst,
             //     new PointerType(gepType)); // 指定转换类型为 GEP 到指针
             // node->blockInsts.addInst(castInst);
-            // std::cout << "cast type: " << castInst->getType()->toString() << std::endl;
             // node->val = castInst;
-            // std::cout << "array type: " << node->val->getType()->toString() << std::endl;
             // // node->val = castInst; // 最终的 gep 指令 Value*
             return node->val; // 返回最终的 gep 指令 Value*
         }
@@ -3172,8 +2781,6 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
             // gepPtr->setType(loadInst->getType()->getPointeeType())                   //
             gepType = gepPtr->getType(); // 更新 gepType 为加载后的类型
                                          // 获取指向的类型
-            // std::cout << "gepPtr(ptr) type: " << gepPtr->getType()->toString() << std::endl; // 逐层调用getelementptr
-
             for (int i = 0; i < accessDims; ++i) {
                 // 先处理索引表达式，转换成Value*
                 ast_node * idxNode = ir_visit_ast_node(array_dims[i]);
@@ -3233,7 +2840,6 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
                 }
                 gepPtr->setType(gepType);
             }
-            std::cout << "gepType" << gepType->toString() << std::endl;
             if (gepType->isArrayType()) {
                 auto getelementptr = new GetElementPtrInst(
                     module->getCurrentFunction(),
@@ -3261,151 +2867,6 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
     return node->val; // 返回最终的 gep 指令 Value*
 }
 
-// Value * IRGenerator::funcall_array_access(ast_node * node, std::vector<Instruction *> & insts)
-// {
-
-//     // 是数组变量，提取数组名和维度表达式
-//     std::string             array_name;
-//     std::vector<ast_node *> array_dims;
-//     extract_array_info(node, array_name, array_dims);
-
-//     ///设置name，否则作为左值会报错
-//     node->name = array_name;
-//     // 解析维度表达式为实际的常数
-//     std::vector<int> dims;
-//     for (auto * expr_node: array_dims) {
-//         int temp_size = evaluateConstExpr(expr_node); // 尝试计算数组维度，如果失败则返回负数
-//         int dim_size;
-//         if (temp_size < 0) {
-//             dim_size = -1;
-//             dims.push_back(dim_size);
-//         } else {
-//             dim_size = temp_size;
-//             dims.push_back(dim_size);
-//         }
-//     }
-
-//     /// 使用tempVal获取之前生成的节点
-//     Value * tempVal = module->findVarValue(array_name);
-//     if (!tempVal) {
-//         std::cerr << "Function call - array: Cannot find array!" << std::endl;
-//     }
-//     ArrayType * arrayType = new ArrayType(tempVal->getType()->getElementType(), dims);
-//     std::cout << "arrayType type: " << arrayType->toString() << std::endl;
-//     ArrayType * arrayType1 = new ArrayType(tempVal->getType()->getElementType(), dims);
-//     Value *     arrayPRParam = new Value(arrayType); // 设置实参表
-//     arrayPRParam->setName(array_name);               // a
-//     // std::cout << "arrayPRParam type: " << arrayPRParam->getType()->toString() << std::endl;
-//     Type * type = tempVal->getType();
-
-//     if (type->isArrayType()) {
-//         auto *           arrayType = static_cast<ArrayType *>(type);
-//         std::vector<int> ori_dims = arrayType->getDimensions();
-//         // int              offset_size = calcOffset(ori_dims, dims);
-//         //  int              offset = offset_size * 4;
-//         int d = ori_dims.size();
-//         int m = array_dims.size();
-
-//         // 从后往前构造偏移表达式
-//         Value * offset = nullptr;
-//         Value * stride = module->newConstInt(1); // 初始stride=1
-
-//         for (int j = d - 1; j > m - 1; j--) {
-//             // 更新stride *= ori_dims[i]
-//             auto new_stride = new BinaryInstruction(
-//                 module->getCurrentFunction(),
-//                 IRInstOperator::IRINST_OP_MUL_I,
-//                 stride,
-//                 module->newConstInt(ori_dims[j]),
-//                 IntegerType::getTypeInt());
-//             stride = new_stride;
-//             // insts.push_back(new_stride);
-//             node->blockInsts.addInst(new_stride);
-//         }
-
-//         for (int i = m - 1; i >= 0; i--) {
-//             // ast_node * expr_node = array_dims[i - (d - m)];
-
-//             // // 生成子表达式的 IR
-//             // ir_visit_ast_node(expr_node);
-//             // Value * indexVal = expr_node->val;
-//             ast_node * expr_node = ir_visit_ast_node(array_dims[i]);
-
-//             // 生成子表达式的 IR
-//             Value * indexVal = expr_node->val;
-//             node->blockInsts.addInst(expr_node->blockInsts);
-//             // insts.push_back(expr_node->blockInsts);/
-
-//             // tmp = indexVal * stride
-//             auto term = new BinaryInstruction(
-//                 module->getCurrentFunction(),
-//                 IRInstOperator::IRINST_OP_MUL_I,
-//                 indexVal,
-//                 stride,
-//                 IntegerType::getTypeInt());
-//             // insts.push_back(term);
-//             node->blockInsts.addInst(term);
-
-//             // offset = offset + term
-//             if (offset == nullptr) {
-//                 offset = term;
-//             } else {
-//                 auto sum = new BinaryInstruction(
-//                     module->getCurrentFunction(),
-//                     IRInstOperator::IRINST_OP_ADD_I,
-//                     offset,
-//                     term,
-//                     IntegerType::getTypeInt());
-//                 // insts.push_back(sum);
-//                 node->blockInsts.addInst(sum);
-//                 offset = sum;
-//             }
-
-//             if (i - 1 >= 0) {
-//                 // 更新stride *= ori_dims[i]
-//                 auto new_stride = new BinaryInstruction(
-//                     module->getCurrentFunction(),
-//                     IRInstOperator::IRINST_OP_MUL_I,
-//                     stride,
-//                     module->newConstInt(ori_dims[i]),
-//                     IntegerType::getTypeInt());
-//                 stride = new_stride;
-//                 // insts.push_back(new_stride);
-//                 node->blockInsts.addInst(new_stride);
-//             }
-//         }
-//         auto offest_size = new BinaryInstruction(
-//             module->getCurrentFunction(),
-//             IRInstOperator::IRINST_OP_MUL_I,
-//             offset,
-//             module->newConstInt(4),
-//             IntegerType::getTypeInt());
-//         // insts.push_back(offest_size);
-//         node->blockInsts.addInst(offest_size);
-
-//         auto addr = new BinaryInstruction(
-//             module->getCurrentFunction(),
-//             IRInstOperator::IRINST_OP_ADD_I,
-//             tempVal,
-//             offest_size,
-//             IntegerType::getTypeInt());
-//         node->val = addr;
-//         // ///需要手动设置Type，否则addr默认是int类型的value
-//         // node->val->setType(type);
-//         // std::cout << "addr type: " << addr->getType()->toString() << std::endl;
-//         // insts.push_back(addr);
-//         node->blockInsts.addInst(addr);
-//         arrayPRParam = addr;
-//         arrayPRParam->setType(arrayType1); // 设置类型
-
-//     } else {
-//         // 处理错误情况
-//         std::cerr << "Error: Expected an array type." << std::endl;
-//         return nullptr;
-//     }
-
-//     return arrayPRParam;
-// }
 
 /// @brief 变量声明语句节点翻译成线性中间IR
 /// @param node AST节点
@@ -3492,7 +2953,6 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                                   << std::endl;
                         return false;
                     }
-                    // std::cout << "init_num : " << init_num->float_val << std::endl;
                 }
 
                 node->val->setInitVal(float_init_list);
@@ -3514,7 +2974,6 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                                   << std::endl;
                         return false;
                     }
-                    // std::cout << "init_num : " << init_num->integer_val << std::endl;
                 }
                 node->val->setInitVal(int_init_list);
                 node->val->isInited = true; // 标记数组已初始化
@@ -3586,8 +3045,8 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 auto rBitWide = rTy->getBitWidth();
                 if (lBitWide != rBitWide) {
                     // 如果位宽不同，进行类型转换
-					CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, lTy);
-					node->blockInsts.addInst(castInst);
+                    CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, lTy);
+                    node->blockInsts.addInst(castInst);
                     right->val = castInst;
                 }
             }
@@ -3849,7 +3308,7 @@ bool IRGenerator::evaluateConstExpr(ast_node * root, double * result)
             std::vector<int> dims;
             for (size_t i = 1; i < root->sons.size(); ++i) {
                 double val;
-                if (!evaluateConstExpr(root->sons[i], &val))
+                if (!evaluateConstExpr(root->sons[i], &val)) // 递归处理，常量表达式的数组访问的下标也可能是表达式
                     return false;
                 dims.push_back(static_cast<int>(val));
             }
@@ -3863,7 +3322,7 @@ bool IRGenerator::evaluateConstExpr(ast_node * root, double * result)
             if (root->sons.size() != 1)
                 return false;
             double operand;
-            if (!evaluateConstExpr(root->sons[0], &operand))
+            if (!evaluateConstExpr(root->sons[0], &operand)) // 递归调用，算出当前运算符之后式子的值
                 return false;
 
             switch (root->node_type) {
@@ -3961,15 +3420,12 @@ bool IRGenerator::init_array_flattened(
     // 2. 拉平成一维值数组
     std::vector<ast_node *> * flat_list = new std::vector<ast_node *>;
     flatten_init_node(initNode, dims, 0, *flat_list);
-    std::cout << (int) flat_list->size() << std::endl;
     // 3. 填充 IR
     for (int i = 0; i < total_elems; ++i) {
         ast_node * val_node = (i < flat_list->size()) ? (*flat_list)[i] : nullptr;
-        // std::cout<<"node val"<< node
 
         Value * val = nullptr;
         if (val_node) {
-            // std::cout << "val_node->gettype: " << (int) val_node->node_type << std::endl;
             if (!val_node->val) {
                 ir_visit_ast_node(val_node);                        // 确保 val_node->val 被正确设置
                 initNode->blockInsts.addInst(val_node->blockInsts); // 添加子节点的指令到当前节点 //
@@ -3987,7 +3443,6 @@ bool IRGenerator::init_array_flattened(
                     return false;
                 }
             }
-            // std::cout << "val_node->gettype2: " << (int) val_node->node_type << std::endl;
             val = val_node->val ? val_node->val : nullptr;
 
             if (!val) {
@@ -4051,7 +3506,6 @@ bool IRGenerator::init_array_flattened(
         Value * addr = gepPtr;
         // addr->setType(gepType); // 确保地址的类型正确
 
-        // std::cout << "here: " << addr->getType()->toString() << std::endl;
         //  5. 生成 store 指令
         StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), addr, val);
         // addr->setIRName(std::to_string(addr->getIntVal()));
@@ -4247,34 +3701,26 @@ bool IRGenerator::gen_condition_branch(
     }
 
     ast_operator_type op = cond_node->node_type; // 获取操作符类型
-    // --- 1. Check for short-circuiting operators (&&, ||) ---
+    // 1. 检测是否为||或&&，只有and和or需要短路
     if (op == ast_operator_type::AST_OP_AND || op == ast_operator_type::AST_OP_OR) {
-        // std::cout << "Handling short-circuiting!" << std::endl;
         ast_node * left_node = cond_node->sons[0];
         ast_node * right_node = cond_node->sons[1];
 
         if (op == ast_operator_type::AST_OP_AND) {
-            // Short-circuit for && (a && b)
-            // Logic: Evaluate a. If a is true, evaluate b. If a is false, jump to false_target.
-            // a && b branches to true_target if (a is true AND b is true)
-            // a && b branches to false_target if (a is false OR (a is true AND b is false))
+            // 处理and短路情况，对于and，左值为true需要判断右值，左值为false则直接跳转至if-else的false标签
 
-            // Create a label to evaluate the right side (b) if the left side (a) is true
+            // 标签，标注处理右值的代码块的入口
             LabelInstruction * eval_right_label = new LabelInstruction(currentFunc);
 
-            // Recursively generate IR for the left operand (a)
-            // If 'a' is true, jump to eval_right_label. If 'a' is false, jump directly to the overall false_target.
+            // 递归调用处理左值短路
             if (!gen_condition_branch(left_node, eval_right_label, false_target, current_block_insts)) {
                 std::cerr << "Error generating left operand for &&." << std::endl;
                 return false;
             }
 
-            // Add the label for the basic block that evaluates the right side
             current_block_insts.addInst(eval_right_label);
 
-            // Recursively generate IR for the right operand (b)
-            // If 'b' is true, jump to the overall true_target. If 'b' is false, jump to the overall false_target.
-            // Note: This block is only reached if 'a' was true.
+            // 递归调用处理右值短路，右侧true则跳转至if-else true，否则跳转至if-else false
             if (!gen_condition_branch(right_node, true_target, false_target, current_block_insts)) {
                 std::cerr << "Error generating right operand for &&." << std::endl;
                 return false;
@@ -4282,61 +3728,46 @@ bool IRGenerator::gen_condition_branch(
             return true; // Successfully generated IR for && short-circuiting
 
         } else if (op == ast_operator_type::AST_OP_OR) {
-            // Short-circuit for || (a || b)
-            // Logic: Evaluate a. If a is false, evaluate b. If a is true, jump to true_target.
-            // a || b branches to true_target if (a is true OR (a is false AND b is true))
-            // a || b branches to false_target if (a is false AND b is false)
-
-            // Create a label to evaluate the right side (b) if the left side (a) is false
+            // 与处理and相似，不同为左值为true，直接跳转至if-else true，否则判断右值
             LabelInstruction * eval_right_label = new LabelInstruction(currentFunc);
 
-            // Recursively generate IR for the left operand (a)
-            // If 'a' is true, jump directly to the overall true_target. If 'a' is false, jump to eval_right_label.
+            // 递归处理左值短路
             if (!gen_condition_branch(left_node, true_target, eval_right_label, current_block_insts)) {
                 std::cerr << "Error generating left operand for ||." << std::endl;
                 return false;
             }
 
-            // Add the label for the basic block that evaluates the right side
             current_block_insts.addInst(eval_right_label);
 
-            // Recursively generate IR for the right operand (b)
-            // If 'b' is true, jump to the overall true_target. If 'b' is false, jump to the overall false_target.
-            // Note: This block is only reached if 'a' was false.
+            // 递归处理右值短路
             if (!gen_condition_branch(right_node, true_target, false_target, current_block_insts)) {
                 std::cerr << "Error generating right operand for ||." << std::endl;
                 return false;
             }
 
-            return true; // Successfully generated IR for || short-circuiting
+            return true;
         }
-        // Fall through if it's another binary op (like comparison)
     }
-    // --- 2. Check for logical NOT (!) ---
+    // 2. 处理 非 逻辑
     else if (op == ast_operator_type::AST_OP_NOT) {
         ast_node * operand_node = cond_node->sons[0];
-        // expr is true when expr is false, and false when expr is true.
-        // So, recursively generate IR for 'expr' but swap the true and false targets.
+        // 真则假，假则真
         return gen_condition_branch(operand_node, false_target, true_target, current_block_insts);
-        // Fall through for other unary ops
     }
 
-    // --- 3. Handle other condition types (comparisons, variables, literals, calls returning value) ---
-    // For these, evaluate the expression to get a single Value, then branch based on that value.
-
-    ast_node * cond_eval_result = ir_visit_ast_node(cond_node); // Generate IR for the condition expression
+    // 3. 处理除了&&或||之外的基础逻辑表达式
+    ast_node * cond_eval_result = ir_visit_ast_node(cond_node);
     if (!cond_eval_result || !cond_eval_result->val) {
         std::cerr << "Error: Condition expression failed to generate value." << std::endl;
         return false;
     }
-    current_block_insts.addInst(cond_eval_result->blockInsts); // Add the evaluation instructions to the current block
+    current_block_insts.addInst(cond_eval_result->blockInsts);
 
     Value * cond_val = cond_eval_result->val;
     Type *  cond_type = cond_val->getType();
 
-    // --- 4. Ensure the condition value is of type i1 (boolean) ---
-    // SysY treats non-zero int/float as true, zero as false. Need to convert if necessary.
-    Value * branch_cond_val = nullptr; // This will be the final i1 value used for branching
+    // 4. 确保条件值类型为i1
+    Value * branch_cond_val = nullptr; // 最终条件值
 
     if (cond_type->isInt1Byte()) {
         branch_cond_val = cond_val;
@@ -4346,31 +3777,23 @@ bool IRGenerator::gen_condition_branch(
             std::cerr << "Internal Error: Failed to get zero constant for integer type." << std::endl;
             return false;
         }
-        // Create the icmp ne instruction: cond_val != 0
-        // Use the IcmpInstruction constructor.
+        // 新建icmp ne instruction: cond_val != 0
         Instruction * cmp_inst =
             new IcmpInstruction(currentFunc, IRInstOperator::IRINST_OP_NEQ_I, cond_val, zero_const);
         current_block_insts.addInst(cmp_inst);
-        branch_cond_val = static_cast<Value *>(cmp_inst); // The IcmpInstruction itself is the i1 Value result
-    } else if (cond_type->isFloatType()) {                // If it's a float type (like float/f32)
-        // Convert non-zero float to i1 true, zero to i1 false (value != 0.0)
-        // Use FcmpInstruction with 'une' predicate for float not equal.
-        Constant * zero_const = new ConstFloat(0.0f); // Assuming ConstantFloat::get(0.0f) returns a Value*
+        branch_cond_val = static_cast<Value *>(cmp_inst); // 用icmp将i32与0比较，得出类型为i1的最终条件值
+    } else if (cond_type->isFloatType()) {
+        Constant * zero_const = new ConstFloat(0.0f);
         if (!zero_const) {
             std::cerr << "Internal Error: Failed to get zero constant for float type." << std::endl;
             return false;
         }
-        // Create the fcmp une instruction: cond_val != 0.0
-        Instruction * fcmp_inst = new FcmpInstruction(
-            currentFunc,
-            IRInstOperator::IRINST_OP_NEQ_F,
-            cond_val,
-            zero_const); // Using NEQ_F maps to 'une' in Fcmp toString
+        Instruction * fcmp_inst =
+            new FcmpInstruction(currentFunc, IRInstOperator::IRINST_OP_NEQ_F, cond_val, zero_const);
         current_block_insts.addInst(fcmp_inst);
-        branch_cond_val = static_cast<Value *>(fcmp_inst); // The FcmpInstruction itself is the i1 Value result
-
+        branch_cond_val = static_cast<Value *>(fcmp_inst);
     } else {
-        // Unsupported type for a condition
+        // 不被支持作为条件的类型
         std::cerr << "Error: Invalid type for condition expression: " << cond_type->toString() << std::endl;
         return false;
     }
@@ -4380,15 +3803,12 @@ bool IRGenerator::gen_condition_branch(
         return false;
     }
 
-    // --- 5. Add the final conditional branch based on the resulting i1 value ---
-    // ConditionalInstruction(Function* func, Value* condition, LabelInstruction* true_target, LabelInstruction*
-    // false_target)
+    // 5. 添加条件分支指令
     current_block_insts.addInst(new ConditionalInstruction(currentFunc, branch_cond_val, true_target, false_target));
 
-    return true; // Successfully generated IR for non-short-circuiting condition
+    return true;
 }
 
-// TODO:验证获取常量是否正常
 bool IRGenerator::getConstVal(std::string name, double * val)
 {
     Value * var = module->findVarValue(name);
