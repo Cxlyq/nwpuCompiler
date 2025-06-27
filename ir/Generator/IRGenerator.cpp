@@ -1402,6 +1402,14 @@ bool IRGenerator::ir_eq(ast_node * node)
 
     if (lTyID != rTyID) {
         if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
+            auto lTy = (IntegerType *) left->val->getType();
+            auto lBitWidth = lTy->getBitWidth();
+            if (lBitWidth < 32) {
+                CastInstruction * cast1Bit =
+                    new CastInstruction(module->getCurrentFunction(), lhs, IntegerType::getTypeInt());
+                node->blockInsts.addInst(cast1Bit);
+                lhs = cast1Bit;
+            }
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
@@ -1504,6 +1512,14 @@ bool IRGenerator::ir_neq(ast_node * node)
 
     if (lTyID != rTyID) {
         if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
+            auto lTy = (IntegerType *) left->val->getType();
+            auto lBitWidth = lTy->getBitWidth();
+            if (lBitWidth < 32) {
+                CastInstruction * cast1Bit =
+                    new CastInstruction(module->getCurrentFunction(), lhs, IntegerType::getTypeInt());
+                node->blockInsts.addInst(cast1Bit);
+                lhs = cast1Bit;
+            }
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
@@ -1607,6 +1623,14 @@ bool IRGenerator::ir_ge(ast_node * node)
 
     if (lTyID != rTyID) {
         if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
+            auto lTy = (IntegerType *) left->val->getType();
+            auto lBitWidth = lTy->getBitWidth();
+            if (lBitWidth < 32) {
+                CastInstruction * cast1Bit =
+                    new CastInstruction(module->getCurrentFunction(), lhs, IntegerType::getTypeInt());
+                node->blockInsts.addInst(cast1Bit);
+                lhs = cast1Bit;
+            }
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
@@ -1704,6 +1728,14 @@ bool IRGenerator::ir_le(ast_node * node)
 
     if (lTyID != rTyID) {
         if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
+            auto lTy = (IntegerType *) left->val->getType();
+            auto lBitWidth = lTy->getBitWidth();
+            if (lBitWidth < 32) {
+                CastInstruction * cast1Bit =
+                    new CastInstruction(module->getCurrentFunction(), lhs, IntegerType::getTypeInt());
+                node->blockInsts.addInst(cast1Bit);
+                lhs = cast1Bit;
+            }
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
@@ -1808,6 +1840,14 @@ bool IRGenerator::ir_gne(ast_node * node)
 
     if (lTyID != rTyID) {
         if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
+            auto lTy = (IntegerType *) left->val->getType();
+            auto lBitWidth = lTy->getBitWidth();
+            if (lBitWidth < 32) {
+                CastInstruction * cast1Bit =
+                    new CastInstruction(module->getCurrentFunction(), lhs, IntegerType::getTypeInt());
+                node->blockInsts.addInst(cast1Bit);
+                lhs = cast1Bit;
+            }
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
@@ -1910,6 +1950,14 @@ bool IRGenerator::ir_lne(ast_node * node)
 
     if (lTyID != rTyID) {
         if ((lTyID == Type::IntegerTyID) && (rTyID == Type::FloatTyID)) {
+            auto lTy = (IntegerType *) left->val->getType();
+            auto lBitWidth = lTy->getBitWidth();
+            if (lBitWidth < 32) {
+                CastInstruction * cast1Bit =
+                    new CastInstruction(module->getCurrentFunction(), lhs, IntegerType::getTypeInt());
+                node->blockInsts.addInst(cast1Bit);
+                lhs = cast1Bit;
+            }
             CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), lhs, FloatType::getType());
             node->blockInsts.addInst(castInst);
             lhs = castInst;
@@ -2846,7 +2894,7 @@ bool IRGenerator::ir_array_access(ast_node * node)
         // gepPtr->setType(loadInst->getType()->getPointeeType())                   //
         gepType = gepPtr->getType(); // 更新 gepType 为加载后的类型
                                      // 获取指向的类型
-        std::cout << "gepPtr(ptr) type: " << gepPtr->getType()->toString() << std::endl;
+        // std::cout << "gepPtr(ptr) type: " << gepPtr->getType()->toString() << std::endl;
     }
 
     // 逐层调用getelementptr
@@ -3108,7 +3156,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
             // gepPtr->setType(loadInst->getType()->getPointeeType())                   //
             gepType = gepPtr->getType(); // 更新 gepType 为加载后的类型
                                          // 获取指向的类型
-            std::cout << "gepPtr(ptr) type: " << gepPtr->getType()->toString() << std::endl; // 逐层调用getelementptr
+            // std::cout << "gepPtr(ptr) type: " << gepPtr->getType()->toString() << std::endl; // 逐层调用getelementptr
 
             for (int i = 0; i < accessDims; ++i) {
                 // 先处理索引表达式，转换成Value*
