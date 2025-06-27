@@ -181,7 +181,6 @@ void GraphColoringRegisterAllocator::assignColors(
     while (!stack.empty()) {
         Value * node = stack.top();
         stack.pop();
-        // std::cout << "Assigning color to variable " << node->getIRName() << "\n";
 
         std::unordered_set<int> usedColors;
         for (Value * neighbor: graph.at(node)) { // <<< 改为当前图graph

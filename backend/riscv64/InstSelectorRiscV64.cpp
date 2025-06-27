@@ -847,6 +847,15 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                 if (floatIndex < 8) {
                     int float_reg_no = 42 + floatIndex; // 42号为fa0
                     // TODO:[优化]在非全栈模式时需要对被占用的栈保护寄存器压栈
+                    if (arg->getRegId() >= 42 && arg->getRegId() < float_reg_no) {
+                        int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
+
+                        iloc.store_var(arg->getRegId(), arg, addr_regno);
+                        simpleRegisterAllocator.free(addr_regno);
+                    } else if (arg->getRegId() == float_reg_no) {
+                        floatIndex++;
+                        continue;
+                    }
                     // if(PlatformRiscV64::floatRegVal[float_reg_no]->)
                     simpleRegisterAllocator.Allocate(float_reg_no);
                     int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
@@ -861,13 +870,23 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                     newVal->setMemoryAddr(RISCV64_SP_REG_NO, esp);
                     esp += 4; // 浮点数 4 字节
                     Instruction * storeInst = new StoreInstruction(func, newVal, arg);
-                    translate_assign(storeInst);
+                    translate_store(storeInst);
                     delete storeInst;
                     // floatIndex++;
                 }
             } else if (arg->getType()->isInt32Type()) {
                 if (intIndex < 8) {
                     int int_reg_no = 10 + intIndex; // 10号为a0
+                    std::cout << arg->getRegId() << endl;
+                    if (arg->getRegId() >= 10 && arg->getRegId() < int_reg_no) {
+                        int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
+
+                        iloc.store_var(arg->getRegId(), arg, addr_regno);
+                        simpleRegisterAllocator.free(addr_regno);
+                    } else if (arg->getRegId() == int_reg_no) {
+                        intIndex++;
+                        continue;
+                    }
                     simpleRegisterAllocator.Allocate(int_reg_no);
                     int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
                     std::cout << "[InstSelectorRiscV64::translate_call]: call " << callInst->getName() << "(): int arg "
@@ -881,7 +900,7 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                     newVal->setMemoryAddr(RISCV64_SP_REG_NO, esp);
                     esp += 4;
                     Instruction * storeInst = new StoreInstruction(func, newVal, arg);
-                    translate_assign(storeInst);
+                    translate_store(storeInst);
                     delete storeInst;
                     // intIndex++;
                 }
@@ -904,7 +923,7 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                     newVal->setMemoryAddr(RISCV64_SP_REG_NO, esp);
                     esp += 8; // 指针默认按 8 字节处理
                     Instruction * storeInst = new StoreInstruction(func, newVal, arg);
-                    translate_assign(storeInst);
+                    translate_store(storeInst);
                     delete storeInst;
                 }
             } else {
@@ -1042,6 +1061,8 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
         } else {
             int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
             int32_t data_regno = simpleRegisterAllocator.AllocateTempInt();
+            std::cout << data_regno << endl;
+            std::cout << addr_regno << endl;
 
             iloc.load_imm(data_regno, ConstIntSrc->getVal());
 
@@ -1218,7 +1239,7 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
         int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
         //  data_reg<- src
         iloc.load_var(dst_regId, src, addr_regno);
-        std::cout<<"91\n";
+        std::cout << "91\n";
         // iloc.store_var(dst_regId, dst, addr_regno);
         simpleRegisterAllocator.free(addr_regno);
     }
