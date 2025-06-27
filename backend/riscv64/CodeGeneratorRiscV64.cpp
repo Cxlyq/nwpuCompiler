@@ -47,8 +47,8 @@ void CodeGeneratorRiscV64::genHeader()
 {
     // 设置 RISC-V 架构：64-bit, 包含整数、乘法、原子、浮点、压缩指令扩展
     fprintf(fp, ".text\n");
-    fprintf(fp, ".attribute 4, 16\n"); // 16 表示 lp64f ABI，具体值可能因工具链略有差异
-    fprintf(fp, ".attribute 5, \"rv64i2p0_m2p0_a2p0_f2p0_c2p0\"\n");
+    fprintf(fp, ".attribute 4, 15\n"); // lp64d ABI，或者根据你的工具链确认
+    fprintf(fp, ".attribute 5, \"rv64i2p0_m2p0_a2p0_f2p0_d2p0_c2p0\"\n"); // 包含 d 扩展
     // TODO 是否需要输出源文件
     //  fprintf(fp, ".file \"generated_code.c\"\n");
 }
