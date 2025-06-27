@@ -942,7 +942,17 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
             return;
         }
         if (dst_regId != -1) {
-            iloc.load_imm(dst_regId, ConstIntSrc->getVal());
+            if (Instanceof(GEPDst, GetElementPtrInst *, dst)) {
+                int32_t data_regno = simpleRegisterAllocator.AllocateTempInt();
+
+                iloc.load_imm(data_regno, ConstIntSrc->getVal());
+
+                iloc.store_var(data_regno, GEPDst, dst_regId);
+
+                simpleRegisterAllocator.free(data_regno);
+            } else {
+                iloc.load_imm(dst_regId, ConstIntSrc->getVal());
+            }
         } else {
             int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
             int32_t data_regno = simpleRegisterAllocator.AllocateTempInt();
@@ -1147,12 +1157,21 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
     // 需要注意的是，GEP指令的结果是一个指针类型的
     // 变量，因此需要将结果存储到一个寄存器或内存变量
     // 中
-    Value * base = inst->getOperand(0);
+    Instanceof(gepInst, GetElementPtrInst *, inst);
+    Value * base = gepInst->getOperand(0);
     std::cout << 22 << endl;
-
+    int index = 0; // 数组偏移
+    int OperandNum = gepInst->getOperandsNum();
     // Value * index0 = inst->getOperand(1); // 通常是常量 0
-    Instanceof(index1, Instruction *, inst->getOperand(2)); // 数组偏移量
-    Instanceof(index2, ConstInt *, index1->getOperand(0));
+    if (Instanceof(index1, ConstInt *, gepInst->getOperand(OperandNum - 1))) {
+        index = index1->getVal();
+    } else if (Instanceof(index1, Instruction *, gepInst->getOperand(OperandNum - 1))) {
+        if (Instanceof(index1_Operand, ConstInt *, index1->getOperand(0))) {
+            index = index1_Operand->getVal();
+        }
+    } else {
+        std::cout << "[InstSelectorRiscV64::translate_gep] src is error\n";
+    }
 
     std::cout << 23 << endl;
 
@@ -1165,19 +1184,47 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
             minic_log(LOG_ERROR, "BUG");
         }
         // ---------- Step 2: 处理偏移量 index1 ----------
-        int elementSize = base->getType()->getBaseElementType()->getSize(); // 比如 i32 -> 4
+        int elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
         int offset = 0;
-        offset = (index2->getVal() * elementSize) + baseOffset;
-        std::cout << "index1->getVal():" << index2->getVal() << endl;
+        offset = (index * elementSize) + baseOffset;
+        std::cout << "index:" << index << endl;
         std::cout << "baseOffset:" << baseOffset << endl;
         std::cout << "offset:" << offset << endl;
-        inst->setMemoryAddr(baseRegId, offset);
+        gepInst->setAddressingInfo(baseRegId, offset);
     } else if (Instanceof(base_gv, GlobalVariable *, base)) {
-        base_gv->getRegId();
-    } else if (Instanceof(base_gep, GetElementPtrInst *, base)) {
+        // 目标寄存器：假设你用 getRegId 获取目标寄存器编号
+        int         resultRegId = simpleRegisterAllocator.Allocate(gepInst);
+        int         tmpRegId = simpleRegisterAllocator.AllocateTempInt(); // 假设是 a0，编号为 10
+        std::string label = base_gv->getName();                           // 比如 "a"
+        // 输出 lui a0, %hi(a)
+        iloc.inst("lui", PlatformRiscV64::regName[tmpRegId], "%hi(" + label + ")", "");
 
+        // 输出 addi a0, a0, %lo(a)
+        iloc.inst(
+            "addi",
+            PlatformRiscV64::regName[resultRegId],
+            PlatformRiscV64::regName[tmpRegId],
+            "%lo(" + label + ")");
+
+        int elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
+        int offset = 0;
+        offset = (index * elementSize);
+        gepInst->setAddressingInfo(resultRegId, offset);
+        simpleRegisterAllocator.free(tmpRegId);
+    } else if (Instanceof(base_gep, GetElementPtrInst *, base)) {
+        int32_t baseRegId = base_gep->getBaseRegId();
+        int64_t baseOffset = base_gep->getOffset();
+        // ---------- Step 2: 处理偏移量 index1 ----------
+        int elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
+        int offset = 0;
+        offset = (index * elementSize) + baseOffset;
+        std::cout << "index:" << index << endl;
+        std::cout << "baseOffset:" << baseOffset << endl;
+        std::cout << "offset:" << offset << endl;
+        gepInst->setAddressingInfo(baseRegId, offset);
     } else {
         std::cout << "[InstSelectorRiscV64::translate_gep] src is not a Global/Local variable\n";
     }
     std::cout << 21 << endl;
+    inst->clearOperands();
 }
