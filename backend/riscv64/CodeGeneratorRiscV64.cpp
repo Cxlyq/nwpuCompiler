@@ -554,7 +554,6 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
             // 64位RISC平台按照4字节的大小整数倍分配局部变量
             size = (size + 3) & ~3;
-
             // 累计当前作用域大小
             sp_esp += size;
 
@@ -562,7 +561,6 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
             // 若立即数满足要求，可采用基址寄存器+立即数变量的方式访问变量
             // 否则，需要先把偏移量放到寄存器中，然后机制寄存器+偏移寄存器来寻址
             // 之后需要对所有使用到该Value的指令在寄存器分配前要变换。
-
             // 局部变量偏移设置
             varOffsets.push_back({var, sp_esp, size});
         }
@@ -578,7 +576,6 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
             // 64位RISC平台按照4字节的大小整数倍分配局部变量
             size = (size + 3) & ~3;
-
             // 累计当前作用域大小
             sp_esp += size;
 
@@ -586,7 +583,6 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
             // 若立即数满足要求，可采用基址寄存器+立即数变量的方式访问变量
             // 否则，需要先把偏移量放到寄存器中，然后机制寄存器+偏移寄存器来寻址
             // 之后需要对所有使用到该Value的指令在寄存器分配前要变换。
-
             // 局部变量偏移设置
             varOffsets.push_back({inst, sp_esp, size});
         }
@@ -602,7 +598,7 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
     // 设置所有变量的地址（相对于 FP）
     for (auto & entry: varOffsets) {
-        int offsetFromFp = entry.offsetFromSp - sp_esp;
+        int offsetFromFp = -entry.offsetFromSp;
 
         if (auto var = dynamic_cast<LocalVariable *>(entry.value)) {
             var->setMemoryAddr(RISCV64_FP_REG_NO, offsetFromFp);

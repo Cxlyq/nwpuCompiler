@@ -1220,7 +1220,7 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
         //  data_reg<- src
         iloc.load_var(dst_regId, src, addr_regno);
         std::cout<<"91\n";
-        iloc.store_var(dst_regId, dst, addr_regno);
+        // iloc.store_var(dst_regId, dst, addr_regno);
         simpleRegisterAllocator.free(addr_regno);
     }
     inst->removeOperand(0);
