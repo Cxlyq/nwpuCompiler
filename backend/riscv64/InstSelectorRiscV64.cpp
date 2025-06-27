@@ -1215,7 +1215,6 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
         }
     } else {
         // 源操作数是内存变量，则需要先load到寄存器中 // FIXME:考虑溢出情况
-        
         int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
         //  data_reg<- src
         iloc.load_var(dst_regId, src, addr_regno);

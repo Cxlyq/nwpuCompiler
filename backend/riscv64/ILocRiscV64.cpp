@@ -513,7 +513,6 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
         // 寄存器变量
         store_var(src_reg_no, localVar);
     } else if (Instanceof(instVar, Instruction *, dest_var)) {
-        std::cout<<"92\n";
         store_var(src_reg_no, instVar);
     } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
         store_var(src_reg_no, globalVar, tmp_reg_no);
