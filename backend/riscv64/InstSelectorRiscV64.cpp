@@ -784,11 +784,10 @@ void InstSelectorRiscV64::translate_assign(Instruction * inst)
 void InstSelectorRiscV64::translate_call(Instruction * inst)
 {
     FuncCallInstruction * callInst = dynamic_cast<FuncCallInstruction *>(inst);
-
+    std::cout << "[InstSelectorRiscV64::translate_call]: call " << callInst->getName() << "() translate begins\n";
     int32_t operandNum = callInst->getOperandsNum();
-
+    std::cout << "[InstSelectorRiscV64::translate_call]: argument NUM: " << operandNum << "\n";
     // if (operandNum != realArgCount) {
-
     //     // 两者不一致 也可能没有ARG指令，正常
     //     if (realArgCount != 0) {
 
@@ -801,7 +800,6 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
 
         // 前八个的后面参数采用栈传递
         int esp = 0;
-
         for (int32_t k = 0; k < operandNum; k++) {
             auto arg = callInst->getOperand(k);
 
@@ -810,8 +808,10 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                     int float_reg_no = 42 + floatIndex; // 42号为fa0
                     // TODO:[优化]在非全栈模式时需要对被占用的栈保护寄存器压栈
                     // if(PlatformRiscV64::floatRegVal[float_reg_no]->)
-                    simpleRegisterAllocator.Allocate(float_reg_no); 
-                    int tmp_reg_no=simpleRegisterAllocator.AllocateTempInt();
+                    simpleRegisterAllocator.Allocate(float_reg_no);
+                    int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+                    std::cout << "[InstSelectorRiscV64::translate_call]: call " << callInst->getName()
+                              << "(): float arg " << floatIndex << " allocating, arg name:" << arg->getName() << "\n";
                     iloc.load_var(float_reg_no, arg, tmp_reg_no);
                     simpleRegisterAllocator.free(tmp_reg_no);
                     floatIndex++;
@@ -823,13 +823,15 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                     Instruction * storeInst = new StoreInstruction(func, newVal, arg);
                     translate_assign(storeInst);
                     delete storeInst;
-                    //floatIndex++;
+                    // floatIndex++;
                 }
-            } else if(arg->getType()->isInt32Type()) {
+            } else if (arg->getType()->isInt32Type()) {
                 if (intIndex < 8) {
                     int int_reg_no = 10 + intIndex; // 10号为a0
                     simpleRegisterAllocator.Allocate(int_reg_no);
                     int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+                    std::cout << "[InstSelectorRiscV64::translate_call]: call " << callInst->getName() << "(): int arg "
+                              << intIndex << " allocating, arg name:" << arg->getName() << "\n";
                     iloc.load_var(int_reg_no, arg, tmp_reg_no);
                     simpleRegisterAllocator.free(tmp_reg_no);
                     intIndex++;
@@ -841,23 +843,24 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                     Instruction * storeInst = new StoreInstruction(func, newVal, arg);
                     translate_assign(storeInst);
                     delete storeInst;
-                    //intIndex++;
+                    // intIndex++;
                 }
             } else if (arg->getType()->isPointerType()) {
                 // TODO:[数组实参]完善这种情况
-                std::cout<<"尚未完成数组作为实参的函数调用\n";
+                std::cout << "尚未完成数组作为实参的函数调用\n";
                 if (intIndex < 8) {
                 } else {
-                    
-				}
+                }
             } else {
-                std::cout<<"函数调用参数非Array/Int/Float";
-			}
+                std::cout << "函数调用参数非Array/Int/Float";
+            }
         }
     }
-
+    std::cout << "[InstSelectorRiscV64::translate_call]: finish alloc arguments"
+              << "\n";
     iloc.call_fun(callInst->getName());
-
+    std::cout << "[InstSelectorRiscV64::translate_call]: call translated"
+              << "\n";
     for (int i = 1; i < intIndex; ++i) {
         simpleRegisterAllocator.free(10 + i); //
     }
@@ -874,16 +877,24 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
             int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
             iloc.store_var(10, callInst, tmp_reg_no);
             simpleRegisterAllocator.free(tmp_reg_no);
+            int     regid = -1;
+            int64_t offset = -1;
+            callInst->getMemoryAddr(&regid, &offset);
+            std::cout << "[InstSelectorRiscV64::translate_call]: call " << callInst->getName() << "(): return int "
+                      << callInst->getIRName() << " storing, target mem regid+offset: " << regid << "+" << offset
+                      << "\n";
+
         } else {
-            std::cout<<"调用函数实际返回值类型不是int32/float\n";
-		}
+            std::cout << "调用函数实际返回值类型不是int32/float\n";
+        }
     }
     simpleRegisterAllocator.free(10);
     simpleRegisterAllocator.free(42);
 
     callInst->clearOperands();
+    std::cout << "[InstSelectorRiscV64::translate_call]: call " << callInst->getName() << " end.\n";
     // 函数调用后清零，使得下次可正常统计
-    //realArgCount = 0;
+    // realArgCount = 0;
 }
 
 /// @brief 实参指令翻译成RISCV64汇编
@@ -1102,19 +1113,14 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
               << dst->getIRName() << "\n";
     if (src_regId != -1) {
         // 源操作数是寄存器，则直接存储到寄存器中
-        std::cout << "0\n";
         // iloc.mov_reg(dst_regId, src_regId); // XXX: 考虑修改函数，看是否需要额外指派地址寄存器
         iloc.store_var(src_regId, dst, -1);
-        std::cout << "01\n";
     } else {
         // 源操作数是内存变量，则需要先load到寄存器中 // FIXME:考虑溢出情况
         int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
         //  data_reg<- src
-        std::cout << "1\n";
         iloc.load_var(dst_regId, src, addr_regno);
-        std::cout << "10\n";
         iloc.store_var(dst_regId, dst, addr_regno);
-        std::cout << "11\n";
         simpleRegisterAllocator.free(addr_regno);
     }
     inst->removeOperand(0);
@@ -1177,9 +1183,8 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
     // 中
     Instanceof(gepInst, GetElementPtrInst *, inst);
     Value * base = gepInst->getOperand(0);
-    std::cout << 22 << endl;
-    int index = 0; // 数组偏移
-    int OperandNum = gepInst->getOperandsNum();
+    int     index = 0; // 数组偏移
+    int     OperandNum = gepInst->getOperandsNum();
     // Value * index0 = inst->getOperand(1); // 通常是常量 0
     if (Instanceof(index1, ConstInt *, gepInst->getOperand(OperandNum - 1))) {
         index = index1->getVal();
@@ -1190,8 +1195,6 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
     } else {
         std::cout << "[InstSelectorRiscV64::translate_gep] src is error\n";
     }
-
-    std::cout << 23 << endl;
 
     // ---------- Step 1: 处理 base 地址 ----------
     if (Instanceof(base_s0, LocalVariable *, base)) {
@@ -1243,6 +1246,5 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
     } else {
         std::cout << "[InstSelectorRiscV64::translate_gep] src is not a Global/Local variable\n";
     }
-    std::cout << 21 << endl;
     inst->clearOperands();
 }

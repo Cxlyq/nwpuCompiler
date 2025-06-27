@@ -465,7 +465,6 @@ void ILocRiscV64::store_var(int src_reg_no, GetElementPtrInst * dest_var, int ad
 void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
 {
     // 被保存目标变量肯定不是常量
-    std::cout << 30 << std::endl;
 
     if (Instanceof(GEP, GetElementPtrInst *, dest_var)) {
         Value * base = GEP->getOperand(0); // GEP 的 base 是数组或结构体指针
@@ -473,11 +472,8 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
             localbase->getRegId();
             store_var(src_reg_no, GEP);
         } else if (Instanceof(globalbase, GlobalVariable *, base)) {
-            std::cout << 31 << std::endl;
             globalbase->getRegId();
-            std::cout << 32 << std::endl;
             store_var(src_reg_no, GEP, tmp_reg_no);
-            std::cout << 33 << std::endl;
         } else if (Instanceof(gepbase, GetElementPtrInst *, base)) {
             gepbase->getRegId();
             store_var(src_reg_no, GEP);
@@ -508,11 +504,8 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int tmp_reg_no)
             localbase->getRegId();
             load_var(rs_reg_no, GEP);
         } else if (Instanceof(globalbase, GlobalVariable *, base)) {
-            std::cout << 31 << std::endl;
             globalbase->getRegId();
-            std::cout << 32 << std::endl;
             load_var(rs_reg_no, GEP, tmp_reg_no);
-            std::cout << 33 << std::endl;
         } else if (Instanceof(gepbase, GetElementPtrInst *, base)) {
             gepbase->getRegId();
             load_var(rs_reg_no, GEP);
@@ -549,9 +542,12 @@ void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var)
         }
     } else {
         // 栈+偏移的寻址方式
-        int32_t var_baseRegId = src_var->getRegId();
-        int64_t var_offset = src_var->getRegId();
-
+        int32_t var_baseRegId = -1;
+        int64_t var_offset = -1;
+        bool    result = src_var->getMemoryAddr(&var_baseRegId, &var_offset);
+        if (!result) {
+            minic_log(LOG_ERROR, "BUG");
+        }
         load_base(rs_reg_no, var_baseRegId, var_offset);
     }
 }
@@ -708,7 +704,7 @@ void ILocRiscV64::allocStack(Function * func)
 /// @param fun
 void ILocRiscV64::call_fun(std::string name)
 {
-    emit("jal", "ra", name);
+    emit("call", name);
 }
 
 /// @brief NOP操作
