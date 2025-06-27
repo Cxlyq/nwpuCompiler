@@ -368,24 +368,7 @@ void CodeGeneratorRiscV64::adjustFormalParamInsts(Function * func)
 {
     // 函数形参的前四个实参值采用的是寄存器传值，后面栈传递
 
-    auto & params = func->getParams();
 
-    // 形参的前四个通过寄存器来传值R0-R3
-    for (int k = 0; k < (int) params.size() && k <= 7; k++) {
-
-        // 前四个设置分配寄存器
-        params[k]->setRegId(k);
-    }
-
-    // 根据ARM版C语言的调用约定，除前8个外的实参进行值传递，逆序入栈
-    int64_t fp_esp = func->getProtectedReg().size() * 8;
-    for (int k = 8; k < (int) params.size(); k++) {
-
-        params[k]->setMemoryAddr(RISCV64_FP_REG_NO, fp_esp);
-
-        // 增加4字节，目前只支持int类型
-        fp_esp += params[k]->getType()->getSize();
-    }
 }
 
 /// @brief 寄存器分配前对函数内的指令进行调整，以便方便寄存器分配
@@ -513,15 +496,48 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
     // 这里对临时变量和局部变量都在栈上进行分配，采用FP+偏移的寻址方式，偏移为负数
 
-    int32_t sp_esp = 16;
+    int64_t sp_esp = func->getProtectedReg().size() * 8;
+
+    // auto & params = func->getParams();
+
+    // 形参的前8个定点通过寄存器来传值a0-a7
+    // int kint = 0;
+    // int kfloat = 0;
+    // // 根据RISC-V版C语言的调用约定，除前8个外的实参进行值传递，逆序入栈
+    // int64_t fp_esp = func->getProtectedReg().size() * 8;
+    // for (int k = 0; k < (int) params.size(); k++) {
+    //     if (params[k]->getType()->isInt32Type()) {
+    //         if (kint >= 8) {
+    //             params[k]->setMemoryAddr(RISCV64_FP_REG_NO, fp_esp);
+    //             fp_esp += params[k]->getType()->getSize();
+    //         } else {
+    //             params[k]->setRegId(10 + kint);
+    //             kint++;
+    //         }
+    //     } else if (params[k]->getType()->isFloatType()) {
+    //         if (kfloat >= 8) {
+    //             params[k]->setMemoryAddr(RISCV64_FP_REG_NO, fp_esp);
+    //             fp_esp += params[k]->getType()->getSize();
+    //         } else {
+    //             params[k]->setRegId(42 + kfloat);
+    //             kfloat++;
+    //         }
+    //     } else if (params[k]->getType()->isPointerType()) {
+    //         if (kint >= 8) {
+    //             params[k]->setMemoryAddr(RISCV64_FP_REG_NO, fp_esp);
+    //             fp_esp += params[k]->getType()->getSize();
+    //         } else {
+    //             params[k]->setRegId(10 + kint);
+    //             kint++;
+    //         }
+    //     }
+    // }
     struct VarOffset {
         Value * value;
-        int32_t offsetFromSp; // 以 sp 向下增长的偏移
+        int64_t offsetFromSp; // 以 sp 向下增长的偏移
         int32_t size;
     };
-
     std::vector<VarOffset> varOffsets;
-
     // 遍历函数变量列表
     for (auto var: func->getVarValues()) {
 
@@ -577,16 +593,13 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
         }
     }
 
-    // 通过栈传递的实参，RISCV64的前四个通过寄存器传递
-    int maxFuncCallArgCnt = func->getMaxFuncCallArgCnt();
-    if (maxFuncCallArgCnt > 8) {
-        sp_esp += (maxFuncCallArgCnt - 8) * 4;
-    }
+
 
     // 只有int类型时可以4字节对齐，支持浮点或者向量运算时要16字节对齐
     sp_esp = (sp_esp + 15) & ~15;
 
     // 设置函数的最大栈帧深度，没有考虑寄存器保护的空间大小
+    // TODO:[]是否考虑保护寄存器？加入函数调用多实参逆序入栈的额外栈长度
     func->setMaxDep(sp_esp);
 
     // 设置所有变量的地址（相对于 FP）

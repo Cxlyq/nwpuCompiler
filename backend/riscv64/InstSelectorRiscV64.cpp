@@ -192,14 +192,21 @@ void InstSelectorRiscV64::translate_entry(Instruction * inst)
     // 获取被保护寄存器
     auto & protectedRegNo = func->getProtectedReg();
 
+    func->getParams();
+
     // 分配栈帧空间
     iloc.allocStack(func);
     // 保存被保护寄存器到栈
     int offset = func->getMaxDep() - 8; // 栈偏移起点（64位每次减8）
     for (auto regno: protectedRegNo) {
         std::string regName = PlatformRiscV64::regName[regno];
-        iloc.inst("sd", regName, std::to_string(offset) + "(sp)");
-        offset -= 8;
+        if (regno < 32 && regno > 0) {
+            iloc.inst("sd", regName, std::to_string(offset) + "(sp)");
+            offset -= 8;
+        } else if (regno >= 32 && regno < 64) {
+            iloc.inst("fsw", regName, std::to_string(offset) + "(sp)");
+            offset -= 4;
+        }
     }
 
     // 设置帧指针 s0(fp) = sp + frame_size
@@ -227,9 +234,15 @@ void InstSelectorRiscV64::translate_exit(Instruction * inst)
     // 保存被保护寄存器到栈
     int offset = func->getMaxDep() - 8; // 栈偏移起点（64位每次减8）
     for (auto regno: protectedRegNo) {
-        std::string regName = PlatformRiscV64::regName[regno];
-        iloc.inst("ld", regName, std::to_string(offset) + "(sp)");
-        offset -= 8;
+        if (regno >= 0 && regno < 32) {
+            std::string regName = PlatformRiscV64::regName[regno];
+            iloc.inst("ld", regName, std::to_string(offset) + "(sp)");
+            offset -= 8;
+        } else if (regno >= 32 && regno < 64) {
+            std::string regName = PlatformRiscV64::regName[regno];
+            iloc.inst("flw", regName, std::to_string(offset) + "(sp)");
+            offset -= 4;
+        }
     }
 
     // 恢复栈空间
@@ -1024,6 +1037,19 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
             simpleRegisterAllocator.free(data_regno);
             simpleRegisterAllocator.free(tmp_regno);
         }
+    } else if (Instanceof(ParamSrc, FormalParam *, src)) {
+		src_regId=ParamSrc->getRegId();
+        std::cout << "[InstSelectorRiscV64::translate_store] src is FormalParam, regid=" << src_regId << "\n";
+        if (Instanceof(LVDst, LocalVariable *, dst)) {
+            if (src_regId != -1) {
+				iloc.store_var(src_regId,LVDst);
+            } else {
+                std::cout << "[InstSelectorRiscV64::translate_store]:尚未实现栈传参\n";
+            }
+        } else {
+            std::cout << "[InstSelectorRiscV64::translate_store]:形参并未store进变量\n";
+        }
+
     } else {
         // 源变量是Instruction临时变量或Local局部变量的情况
         if (Instanceof(InstSrc, Instruction *, src)) {
