@@ -1,0 +1,6 @@
+[submodule "tests/official"]
+	path = tests/official
+	url = http://10.69.45.39:30080/publicprojects/compilertestcases.git
+[submodule "tests/officals"]
+	path = tests/officals
+	url = http://10.69.45.39:30080/publicprojects/compilertestcases.git
