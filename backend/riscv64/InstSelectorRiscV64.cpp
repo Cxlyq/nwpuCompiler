@@ -230,17 +230,17 @@ void InstSelectorRiscV64::translate_entry(Instruction * inst)
 
         if (param->getType()->isFloatType()) {
             if (floatRegIndex < 8) {
-                int         freg = 42 + floatRegIndex; // fa0 = 42
-				param->setRegId(freg);
+                int freg = 42 + floatRegIndex; // fa0 = 42
+                param->setRegId(freg);
                 floatRegIndex++;
             }
         } else if (param->getType()->isInt32Type() || param->getType()->isPointerType()) {
             if (intRegIndex < 8) {
-                int         reg = 10 + intRegIndex; // a0 = 10
+                int reg = 10 + intRegIndex; // a0 = 10
                 param->setRegId(reg);
                 intRegIndex++;
             }
-        } 
+        }
     }
 }
 
@@ -1097,11 +1097,11 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
             simpleRegisterAllocator.free(tmp_regno);
         }
     } else if (Instanceof(ParamSrc, FormalParam *, src)) {
-		src_regId=ParamSrc->getRegId();
+        src_regId = ParamSrc->getRegId();
         std::cout << "[InstSelectorRiscV64::translate_store] src is FormalParam, regid=" << src_regId << "\n";
         if (Instanceof(LVDst, LocalVariable *, dst)) {
             if (src_regId != -1) {
-				iloc.store_var(src_regId,LVDst);
+                iloc.store_var(src_regId, LVDst);
             } else {
                 std::cout << "[InstSelectorRiscV64::translate_store]:尚未实现栈传参\n";
             }
@@ -1260,7 +1260,7 @@ void InstSelectorRiscV64::translate_cast(Instruction * inst)
         // // i32->i64
         // int dstReg = simpleRegisterAllocator.Allocate(inst);
         // int srcReg = simpleRegisterAllocator.Allocate(src);
-        // iloc.inst("addiw", PlatformRiscV64::regName[dstReg], PlatformRiscV64::regName[srcReg], "0");
+        // iloc.inst("addi", PlatformRiscV64::regName[dstReg], PlatformRiscV64::regName[srcReg], "0");
         // FIXME: 对地址的处理是否要显示
     } else {
         std::cerr << "[ERROR] Unsupported cast: " << srcType->toString() << " → " << dstType->toString() << std::endl;

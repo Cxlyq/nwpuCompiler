@@ -262,7 +262,7 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
     }
     if (constant <= 2047 && constant >= -2048) {
         // 如果常量在 -2048 到 2047 之间，可以直接使用 addi 指令
-        emit("addiw", PlatformRiscV64::regName[rs_reg_no], "zero", std::to_string(constant));
+        emit("addi", PlatformRiscV64::regName[rs_reg_no], "zero", std::to_string(constant));
     } else if (constant && 0xFFFFF000 == 0) {
         // 如果常量是 0xFFF00000 的倍数，可以直接使用 lui 指令
         emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant >> 12));
@@ -274,7 +274,7 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
         emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(upper));
         if (lower != 0) {
             emit(
-                "addiw",
+                "addi",
                 PlatformRiscV64::regName[rs_reg_no],
                 PlatformRiscV64::regName[rs_reg_no],
                 std::to_string(lower));
@@ -303,11 +303,7 @@ void ILocRiscV64::load_imm(int rs_reg_no, float num, int32_t tmp_reg_no)
     uint32_t lower = numofINT & 0xFFF;
     emit("lui", PlatformRiscV64::regName[tmp_reg_no], std::to_string(upper));
     if (lower != 0) {
-        emit(
-            "addiw",
-            PlatformRiscV64::regName[tmp_reg_no],
-            PlatformRiscV64::regName[tmp_reg_no],
-            std::to_string(lower));
+        emit("addi", PlatformRiscV64::regName[tmp_reg_no], PlatformRiscV64::regName[tmp_reg_no], std::to_string(lower));
     }
     emit("fmv.w.x", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[tmp_reg_no]);
 }
@@ -378,7 +374,7 @@ void ILocRiscV64::store_base(int src_reg_no, int base_reg_no, int offset)
 /// @param src_reg_no 源寄存器
 void ILocRiscV64::mov_reg(int rs_reg_no, int src_reg_no)
 {
-    if(rs_reg_no>=0&&rs_reg_no<32){
+    if (rs_reg_no >= 0 && rs_reg_no < 32) {
         emit("mv", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[src_reg_no]);
     } else if (rs_reg_no >= 32 && rs_reg_no < 64) {
         emit("fmv.s", PlatformRiscV64::regName[rs_reg_no], PlatformRiscV64::regName[src_reg_no]);
@@ -408,7 +404,7 @@ void ILocRiscV64::store_var(int src_reg_no, LocalVariable * dest_var)
             store_base_64(src_reg_no, dest_baseRegId, dest_offset);
         } else {
             store_base(src_reg_no, dest_baseRegId, dest_offset);
-		}
+        }
     }
 }
 void ILocRiscV64::store_var(int src_reg_no, Instruction * dest_var)

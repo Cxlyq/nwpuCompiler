@@ -353,7 +353,7 @@ void CodeGeneratorRiscV64::registerAllocation(Function * func)
     // 这一步是必须的
     adjustFormalParamInsts(func);
 
-#if 0
+#if 1
     // 临时输出调整后的IR指令，用于查看当前的寄存器分配、栈内变量分配、实参入栈等信息的正确性
     std::string irCodeStr;
     func->renameIR();
@@ -367,8 +367,6 @@ void CodeGeneratorRiscV64::registerAllocation(Function * func)
 void CodeGeneratorRiscV64::adjustFormalParamInsts(Function * func)
 {
     // 函数形参的前四个实参值采用的是寄存器传值，后面栈传递
-
-
 }
 
 /// @brief 寄存器分配前对函数内的指令进行调整，以便方便寄存器分配
@@ -497,6 +495,7 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
     // 这里对临时变量和局部变量都在栈上进行分配，采用FP+偏移的寻址方式，偏移为负数
 
     int64_t sp_esp = func->getProtectedReg().size() * 8;
+    std::cout << "sp_esp:" << sp_esp << std::endl;
 
     // auto & params = func->getParams();
 
@@ -593,10 +592,9 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
         }
     }
 
-
-
     // 只有int类型时可以4字节对齐，支持浮点或者向量运算时要16字节对齐
     sp_esp = (sp_esp + 15) & ~15;
+    std::cout << "sp_esp:" << sp_esp << std::endl;
 
     // 设置函数的最大栈帧深度，没有考虑寄存器保护的空间大小
     // TODO:[]是否考虑保护寄存器？加入函数调用多实参逆序入栈的额外栈长度
@@ -614,6 +612,6 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
             // 处理不了的类型（安全起见）
             assert(false && "Unsupported Value* type for stack allocation");
         }
-        std::cout << entry.value->getName() << "\t" << offsetFromFp << std::endl;
+        std::cout << entry.value->getName() << "\t" << entry.offsetFromSp << std::endl;
     }
 }
