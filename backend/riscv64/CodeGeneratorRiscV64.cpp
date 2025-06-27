@@ -72,7 +72,7 @@ void CodeGeneratorRiscV64::genDataSection()
         if (var->isInBSSSection()) {
             // 未初始化的全局变量，放sbss段
             fprintf(fp, "\n\t.type\t%s,@object\n", name.c_str());
-            fprintf(fp, "\t.section\t.bss\n");
+            fprintf(fp, "\t.section\t.data,\"aw\",@progbits\n");
             fprintf(fp, "\t.globl\t%s\n", name.c_str());
             fprintf(fp, "\t.p2align\t%d\n", (int) std::log2(align));
             fprintf(fp, "%s:\n", name.c_str());

@@ -664,7 +664,7 @@ void InstSelectorRiscV64::translate_pos_int32(Instruction * inst)
 void InstSelectorRiscV64::translate_neg_int32(Instruction * inst)
 {
     // FIXME: [指令指派补充] 需要处理立即数溢出问题
-    translate_one_operator(inst, "negw");
+    translate_two_operator(inst, "subw");
 }
 
 /// @brief 整数逻辑非指令翻译成RISCV64汇编
@@ -1010,7 +1010,8 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
             std::cout << "[InstSelectorRiscV64::translate_store] dst is GetElementPtrInst, regid=" << dst_regId << "\t"
                       << GEPDst->getIRName() << "\n";
         } else {
-            std::cout << "[InstSelectorRiscV64::translate_store] dst is not a GlobalVariable/LocalVariable\n";
+            std::cout << "[InstSelectorRiscV64::translate_store] dst is not a "
+                         "GetElementPtrInst/GlobalVariable/LocalVariable\n";
             return;
         }
         if (dst_regId != -1) {
@@ -1051,14 +1052,29 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
             std::cout << "[InstSelectorRiscV64::translate_store] dst is GlobalVariable, regid=" << dst_regId << "\t"
                       << LVDst->getIRName() << "\n";
         } // 这里dst_regId是寄存器号，dst是内存变量
-        else {
-            std::cout << "[InstSelectorRiscV64::translate_store] dst is not a GlobalVariable/LocalVariable\n";
+        else if (Instanceof(GEPDst, GetElementPtrInst *, dst)) {
+            dst_regId = GEPDst->getRegId();
+            std::cout << "[InstSelectorRiscV64::translate_store] dst is GetElementPtrInst, regid=" << dst_regId << "\t"
+                      << GEPDst->getIRName() << "\n";
+        } else {
+            std::cout << "[InstSelectorRiscV64::translate_store] dst is not a "
+                         "GetElementPtrInst/GlobalVariable/LocalVariable\n";
             return;
         }
         if (dst_regId != -1) {
-            int32_t tmp_regno = simpleRegisterAllocator.AllocateTempInt();
-            iloc.load_imm(dst_regId, ConstFloatSrc->getVal(), tmp_regno);
-            simpleRegisterAllocator.free(tmp_regno);
+            if (Instanceof(GEPDst, GetElementPtrInst *, dst)) {
+                int32_t data_regno = simpleRegisterAllocator.AllocateTempFloat();
+
+                iloc.load_imm(data_regno, ConstIntSrc->getVal());
+
+                iloc.store_var(data_regno, GEPDst, dst_regId);
+
+                simpleRegisterAllocator.free(data_regno);
+            } else {
+                int32_t tmp_regno = simpleRegisterAllocator.AllocateTempInt();
+                iloc.load_imm(dst_regId, ConstFloatSrc->getVal(), tmp_regno);
+                simpleRegisterAllocator.free(tmp_regno);
+            }
         } else {
             int32_t tmp_regno = simpleRegisterAllocator.AllocateTempInt();
             int32_t data_regno = simpleRegisterAllocator.AllocateTempFloat();
@@ -1091,8 +1107,13 @@ void InstSelectorRiscV64::translate_store(Instruction * inst)
             dst_regId = GLDst->getRegId();
             std::cout << "[InstSelectorRiscV64::translate_store] dst is GlobalVariable, regid=" << dst_regId << "\t"
                       << GLDst->getIRName() << "\n";
+        } else if (Instanceof(GEPDst, GetElementPtrInst *, dst)) {
+            dst_regId = GEPDst->getRegId();
+            std::cout << "[InstSelectorRiscV64::translate_store] dst is GetElementPtrInst, regid=" << dst_regId << "\t"
+                      << GEPDst->getIRName() << "\n";
         } else {
-            std::cout << "[InstSelectorRiscV64::translate_store] dst is not a GlobalVariable/LocalVariable\n";
+            std::cout << "[InstSelectorRiscV64::translate_store] dst is not a "
+                         "GetElementPtrInst/GlobalVariable/LocalVariable\n";
             return;
         }
         int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
@@ -1155,9 +1176,17 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
     std::cout << "[InstSelectorRiscV64::translate_load] dst is Instruction, regid=" << dst_regId << "\t"
               << dst->getIRName() << "\n";
     if (src_regId != -1) {
-        // 源操作数是寄存器，则直接存储到寄存器中
-        // iloc.mov_reg(dst_regId, src_regId); // XXX: 考虑修改函数，看是否需要额外指派地址寄存器
-        iloc.store_var(src_regId, dst, -1);
+        if (Instanceof(GEPDst, GetElementPtrInst *, src)) {
+            int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
+            //  data_reg<- src
+            iloc.load_var(dst_regId, GEPDst, addr_regno);
+            iloc.store_var(dst_regId, dst, addr_regno);
+            simpleRegisterAllocator.free(addr_regno);
+        } else {
+            // 源操作数是寄存器，则直接存储到寄存器中
+            // iloc.mov_reg(dst_regId, src_regId); // XXX: 考虑修改函数，看是否需要额外指派地址寄存器
+            iloc.store_var(src_regId, dst, -1);
+        }
     } else {
         // 源操作数是内存变量，则需要先load到寄存器中 // FIXME:考虑溢出情况
         int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
@@ -1225,6 +1254,7 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
     // 需要注意的是，GEP指令的结果是一个指针类型的
     // 变量，因此需要将结果存储到一个寄存器或内存变量
     // 中
+    std::cout << "translate_gep:Start" << endl;
     Instanceof(gepInst, GetElementPtrInst *, inst);
     Value * base = gepInst->getOperand(0);
     int     index = 0; // 数组偏移
@@ -1241,7 +1271,11 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
     }
 
     // ---------- Step 1: 处理 base 地址 ----------
+    std::cout << "translate_gep:处理base地址" << endl;
+
     if (Instanceof(base_s0, LocalVariable *, base)) {
+        std::cout << "translate_gep:base is LocalVariable" << endl;
+
         int32_t baseRegId = -1;
         int64_t baseOffset = -1;
         bool    result = base_s0->getMemoryAddr(&baseRegId, &baseOffset);
@@ -1257,6 +1291,8 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         std::cout << "offset:" << offset << endl;
         gepInst->setAddressingInfo(baseRegId, offset);
     } else if (Instanceof(base_gv, GlobalVariable *, base)) {
+        std::cout << "translate_gep:base is GlobalVariable" << endl;
+
         // 目标寄存器：假设你用 getRegId 获取目标寄存器编号
         int         resultRegId = simpleRegisterAllocator.Allocate(gepInst);
         int         tmpRegId = simpleRegisterAllocator.AllocateTempInt(); // 假设是 a0，编号为 10
@@ -1277,10 +1313,18 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         gepInst->setAddressingInfo(resultRegId, offset);
         simpleRegisterAllocator.free(tmpRegId);
     } else if (Instanceof(base_gep, GetElementPtrInst *, base)) {
+        std::cout << "translate_gep:base is GetElementPtrInst" << endl;
+
         int32_t baseRegId = base_gep->getBaseRegId();
+        std::cout << "translate_gep:baseRegId is " << baseRegId << endl;
+
         int64_t baseOffset = base_gep->getOffset();
+        std::cout << "translate_gep:baseOffset is " << baseOffset << endl;
+
         // ---------- Step 2: 处理偏移量 index1 ----------
-        int elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
+        int elementSize = base->getType()->getPointeeType()->getElementType()->getSize(); // 比如 i32 -> 4
+        std::cout << "translate_gep:elementSize is " << elementSize << endl;
+
         int offset = 0;
         if (baseOffset >= 0) {
             offset = (index * elementSize) + baseOffset;
@@ -1292,7 +1336,7 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         std::cout << "offset:" << offset << endl;
         gepInst->setAddressingInfo(baseRegId, offset);
     } else if (Instanceof(base_load, LoadInstruction *, base)) {
-        std::cout << 24 << endl;
+        std::cout << "translate_gep:base is LoadInstruction" << endl;
 
         int32_t baseRegId = simpleRegisterAllocator.Allocate(base_load);
         std::cout << 25 << endl;
@@ -1312,5 +1356,5 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
     } else {
         std::cout << "[InstSelectorRiscV64::translate_gep] src is not a Global/Local variable\n";
     }
-    std::cout << 21 << endl;
+    std::cout << "translate_gep:end" << endl;
 }
