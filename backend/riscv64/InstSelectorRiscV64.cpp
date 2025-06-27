@@ -26,7 +26,7 @@
 #include "Instruction.h"
 #include "LocalVariable.h"
 #include "PlatformRiscV64.h"
-
+#include "LoadInstruction.h"
 #include "PointerType.h"
 #include "RegVariable.h"
 #include "Function.h"
@@ -1100,6 +1100,7 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
         simpleRegisterAllocator.free(addr_regno);
     }
     inst->removeOperand(0);
+    std::cout << "12\n";
 }
 
 /// @brief Cast指令翻译成RISCV64汇编
@@ -1222,9 +1223,26 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         std::cout << "baseOffset:" << baseOffset << endl;
         std::cout << "offset:" << offset << endl;
         gepInst->setAddressingInfo(baseRegId, offset);
+    } else if (Instanceof(base_load, LoadInstruction *, base)) {
+        std::cout << 24 << endl;
+
+        int32_t baseRegId = simpleRegisterAllocator.Allocate(base_load);
+        std::cout << 25 << endl;
+
+        // ---------- Step 2: 处理偏移量 index1 ----------
+
+        int elementSize = base_load->getType()->getPointeeType()->getSize(); // 比如 i32 -> 4
+        std::cout << "elementSize:" << elementSize << endl;
+
+        std::cout << 26 << endl;
+
+        int offset = 0;
+        offset = (index * elementSize);
+        std::cout << "index:" << index << endl;
+        std::cout << "offset:" << offset << endl;
+        gepInst->setAddressingInfo(baseRegId, offset);
     } else {
         std::cout << "[InstSelectorRiscV64::translate_gep] src is not a Global/Local variable\n";
     }
     std::cout << 21 << endl;
-    inst->clearOperands();
 }
