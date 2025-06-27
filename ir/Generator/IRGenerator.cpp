@@ -433,8 +433,6 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             auto fParam = new FormalParam(pointerType, array_name);
             currentFunc->addParams(fParam);
 
-            // 生成 MoveInstruction 将传入实参值复制到局部形参变量
-            // Instruction * move_inst = new MoveInstruction(currentFunc, param_value, fParam);
             StoreInstruction * store_inst = new StoreInstruction(currentFunc, param_value, fParam);
             node->blockInsts.addInst(store_inst);
         } else {
@@ -461,10 +459,6 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             auto fParam = new FormalParam(param_type_ir, param_name);
             currentFunc->addParams(fParam);
 
-            // 生成 MoveInstruction 将传入实参值复制到局部形参变量
-            // 这条指令确保了传入的值被存储在作用域中的 LocalVariable 中，供函数体使用。
-            // MoveInstruction(Function* func, Value* dest, Value* src)
-            // Instruction *      move_inst = new MoveInstruction(currentFunc, param_value, fParam);
             StoreInstruction * store_inst = new StoreInstruction(currentFunc, param_value, fParam);
             node->blockInsts.addInst(store_inst);
         }
@@ -3546,6 +3540,30 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 // 某个变量没有定值
                 printf("Assign: some variables have no values.\n");
                 return false;
+            }
+
+            // 类型转换
+            auto lTyID = left->val->getType()->getTypeID();
+            auto rTyID = right->val->getType()->getTypeID();
+            auto lhs = left->val;
+            auto rhs = right->val;
+
+            if (lTyID != rTyID) {
+                CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, lhs->getType());
+                node->blockInsts.addInst(castInst);
+                right->val = castInst;
+            } else if (lTyID == Type::IntegerTyID && rTyID == Type::IntegerTyID) {
+                // 如果两个操作数都是整数类型, 比较位宽
+                auto lTy = (IntegerType *) left->val->getType();
+                auto rTy = (IntegerType *) right->val->getType();
+                auto lBitWide = lTy->getBitWidth();
+                auto rBitWide = rTy->getBitWidth();
+                if (lBitWide != rBitWide) {
+                    // 如果位宽不同，进行类型转换
+					CastInstruction * castInst = new CastInstruction(module->getCurrentFunction(), rhs, lTy);
+					node->blockInsts.addInst(castInst);
+                    right->val = castInst;
+                }
             }
 
             StoreInstruction * storeInst = new StoreInstruction(module->getCurrentFunction(), left->val, right->val);
