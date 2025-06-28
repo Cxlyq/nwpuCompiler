@@ -132,9 +132,9 @@ function dotestcase()
 
     # 3. 使用 QEMU 运行 RISC-V ELF 可执行文件
     if [ -f ${INFILE} ]; then
-        OUTSTR=$(qemu-riscv64 ${EXEFILE} < ${INFILE} 2>&1)
+        OUTSTR=$(qemu-riscv64-static ${EXEFILE} < ${INFILE} 2>&1)
     else
-        OUTSTR=$(qemu-riscv64 ${EXEFILE} 2>&1)
+        OUTSTR=$(qemu-riscv64-static ${EXEFILE} 2>&1)
     fi
     RUNRESULT=$?
 

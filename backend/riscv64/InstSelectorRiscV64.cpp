@@ -254,7 +254,9 @@ void InstSelectorRiscV64::translate_exit(Instruction * inst)
         Value * retVal = inst->getOperand(0);
 
         // 赋值给寄存器a0
-        iloc.load_var(10, retVal);
+        int tmp_reg_no=simpleRegisterAllocator.AllocateTempInt();
+        iloc.load_var(10, retVal, tmp_reg_no);
+        simpleRegisterAllocator.free(tmp_reg_no);
     }
     auto & protectedRegNo = func->getProtectedReg();
 
@@ -308,14 +310,15 @@ void InstSelectorRiscV64::translate_br_cond(Instruction * inst)
     Instanceof(falseTarget, LabelInstruction *, brCondInst->getOperand(2));
 
     int32_t cond_reg_no = cond->getRegId();
-    int32_t load_cond_reg_no;
+    int32_t load_cond_reg_no,tmp_reg_no;
     // 看条件变量是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
     if (cond_reg_no == -1) {
         // 分配一个寄存器r8
         load_cond_reg_no = simpleRegisterAllocator.Allocate(cond);
-
+		tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
         // cond -> r8，这里可能由于偏移不满足指令的要求，需要额外分配寄存器
-        iloc.load_var(load_cond_reg_no, cond);
+        iloc.load_var(load_cond_reg_no, cond, tmp_reg_no);
+        simpleRegisterAllocator.free(tmp_reg_no);
     } else {
         load_cond_reg_no = cond_reg_no;
     }
@@ -409,7 +412,7 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
         } else {
             load_arg2_reg_no = -1;
         }
-        iloc.load_var(load_arg2_reg_no, arg2);
+        iloc.load_var(load_arg2_reg_no, arg2, tmp_reg_no);
         simpleRegisterAllocator.free(tmp_reg_no);
     } else {
         load_arg2_reg_no = arg2_reg_no;
@@ -488,7 +491,7 @@ void InstSelectorRiscV64::translate_one_operator(Instruction * inst, string oper
             load_arg1_reg_no = -1;
         }
         // arg1 -> r8，这里可能由于偏移不满足指令的要求，需要额外分配寄存器
-        iloc.load_var(load_arg1_reg_no, arg1);
+        iloc.load_var(load_arg1_reg_no, arg1, tmp_reg_no);
         simpleRegisterAllocator.free(tmp_reg_no);
     } else {
         load_arg1_reg_no = arg1_reg_no;
@@ -817,19 +820,20 @@ void InstSelectorRiscV64::translate_assign(Instruction * inst)
         iloc.store_var(arg1_regId, result, RISCV64_TMP_REG_NO);
     } else if (result_regId != -1) {
         // 内存变量 => 寄存器
-
-        iloc.load_var(result_regId, arg1);
+		int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+        iloc.load_var(result_regId, arg1,tmp_reg_no);
+        simpleRegisterAllocator.free(tmp_reg_no);
     } else {
         // 内存变量 => 内存变量
 
         int32_t temp_regno = simpleRegisterAllocator.AllocateTempInt();
-
+        int     tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
         // arg1 -> r8
-        iloc.load_var(temp_regno, arg1);
+        iloc.load_var(temp_regno, arg1,tmp_reg_no);
 
         // r8 -> rs 可能用到r9
-        iloc.store_var(temp_regno, result, RISCV64_TMP_REG_NO);
-
+        iloc.store_var(temp_regno, result, tmp_reg_no);
+        simpleRegisterAllocator.free(tmp_reg_no);
         simpleRegisterAllocator.free(temp_regno);
     }
 }

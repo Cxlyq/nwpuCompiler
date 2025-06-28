@@ -25,6 +25,7 @@
 #include "Module.h"
 #include "LoadInstruction.h"
 #include "GetElementPtrInst.h"
+#include "SimpleRegisterAllocatorRiscV64.h"
 RiscInst::RiscInst(
     std::string _opcode, std::string _result, std::string _arg1, std::string _arg2, std::string _cond,
     std::string _addition)
@@ -393,7 +394,7 @@ void ILocRiscV64::mov_reg(int rs_reg_no, int src_reg_no)
 /// @brief 保存寄存器到局部变量，
 /// @param src_reg_no 源寄存器
 /// @param dest_var  局部变量
-void ILocRiscV64::store_var(int src_reg_no, LocalVariable * dest_var)
+void ILocRiscV64::store_var(int src_reg_no, LocalVariable * dest_var, int tmp_reg_no)
 {
     //在这里解决目的操作数是否为寄存器变量的问题
     int dest_reg_id = dest_var->getRegId();
@@ -410,14 +411,26 @@ void ILocRiscV64::store_var(int src_reg_no, LocalVariable * dest_var)
         if (!result) {
             minic_log(LOG_ERROR, "BUG");
         }
-        if (dest_var->getType()->isPointerType()) {
-            store_base_64(src_reg_no, dest_baseRegId, dest_offset);
+        if (dest_offset > 2047 || dest_offset < -2048) {
+            int dest_finalBaseRegId = tmp_reg_no;
+            emit("li", PlatformRiscV64::regName[dest_finalBaseRegId], std::to_string(dest_offset));
+            emit("add",PlatformRiscV64::regName[dest_finalBaseRegId],PlatformRiscV64::regName[dest_finalBaseRegId],PlatformRiscV64::regName[dest_baseRegId]);
+            if (dest_var->getType()->isPointerType()) {
+                store_base_64(src_reg_no, dest_finalBaseRegId, 0);
+            } else {
+                store_base(src_reg_no, dest_finalBaseRegId, 0);
+            }
         } else {
-            store_base(src_reg_no, dest_baseRegId, dest_offset);
+            if (dest_var->getType()->isPointerType()) {
+                store_base_64(src_reg_no, dest_baseRegId, dest_offset);
+            } else {
+                store_base(src_reg_no, dest_baseRegId, dest_offset);
+            }
         }
+
     }
 }
-void ILocRiscV64::store_var(int src_reg_no, Instruction * dest_var)
+void ILocRiscV64::store_var(int src_reg_no, Instruction * dest_var, int tmp_reg_no)
 {
     // 在这里解决目的操作数是否为寄存器变量的问题
     int dest_reg_id = dest_var->getRegId();
@@ -434,7 +447,26 @@ void ILocRiscV64::store_var(int src_reg_no, Instruction * dest_var)
         if (!result) {
             minic_log(LOG_ERROR, "BUG");
         }
-        store_base(src_reg_no, dest_baseRegId, dest_offset);
+        if (dest_offset > 2047 || dest_offset < -2048) {
+            int dest_finalBaseRegId = tmp_reg_no;
+            emit("li", PlatformRiscV64::regName[dest_finalBaseRegId], std::to_string(dest_offset));
+            emit(
+                "add",
+                PlatformRiscV64::regName[dest_finalBaseRegId],
+                PlatformRiscV64::regName[dest_finalBaseRegId],
+                PlatformRiscV64::regName[dest_baseRegId]);
+            if (dest_var->getType()->isPointerType()) {
+                store_base_64(src_reg_no, dest_finalBaseRegId, 0);
+            } else {
+                store_base(src_reg_no, dest_finalBaseRegId, 0);
+            }
+        } else {
+            if (dest_var->getType()->isPointerType()) {
+                store_base_64(src_reg_no, dest_baseRegId, dest_offset);
+            } else {
+                store_base(src_reg_no, dest_baseRegId, dest_offset);
+            }
+        }
     }
 }
 
@@ -459,7 +491,7 @@ void ILocRiscV64::store_var(int src_reg_no, GlobalVariable * dest_var, int addr_
 /// @brief 保存寄存器到局部变量，
 /// @param src_reg_no 源寄存器
 /// @param dest_var  局部变量
-void ILocRiscV64::store_var(int src_reg_no, GetElementPtrInst * dest_var)
+void ILocRiscV64::store_var(int src_reg_no, GetElementPtrInst * dest_var /*,int tmp_reg_no*/)
 {
     //在这里解决目的操作数是否为寄存器变量的问题
     int dest_reg_id = dest_var->getRegId();
@@ -470,9 +502,33 @@ void ILocRiscV64::store_var(int src_reg_no, GetElementPtrInst * dest_var)
     } else {
         // 对于局部变量，则直接从栈基址+偏移寻址
         // 栈帧偏移
-        int32_t dest_baseRegId = dest_var->getBaseRegId();
-        int64_t dest_offset = dest_var->getOffset();
-        store_base(src_reg_no, dest_baseRegId, dest_offset);
+        int32_t dest_baseRegId = -1;
+        int64_t dest_offset = -1;
+        bool    result = dest_var->getMemoryAddr(&dest_baseRegId, &dest_offset);
+        if (!result) {
+            minic_log(LOG_ERROR, "BUG");
+        }
+        // TODO:@Kevin-wjq13777 [确认]是否需要这一部分？ 如需要，修改入口参数并更改同名参数
+        // if (dest_offset > 2047 || dest_offset < -2048) {
+        //     int dest_finalBaseRegId = tmp_reg_no;
+        //     emit("li", PlatformRiscV64::regName[dest_finalBaseRegId], std::to_string(dest_offset));
+        //     emit(
+        //         "add",
+        //         PlatformRiscV64::regName[dest_finalBaseRegId],
+        //         PlatformRiscV64::regName[dest_finalBaseRegId],
+        //         PlatformRiscV64::regName[dest_baseRegId]);
+        //     if (dest_var->getType()->isPointerType()) {
+        //         store_base_64(src_reg_no, dest_finalBaseRegId, 0);
+        //     } else {
+        //         store_base(src_reg_no, dest_finalBaseRegId, 0);
+        //     }
+        // } else {
+		if (dest_var->getType()->isPointerType()) {
+			store_base_64(src_reg_no, dest_baseRegId, dest_offset);
+		} else {
+			store_base(src_reg_no, dest_baseRegId, dest_offset);
+		}
+        // }
     }
 }
 /// @brief 保存寄存器到变量，
@@ -492,7 +548,7 @@ void ILocRiscV64::store_var(int src_reg_no, GetElementPtrInst * dest_var, int ad
         std::to_string(dest_var->getOffset()) + "(" + PlatformRiscV64::regName[dest_var->getBaseRegId()] + ")");
 }
 
-/// @brief 保存寄存器到变量，保证将计算结果（r8）保存到变量
+/// @brief 保存寄存器到变量，保证将计算结果
 /// @param src_reg_no 源寄存器
 /// @param dest_var  变量
 /// @param tmp_reg_no 基址寄存器
@@ -521,9 +577,9 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
         GEP->clearOperands();
     } else if (Instanceof(localVar, LocalVariable *, dest_var)) {
         // 寄存器变量
-        store_var(src_reg_no, localVar);
+        store_var(src_reg_no, localVar, tmp_reg_no);
     } else if (Instanceof(instVar, Instruction *, dest_var)) {
-        store_var(src_reg_no, instVar);
+        store_var(src_reg_no, instVar, tmp_reg_no);
     } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
         store_var(src_reg_no, globalVar, tmp_reg_no);
     } else {
@@ -562,9 +618,9 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int tmp_reg_no)
         // 浮点型常量
         load_imm(rs_reg_no, constVal->getVal(), tmp_reg_no);
     } else if (Instanceof(instVar, Instruction *, src_var)) {
-        load_var(rs_reg_no, instVar);
+        load_var(rs_reg_no, instVar, tmp_reg_no);
     } else if (Instanceof(localVar, LocalVariable *, src_var)) {
-        load_var(rs_reg_no, localVar);
+        load_var(rs_reg_no, localVar, tmp_reg_no);
     } else if (Instanceof(globalVar, GlobalVariable *, src_var)) {
         load_var(rs_reg_no, globalVar, tmp_reg_no);
     } else {
@@ -575,7 +631,7 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int tmp_reg_no)
 /// @brief 加载变量到寄存器，保证将变量放到reg中
 /// @param rs_reg_no 结果寄存器
 /// @param src_var 源操作数：指令临时变量
-void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var)
+void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var, int tmp_reg_no)
 {
     if (src_var->getRegId() != -1) {
         // 源操作数为寄存器变量
@@ -591,13 +647,33 @@ void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var)
         if (!result) {
             minic_log(LOG_ERROR, "BUG");
         }
-        load_base(rs_reg_no, var_baseRegId, var_offset);
+        if (var_offset > 2047 || var_offset < -2048) {
+            int var_finalBaseRegId = tmp_reg_no;
+            emit("li", PlatformRiscV64::regName[var_finalBaseRegId], std::to_string(var_offset));
+            emit(
+                "add",
+                PlatformRiscV64::regName[var_finalBaseRegId],
+                PlatformRiscV64::regName[var_finalBaseRegId],
+                PlatformRiscV64::regName[var_baseRegId]);
+            if (src_var->getType()->isPointerType()) {
+                load_base_64(rs_reg_no, var_finalBaseRegId, 0);
+            } else {
+                load_base(rs_reg_no, var_finalBaseRegId, 0);
+            }
+        } else {
+            if (src_var->getType()->isPointerType()) {
+                load_base_64(rs_reg_no, var_baseRegId, var_offset);
+            } else {
+                load_base(rs_reg_no, var_baseRegId, var_offset);
+            }
+        }
+        // load_base(rs_reg_no, var_baseRegId, var_offset);
     }
 }
 /// @brief 加载变量到寄存器，保证将变量放到reg中
 /// @param rs_reg_no 结果寄存器
 /// @param src_var 源操作数：指令临时变量
-void ILocRiscV64::load_var(int rs_reg_no, LocalVariable * src_var)
+void ILocRiscV64::load_var(int rs_reg_no, LocalVariable * src_var, int tmp_reg_no)
 {
     if (src_var->getRegId() != -1) {
         // 源操作数为寄存器变量
@@ -607,16 +683,32 @@ void ILocRiscV64::load_var(int rs_reg_no, LocalVariable * src_var)
         }
     } else {
         // 栈+偏移的寻址方式
+        // 栈+偏移的寻址方式
         int32_t var_baseRegId = -1;
         int64_t var_offset = -1;
         bool    result = src_var->getMemoryAddr(&var_baseRegId, &var_offset);
         if (!result) {
             minic_log(LOG_ERROR, "BUG");
         }
-        if (src_var->getType()->isPointerType()) {
-            load_base_64(rs_reg_no, var_baseRegId, var_offset);
+        if (var_offset > 2047 || var_offset < -2048) {
+            int var_finalBaseRegId = tmp_reg_no;
+            emit("li", PlatformRiscV64::regName[var_finalBaseRegId], std::to_string(var_offset));
+            emit(
+                "add",
+                PlatformRiscV64::regName[var_finalBaseRegId],
+                PlatformRiscV64::regName[var_finalBaseRegId],
+                PlatformRiscV64::regName[var_baseRegId]);
+            if (src_var->getType()->isPointerType()) {
+                load_base_64(rs_reg_no, var_finalBaseRegId, 0);
+            } else {
+                load_base(rs_reg_no, var_finalBaseRegId, 0);
+            }
         } else {
-            load_base(rs_reg_no, var_baseRegId, var_offset);
+            if (src_var->getType()->isPointerType()) {
+                load_base_64(rs_reg_no, var_baseRegId, var_offset);
+            } else {
+                load_base(rs_reg_no, var_baseRegId, var_offset);
+            }
         }
     }
 }
@@ -624,7 +716,7 @@ void ILocRiscV64::load_var(int rs_reg_no, LocalVariable * src_var)
 /// @brief 加载变量到寄存器，保证将变量放到reg中
 /// @param rs_reg_no 结果寄存器
 /// @param src_var 源操作数：指令临时变量
-void ILocRiscV64::load_var(int rs_reg_no, GetElementPtrInst * src_var)
+void ILocRiscV64::load_var(int rs_reg_no, GetElementPtrInst * src_var /*, int tmp_reg_no*/)
 {
     if (src_var->getRegId() != -1) {
         // 源操作数为寄存器变量
@@ -633,10 +725,33 @@ void ILocRiscV64::load_var(int rs_reg_no, GetElementPtrInst * src_var)
             mov_reg(rs_reg_no, src_regId);
         }
     } else {
-        // 栈+偏移的寻址方式
-        int32_t var_baseRegId = src_var->getBaseRegId();
-        int64_t var_offset = src_var->getOffset();
-        load_base(rs_reg_no, var_baseRegId, var_offset);
+        int32_t var_baseRegId = -1;
+        int64_t var_offset = -1;
+        bool    result = src_var->getMemoryAddr(&var_baseRegId, &var_offset);
+        if (!result) {
+            minic_log(LOG_ERROR, "BUG");
+        }
+        // TODO:@Kevin-wjq13777 [确认]是否需要这一部分？ 如需要，修改入口参数并更改同名参数
+        // if (var_offset > 2047 || var_offset < -2048) {
+        //     int var_finalBaseRegId = tmp_reg_no;
+        //     emit("li", PlatformRiscV64::regName[var_finalBaseRegId], std::to_string(var_offset));
+        //     emit(
+        //         "add",
+        //         PlatformRiscV64::regName[var_finalBaseRegId],
+        //         PlatformRiscV64::regName[var_finalBaseRegId],
+        //         PlatformRiscV64::regName[var_baseRegId]);
+        //     if (src_var->getType()->isPointerType()) {
+        //         load_base_64(rs_reg_no, var_finalBaseRegId, 0);
+        //     } else {
+        //         load_base(rs_reg_no, var_finalBaseRegId, 0);
+        //     }
+        // } else {
+            if (src_var->getType()->isPointerType()) {
+                load_base_64(rs_reg_no, var_baseRegId, var_offset);
+            } else {
+                load_base(rs_reg_no, var_baseRegId, var_offset);
+            }
+        // }
     }
 }
 
