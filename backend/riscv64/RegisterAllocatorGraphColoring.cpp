@@ -604,20 +604,22 @@ void GraphColoringRegisterAllocator::free(Value * var)
     if (var && var->getRegId() != -1) {
         int regIndex = regNoToIndex(var->getRegId());
         if (regIndex != -1) {
-            if (var->getType()->isIntegerType()) {
-                // 整数寄存器，直接操作 intRegBitmap
-                intRegBitmap.reset(regIndex);
-                auto it = std::find(intRegValues.begin(), intRegValues.end(), var);
-                if (it != intRegValues.end()) {
-                    intRegValues.erase(it);
-                }
-            } else {
+            if (var->getType()->isFloatType()) {
+
                 auto it = std::find(floatRegValues.begin(), floatRegValues.end(), var);
                 if (it != floatRegValues.end()) {
                     floatRegValues.erase(it);
                 }
                 // 浮点寄存器，计算浮点寄存器对应的bitmap索引
                 floatRegBitmap.reset(regIndex);
+                // 整数寄存器，直接操作 intRegBitmap
+
+            } else {
+                intRegBitmap.reset(regIndex);
+                auto it = std::find(intRegValues.begin(), intRegValues.end(), var);
+                if (it != intRegValues.end()) {
+                    intRegValues.erase(it);
+                }
             }
         }
         var->setRegId(-1);
@@ -630,40 +632,58 @@ void GraphColoringRegisterAllocator::free(Value * var)
 ///
 void GraphColoringRegisterAllocator::free(int32_t no)
 {
-
     if (no == -1) {
+        // std::cout << "[free] 忽略无效寄存器号 -1\n";
         return;
     }
 
     int regIndex = regNoToIndex(no);
     if (regIndex == -1) {
-        return; // 非法寄存器号
+        // std::cout << "[free] 非法寄存器号: " << no << "，无法找到对应索引\n";
+        return;
     }
 
     if (no >= 32) {
+        // 浮点寄存器
         floatRegBitmap.reset(regIndex);
+        // std::cout << "[free] 释放浮点寄存器 f" << no << " (index " << regIndex << ")\n";
+
         auto pIter = std::find_if(floatRegValues.begin(), floatRegValues.end(), [=](Value * val) {
             return val->getRegId() == no;
         });
 
         if (pIter != floatRegValues.end()) {
+            // std::cout << "[free] -> 移除绑定变量: " << (*pIter)->getName() << "\n";
             (*pIter)->setRegId(-1);
             floatRegValues.erase(pIter);
+        } else {
+            // std::cout << "[free] -> 未找到绑定变量，可能是立即数或未追踪变量\n";
         }
     } else {
-
+        // 整数寄存器
         intRegBitmap.reset(regIndex);
+        // std::cout << "[free] 释放整数寄存器 r" << no << " (index " << regIndex << ")\n";
 
         auto pIter =
             std::find_if(intRegValues.begin(), intRegValues.end(), [=](Value * val) { return val->getRegId() == no; });
 
         if (pIter != intRegValues.end()) {
-
+            // std::cout << "[free] -> 移除绑定变量: " << (*pIter)->getName() << "\n";
             (*pIter)->setRegId(-1);
             intRegValues.erase(pIter);
+        } else {
+            // std::cout << "[free] -> 未找到绑定变量，可能是立即数或未追踪变量\n";
         }
     }
+    // ✅ 输出完整 intRegBitmap 状态
+    // std::cout << "[free] 当前整数寄存器使用状态：\n";
+    // for (int i = 0; i < PlatformRiscV64::maxUsableIntRegNum; ++i) {
+    //     int  regNo = PlatformRiscV64::RISCV64_INT_REGS[i];
+    //     bool used = intRegBitmap.test(i);
+    //     std::cout << "  r" << regNo << ": " << (used ? "占用" : "空闲") << "\n";
+    // }
 }
+
 void GraphColoringRegisterAllocator::intBitmapSet(int32_t no)
 {
     intRegBitmap.set(no);
