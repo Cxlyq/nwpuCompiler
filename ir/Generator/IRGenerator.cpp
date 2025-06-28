@@ -619,8 +619,11 @@ bool IRGenerator::ir_block(ast_node * node)
                 node->blockInsts.addInst(mergeLabel); // 添加merge标签
                 continue;                             // 继续处理下一个语句
             }
-        } else if (base_node->node_type == ast_operator_type::AST_OP_RETURN) {
-            stop = true; // block中遇到return语句，停止翻译后续语句
+        } else if (
+            base_node->node_type == ast_operator_type::AST_OP_RETURN ||
+            base_node->node_type == ast_operator_type::AST_OP_BREAK ||
+            base_node->node_type == ast_operator_type::AST_OP_CONTINUE) {
+            stop = true; // block中遇到return, break, continue语句，停止翻译后续语句
         }
 
         // 除了if-else以外的语句会进行到此处
@@ -2072,35 +2075,15 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
     // 如果有 else 块，假分支跳到 else 块的标签
     // 如果没有 else 块，假分支跳到 merge 块的标签
     LabelInstruction * false_branch_target = nullptr;
-    if (else_node) {
+
+    if (else_node) {                                    // 此处需要根据else_node确定false标签
         else_label = new LabelInstruction(currentFunc); // 创建 else 块的实际标签
         false_branch_target = else_label;
-
-        // 检测else中是否有break, continue, return标签或完全return的if-else语句块
-        if (else_node->node_type == ast_operator_type::AST_OP_RETURN) { // ELSE节点本身是return语句
-            hasReturnInElse = true;
-        } else if (
-            else_node->node_type == ast_operator_type::AST_OP_BREAK ||
-            else_node->node_type == ast_operator_type::AST_OP_CONTINUE) { // ELSE节点本身是continue, break语句
-            hasBreakContinueInElse = true;
-        } else {
-            for (auto node_in_else: else_node->sons) {
-                if (node_in_else->node_type == ast_operator_type::AST_OP_BREAK ||
-                    node_in_else->node_type == ast_operator_type::AST_OP_CONTINUE) {
-                    hasBreakContinueInElse = true;
-                }
-                if (node_in_else->node_type == ast_operator_type::AST_OP_RETURN ||
-                    node_in_else->isIfElseHaveReturn) { // 如果本层else有return，或者下一层if-else是完全return
-                    hasReturnInElse = true;
-                }
-            }
-        }
-
     } else {
         false_branch_target = merge_label;
     }
 
-    // 3. 支持短路，添加条件分支指令。区别于遍历ir_and/or，因为其会产生额外的一个Value ValueOfLogic
+    // 3. 生成if cond块，支持短路，添加条件分支指令。区别于遍历ir_and/or，因为其会产生额外的一个Value ValueOfLogic
     if (!gen_condition_branch(cond_node, true_branch_label, false_branch_target, node->blockInsts)) {
         // Error occurred during condition branching generation
         std::cerr << "Error generating condition branch for if-else." << std::endl;
@@ -2151,17 +2134,14 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
                 node_in_if->node_type == ast_operator_type::AST_OP_CONTINUE) {
                 hasBreakContinueInIf = true;
             }
-            if (node_in_if->node_type == ast_operator_type::AST_OP_RETURN ||
-                node_in_if->isIfElseHaveReturn) { // 如果本层if有return，或者下一层if-else是完全return
+            if (node_in_if->node_type == ast_operator_type::AST_OP_RETURN || node_in_if->isIfElseHaveReturn ||
+                node_in_if->returnedBlock) { // 如果本层if有return，或者下一层if-else是完全return
                 hasReturnInIf = true;
             }
         }
     }
 
-    // 在 then 块的末尾添加一个无条件跳转到 merge 块的指令。
-    // 即使 then 块的最后一条指令本身是一个终止指令（如 return 或 goto），
-    // 为了简化生成逻辑，通常还是会添加一个额外的跳转指令。优化阶段可以移除死代码。
-    // 使用你提供的 GotoInstruction 类 (它是无条件跳转)。
+    // 在 if 块的末尾添加一个无条件跳转到 merge 块的指令。
     if (!hasBreakContinueInIf &&
         !hasReturnInIf) { // ! 注意，如果if语句有break, continue, return，其本身的跳转标签会与 merge_label 重复
         node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
@@ -2197,10 +2177,31 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
             node->blockInsts.addInst(elseBlock->blockInsts);
         }
 
+        // 检测else中是否有break, continue, return标签或完全return的if-else语句块
+        if (else_node->node_type == ast_operator_type::AST_OP_RETURN) { // ELSE节点本身是return语句,
+            hasReturnInElse = true;
+        } else if (
+            else_node->node_type == ast_operator_type::AST_OP_BREAK ||
+            else_node->node_type == ast_operator_type::AST_OP_CONTINUE) { // ELSE节点本身是continue, break语句
+            hasBreakContinueInElse = true;
+        } else {
+            for (auto node_in_else: else_node->sons) {
+                if (node_in_else->node_type == ast_operator_type::AST_OP_BREAK ||
+                    node_in_else->node_type == ast_operator_type::AST_OP_CONTINUE) {
+                    hasBreakContinueInElse = true;
+                }
+                if (node_in_else->node_type == ast_operator_type::AST_OP_RETURN || node_in_else->isIfElseHaveReturn ||
+                    node_in_else
+                        ->returnedBlock) { // 如果本层else有return，或者下一层if-else是完全return, 或者存在return的block
+                    hasReturnInElse = true;
+                }
+            }
+        }
+
         // 在 else 块的末尾添加一个无条件跳转到 merge 块的指令。
-        // 同 then 块，即使 else 块的最后一条指令本身是终止指令，也添加一个跳转。
         if (!hasBreakContinueInElse &&
             !hasReturnInElse) { // ! 注意，如果else语句有break, continue, return，其本身的跳转标签会与 merge_label 重复
+            std::cout << "here " << hasBreakContinueInElse << " " << hasReturnInElse << std::endl;
             node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
         }
     }
@@ -2214,18 +2215,12 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
             (hasBreakContinueInIf && hasBreakContinueInElse)) { // if-else语句块存在完全return
             *stop = true;
             node->isIfElseHaveReturn = true;
+            std::cout << "here\n";
         } else {
             *stop = false;
             node->isIfElseHaveReturn = false; // 如果ifelse没有全部 return，则继续翻译后续代码
         }
     } else {
-        // if (hasReturnInIf) { // 单独if语句块存在完全return
-        //     *stop = true;
-        //     node->isIfElseHaveReturn = true;
-        // } else {
-        //     *stop = false;
-        //     node->isIfElseHaveReturn = false; // 如果if没有 return，则继续翻译后续代码
-        // }
         *stop = false;
     }
 

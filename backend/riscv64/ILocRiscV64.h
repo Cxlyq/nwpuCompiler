@@ -187,12 +187,12 @@ public:
     /// @brief 加载变量到寄存器
     /// @param rs_reg_no 结果寄存器
     /// @param var Instruction中间结果变量
-    void load_var(int rs_reg_no, Instruction * var);
+    void load_var(int rs_reg_no, Instruction * var, int tmp_reg_no = -1);
 
     /// @brief 加载变量到寄存器
     /// @param rs_reg_no 结果寄存器
     /// @param var 局部变量
-    void load_var(int rs_reg_no, LocalVariable * var);
+    void load_var(int rs_reg_no, LocalVariable * var, int tmp_reg_no = -1);
 
     /// @brief 加载变量到寄存器
     /// @param rs_reg_no 结果寄存器
@@ -207,7 +207,7 @@ public:
     /// @brief 加载变量到寄存器
     /// @param rs_reg_no 结果寄存器
     /// @param var 指针变量
-    void load_var(int rs_reg_no, GetElementPtrInst * src_var);
+    void load_var(int rs_reg_no, GetElementPtrInst * src_var /*, int tmp_reg_no = -1*/);
 
     /// @brief 加载变量地址到寄存器
     /// @param rs_reg_no 结果寄存器
@@ -230,13 +230,13 @@ public:
     /// @param src_reg_no 源寄存器号
     /// @param var 变量
     /// @param addr_reg_no 地址寄存器号
-    void store_var(int src_reg_no, LocalVariable * var);
+    void store_var(int src_reg_no, LocalVariable * var, int tmp_reg_no = -1);
 
     /// @brief 保存寄存器到变量
     /// @param src_reg_no 源寄存器号
     /// @param var 变量
     /// @param addr_reg_no 地址寄存器号
-    void store_var(int src_reg_no, Instruction * var);
+    void store_var(int src_reg_no, Instruction * var, int tmp_reg_no = -1);
 
     /// @brief 保存寄存器到变量
     /// @param src_reg_no 源寄存器号
@@ -248,7 +248,7 @@ public:
     /// @param src_reg_no 源寄存器号
     /// @param var 变量
     /// @param addr_reg_no 地址寄存器号
-    void store_var(int src_reg_no, GetElementPtrInst * dest_var);
+    void store_var(int src_reg_no, GetElementPtrInst * dest_var /*, int tmp_reg_no = -1*/);
 
     /// @brief 寄存器Mov操作
     /// @param rs_reg_no 结果寄存器

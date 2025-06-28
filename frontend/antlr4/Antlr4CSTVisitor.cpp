@@ -527,7 +527,17 @@ std::any MiniCCSTVisitor::visitExpressionStatement(MiniCParser::ExpressionStatem
 std::any MiniCCSTVisitor::visitIfelseStatement(MiniCParser::IfelseStatementContext * ctx)
 {
     auto       condNode = std::any_cast<ast_node *>(visitCond(ctx->cond()));
-    auto       ifstmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()[0]));
+    ast_node * ifstmtNode;
+    if (Instanceof(ifelseCtx, MiniCParser::IfelseStatementContext *, ctx->statement()[0])) {
+        // auto blockNode = new ast_node(ast_operator_type::AST_OP_BLOCK, VoidType::getType(), -1);
+        // 递归遍历ifelse语句
+        auto ifElseNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()[0]));
+        auto blockNode = ast_node::New(ast_operator_type::AST_OP_BLOCK, ifElseNode, nullptr);
+        ifstmtNode = blockNode;
+    } else {
+        ifstmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()[0]));
+    }
+
     ast_node * elsestmtNode = nullptr;
     if (ctx->T_ELSE()) {
         elsestmtNode = std::any_cast<ast_node *>(visitStatement(ctx->statement()[1]));
