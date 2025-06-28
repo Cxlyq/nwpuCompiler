@@ -341,6 +341,11 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
     Instruction * result = inst;
     Value *       arg1 = inst->getOperand(0);
     Value *       arg2 = inst->getOperand(1);
+    std::cout << "[InstSelectorRiscV64::translate_two_operator] result: " + result->getIRName() << std::endl;
+    std::cout << "[InstSelectorRiscV64::translate_two_operator] arg1: " + arg1->getIRName() << std::endl;
+
+    std::cout << "[InstSelectorRiscV64::translate_two_operator] arg2: " + arg2->getIRName() << std::endl;
+
     if (Instanceof(instArg1, Instruction *, arg1)) {
         arg1_reg_no = instArg1->getRegId();
     } else if (Instanceof(LVArg1, LocalVariable *, arg1)) {
@@ -453,6 +458,9 @@ void InstSelectorRiscV64::translate_one_operator(Instruction * inst, string oper
     Value *       arg1 = inst->getOperand(0);
     int32_t       arg1_reg_no = -1;
     int32_t       result_reg_no = simpleRegisterAllocator.Allocate(result);
+    std::cout << "[InstSelectorRiscV64::translate_one_operator] result: " + result->getIRName() << std::endl;
+    std::cout << "[InstSelectorRiscV64::translate_one_operator] arg1: " + arg1->getIRName() << std::endl;
+
     if (Instanceof(instArg1, Instruction *, arg1)) {
         arg1_reg_no = instArg1->getRegId();
     } else if (Instanceof(LVArg1, LocalVariable *, arg1)) {
@@ -574,15 +582,21 @@ void InstSelectorRiscV64::translate_eq_int32(Instruction * inst)
 void InstSelectorRiscV64::translate_neq_int32(Instruction * inst)
 {
     // 获取两个操作数
+    std::cout << "[InstSelectorRiscV64::translate_neq_int32]1" << endl;
     Value * lhs = inst->getOperand(0);
+    std::cout << "[InstSelectorRiscV64::translate_neq_int32]lhs: " << lhs << endl;
+
     Value * rhs = inst->getOperand(1);
-    auto    subInst = BinaryInstruction::createAutoTyped(
+    std::cout << "[InstSelectorRiscV64::translate_neq_int32]rhs: " << rhs << endl;
+
+    auto subInst = BinaryInstruction::createAutoTyped(
         func,
         lhs,
         rhs,
         IRInstOperator::IRINST_OP_SUB_I,
         IRInstOperator::IRINST_OP_SUB_F);
     // sub temp, lhs, rhs
+
     translate_sub_int32(subInst);
 
     // delete subInst;
