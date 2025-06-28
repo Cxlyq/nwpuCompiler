@@ -9,6 +9,7 @@
  *
  */
 
+//#include <bits/getopt_ext.h>
 #include <iostream>
 #include <string>
 #include <getopt.h>
@@ -75,6 +76,8 @@ static struct option long_options[] = {
     {"output", required_argument, 0, 'o'},
     {"symbol", no_argument, 0, 'S'},
     {"ast", no_argument, 0, 'T'},
+    {"antlr4", no_argument, 0, 'A'},
+    {"ll", no_argument, 0, 'L'},
     {"ir", no_argument, 0, 'I'},
     {"optimize", required_argument, 0, 'O'},
     {"target", required_argument, 0, 't'},
@@ -114,7 +117,7 @@ static int ArgsAnalysis(int argc, char * argv[])
     // -O要求必须带有附加整数，指明优化的级别
     // -t要求必须带有目标CPU，指明目标CPU的汇编
     // -c选项在输出汇编时有效，附带输出IR指令内容
-    const char options[] = "ho:STIADO:t:c";
+    const char options[] = "ho:STLADO:t:c";
     int        option_index = 0;
 
     opterr = 1;
@@ -133,6 +136,11 @@ lb_check:
                 break;
             case 'T':
                 gShowAST = true;
+                break;
+            case 'A':
+                break;
+            case 'L':
+                gShowLineIR = true;
                 break;
             case 'I':
                 // 产生中间IR
@@ -199,7 +207,7 @@ lb_check:
         if (gShowAST) {
             gOutputFile = "output.png";
         } else if (gShowLineIR) {
-            gOutputFile = "output.ir";
+            gOutputFile = "output.ll";
         } else {
             gOutputFile = "output.s";
         }
