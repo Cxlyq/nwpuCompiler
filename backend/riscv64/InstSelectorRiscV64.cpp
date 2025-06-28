@@ -596,10 +596,8 @@ void InstSelectorRiscV64::translate_neq_int32(Instruction * inst)
         IRInstOperator::IRINST_OP_SUB_I,
         IRInstOperator::IRINST_OP_SUB_F);
     // sub temp, lhs, rhs
-    std::cout << "[InstSelectorRiscV64::translate_neq_int32]4" << endl;
 
     translate_sub_int32(subInst);
-    std::cout << "[InstSelectorRiscV64::translate_neq_int32]5" << endl;
 
     // delete subInst;
     // seqz result, temp
@@ -703,7 +701,7 @@ void InstSelectorRiscV64::translate_not_int32(Instruction * inst)
 {
     // 逻辑非操作，直接翻译成seqz指令
     // 即如果结果为0，则返回1，否则返回0
-    translate_two_operator(inst, "seqz");
+    translate_one_operator(inst, "seqz");
 }
 
 /// @brief 浮点数加法指令翻译成RISCV64汇编
