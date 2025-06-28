@@ -61,6 +61,8 @@ IcmpInstruction::IcmpInstruction(Function * _func, IRInstOperator _predicate, Va
 {
     // Optional: Add assertions or checks here to ensure predicate is a valid ICMP op
     // and that lhs/rhs types are compatible integer types.
+    addOperand(_lhs);
+    addOperand(_rhs);
 }
 
 ///
@@ -78,6 +80,8 @@ IcmpInstruction::IcmpInstruction(Function * _func, IRInstOperator _predicate, Va
     // Optional: Add assertions or checks here to ensure predicate is a valid ICMP op
     // and that lhs/rhs types are compatible integer types.
     isRhsConst = true; // 标记 rhs 是常数
+    addOperand(_lhs);
+    addOperand(_rhsConst);
 }
 
 ///
