@@ -55,8 +55,6 @@
 #include "Value.h"
 #include "LoadInstruction.h"
 #include "CastInstruction.h"
-#include "IcmpInstruction.h"
-#include "FcmpInstruction.h"
 #include "GetElementPtrInst.h"
 
 /// @brief 构造函数
@@ -419,7 +417,7 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
             if (!arrayType) {
                 std::cerr << "Function formal params: Failer to generate Array Type!" << std::endl;
             }
-            Type * eletype = arrayType->getElementType();
+            Type *        eletype = arrayType->getElementType();
             PointerType * pointerType = new PointerType(eletype);
             //  PointerType * pointee = new PointerType(pointerType);
             //   创建一个数组局部变量
@@ -986,7 +984,6 @@ bool IRGenerator::ir_mod(ast_node * node)
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
 
-
     //取余运算不支持float类型
     bool isFloat = (lhs->getType()->isArrayType() ? lhs->getType()->getElementType()->isFloatType()
                                                   : lhs->getType()->isFloatType()) ||
@@ -1052,7 +1049,6 @@ bool IRGenerator::ir_and(ast_node * node)
     Value * lhs = left->val;
     node->blockInsts.addInst(left->blockInsts);
 
-
     auto neqInst1 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1097,8 +1093,6 @@ bool IRGenerator::ir_and(ast_node * node)
     node->blockInsts.addInst(cond_branch_inst2);
     // 添加标签
     node->blockInsts.addInst(store_true);
-
-
 
     std::string tmpName = generateTempName("ValueOfLogic");
     Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
@@ -1164,7 +1158,6 @@ bool IRGenerator::ir_or(ast_node * node)
     Value * lhs = left->val;
     node->blockInsts.addInst(left->blockInsts);
 
-
     auto neqInst1 = BinaryInstruction::createAutoTyped(
         module->getCurrentFunction(),
         lhs,
@@ -1209,7 +1202,6 @@ bool IRGenerator::ir_or(ast_node * node)
     node->blockInsts.addInst(cond_branch_inst2);
     // 添加标签
     node->blockInsts.addInst(store_true);
-
 
     std::string tmpName = generateTempName("ValueOfLogic");
     Value * ValueOfLogic = module->newVarValueWithInt(IntegerType::getTypeInt(), tmpName, 0, ValueCategory::VARIABLE);
@@ -1277,7 +1269,6 @@ bool IRGenerator::ir_eq(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
@@ -1372,10 +1363,8 @@ bool IRGenerator::ir_neq(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
 
-
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
-
 
     // 操作数不同时进行类型转换
 
@@ -1466,7 +1455,6 @@ bool IRGenerator::ir_ge(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
 
-
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
 
@@ -1552,7 +1540,6 @@ bool IRGenerator::ir_le(ast_node * node)
     ///检查操作数是否是数组，若是需要load
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
-
 
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
@@ -1647,7 +1634,6 @@ bool IRGenerator::ir_gne(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
 
-
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
 
@@ -1739,7 +1725,6 @@ bool IRGenerator::ir_lne(ast_node * node)
     node->blockInsts.addInst(left->blockInsts);
     Value * lhs = left->val;
 
-
     node->blockInsts.addInst(right->blockInsts);
     Value * rhs = right->val;
 
@@ -1814,7 +1799,6 @@ bool IRGenerator::ir_pos(ast_node * node)
 
     node->blockInsts.addInst(expr->blockInsts);
     Value * lhs = expr->val;
-
 
     // 设置当前节点的计算结果
     node->val = lhs;
@@ -2698,7 +2682,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
             auto * loadInst = new LoadInstruction(module->getCurrentFunction(), gepPtr); // 加载最终的指针值
             node->blockInsts.addInst(loadInst);
             node->val = loadInst; // 设置最终的值为加载后的指针
-            return node->val; // 返回最终的加载指令 Value*
+            return node->val;     // 返回最终的加载指令 Value*
         } else {
             //说明是多重指针
             // 逐层调用getelementptr
@@ -2866,7 +2850,6 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
 
     return node->val; // 返回最终的 gep 指令 Value*
 }
-
 
 /// @brief 变量声明语句节点翻译成线性中间IR
 /// @param node AST节点
@@ -3778,8 +3761,12 @@ bool IRGenerator::gen_condition_branch(
             return false;
         }
         // 新建icmp ne instruction: cond_val != 0
-        Instruction * cmp_inst =
-            new IcmpInstruction(currentFunc, IRInstOperator::IRINST_OP_NEQ_I, cond_val, zero_const);
+        Instruction * cmp_inst = new BinaryInstruction(
+            currentFunc,
+            IRInstOperator::IRINST_OP_NEQ_I,
+            cond_val,
+            zero_const,
+            IntegerType::getTypeBool());
         current_block_insts.addInst(cmp_inst);
         branch_cond_val = static_cast<Value *>(cmp_inst); // 用icmp将i32与0比较，得出类型为i1的最终条件值
     } else if (cond_type->isFloatType()) {
@@ -3788,8 +3775,12 @@ bool IRGenerator::gen_condition_branch(
             std::cerr << "Internal Error: Failed to get zero constant for float type." << std::endl;
             return false;
         }
-        Instruction * fcmp_inst =
-            new FcmpInstruction(currentFunc, IRInstOperator::IRINST_OP_NEQ_F, cond_val, zero_const);
+        Instruction * fcmp_inst = new BinaryInstruction(
+            currentFunc,
+            IRInstOperator::IRINST_OP_NEQ_F,
+            cond_val,
+            zero_const,
+            IntegerType::getTypeBool());
         current_block_insts.addInst(fcmp_inst);
         branch_cond_val = static_cast<Value *>(fcmp_inst);
     } else {
