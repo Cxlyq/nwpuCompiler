@@ -263,22 +263,32 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
     if (constant <= 2047 && constant >= -2048) {
         // 如果常量在 -2048 到 2047 之间，可以直接使用 addi 指令
         emit("addi", PlatformRiscV64::regName[rs_reg_no], "zero", std::to_string(constant));
-    } else if (constant && 0xFFFFF000 == 0) {
+    } else if ((constant & 0x00000FFF) == 0) {
         // 如果常量是 0xFFF00000 的倍数，可以直接使用 lui 指令
+        std::cout << "constant:" << constant << "\n";
+        std::cout << "constant>>12:"<<(constant>>12) << "\n";
         emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant >> 12));
         return;
     } else {
-        uint32_t upper = (constant >> 12) & 0xFFFFF;
-        uint32_t lower = constant & 0xFFF;
+        std::cout << constant << "\n";
+        int32_t upper = (constant >> 12);
 
+        int32_t lower = constant & 0xFFF;
+        if (lower & 0x800) {
+            lower |= lower - 4096;
+            upper = upper + 1;
+        }
+        std::cout << upper << "\n";
+        std::cout << lower << "\n";
         emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(upper));
         if (lower != 0) {
             emit(
-                "addi",
+                "addiw",
                 PlatformRiscV64::regName[rs_reg_no],
                 PlatformRiscV64::regName[rs_reg_no],
                 std::to_string(lower));
         }
+        std::cout<<((upper<<12)+lower)<<"\n";
     }
 
     // emit("li", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant));
