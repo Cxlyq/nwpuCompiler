@@ -619,8 +619,11 @@ bool IRGenerator::ir_block(ast_node * node)
                 node->blockInsts.addInst(mergeLabel); // 添加merge标签
                 continue;                             // 继续处理下一个语句
             }
-        } else if (base_node->node_type == ast_operator_type::AST_OP_RETURN) {
-            stop = true; // block中遇到return语句，停止翻译后续语句
+        } else if (
+            base_node->node_type == ast_operator_type::AST_OP_RETURN ||
+            base_node->node_type == ast_operator_type::AST_OP_BREAK ||
+            base_node->node_type == ast_operator_type::AST_OP_CONTINUE) {
+            stop = true; // block中遇到return, break, continue语句，停止翻译后续语句
         }
 
         // 除了if-else以外的语句会进行到此处
@@ -2131,8 +2134,8 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
                 node_in_if->node_type == ast_operator_type::AST_OP_CONTINUE) {
                 hasBreakContinueInIf = true;
             }
-            if (node_in_if->node_type == ast_operator_type::AST_OP_RETURN ||
-                node_in_if->isIfElseHaveReturn) { // 如果本层if有return，或者下一层if-else是完全return
+            if (node_in_if->node_type == ast_operator_type::AST_OP_RETURN || node_in_if->isIfElseHaveReturn ||
+                node_in_if->returnedBlock) { // 如果本层if有return，或者下一层if-else是完全return
                 hasReturnInIf = true;
             }
         }
@@ -2187,8 +2190,9 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
                     node_in_else->node_type == ast_operator_type::AST_OP_CONTINUE) {
                     hasBreakContinueInElse = true;
                 }
-                if (node_in_else->node_type == ast_operator_type::AST_OP_RETURN ||
-                    node_in_else->isIfElseHaveReturn) { // 如果本层else有return，或者下一层if-else是完全return
+                if (node_in_else->node_type == ast_operator_type::AST_OP_RETURN || node_in_else->isIfElseHaveReturn ||
+                    node_in_else
+                        ->returnedBlock) { // 如果本层else有return，或者下一层if-else是完全return, 或者存在return的block
                     hasReturnInElse = true;
                 }
             }
