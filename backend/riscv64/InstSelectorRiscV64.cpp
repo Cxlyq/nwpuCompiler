@@ -39,6 +39,7 @@
 #include "BinaryInstruction.h"
 #include "GetElementPtrInst.h"
 #include "Value.h"
+#include "math.h"
 /// @param _irCode 指令
 /// @param _iloc ILoc
 /// @param _func 函数
@@ -434,8 +435,8 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
     // }
 
     // 释放寄存器
-    simpleRegisterAllocator.free(arg1);
-    simpleRegisterAllocator.free(arg2);
+    simpleRegisterAllocator.free(load_arg1_reg_no);
+    simpleRegisterAllocator.free(load_arg2_reg_no);
     inst->removeOperand(0);
     inst->removeOperand(1);
     // simpleRegisterAllocator.free(result);
@@ -505,7 +506,7 @@ void InstSelectorRiscV64::translate_one_operator(Instruction * inst, string oper
     // }
 
     // 释放寄存器
-    simpleRegisterAllocator.free(arg1);
+    simpleRegisterAllocator.free(load_arg1_reg_no);
     // simpleRegisterAllocator.free(result);
     inst->removeOperand(0);
 }
@@ -1306,6 +1307,7 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
     Instanceof(gepInst, GetElementPtrInst *, inst);
     Value * base = gepInst->getOperand(0);
     int     index = 0; // 数组偏移
+    bool    isConst = true;
     int     OperandNum = gepInst->getOperandsNum();
     // Value * index0 = inst->getOperand(1); // 通常是常量 0
     if (Instanceof(index1, ConstInt *, gepInst->getOperand(OperandNum - 1))) {
@@ -1313,6 +1315,8 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
     } else if (Instanceof(index1, Instruction *, gepInst->getOperand(OperandNum - 1))) {
         if (Instanceof(index1_Operand, ConstInt *, index1->getOperand(0))) {
             index = index1_Operand->getVal();
+        } else {
+            isConst = false;
         }
     } else {
         std::cout << "[InstSelectorRiscV64::translate_gep] src is error\n";
@@ -1354,7 +1358,21 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
             PlatformRiscV64::regName[resultRegId],
             PlatformRiscV64::regName[tmpRegId],
             "%lo(" + label + ")");
-
+        if (!isConst) {
+            Instanceof(index1, Instruction *, gepInst->getOperand(OperandNum - 1));
+            int index1OperandRegId = simpleRegisterAllocator.Allocate(index1->getOperand(0));
+            int shift = log2(index1->getOperand(0)->getType()->getSize());
+            iloc.inst(
+                "slli",
+                PlatformRiscV64::regName[index1OperandRegId],
+                PlatformRiscV64::regName[index1OperandRegId],
+                to_string(shift));
+            iloc.inst(
+                "add",
+                PlatformRiscV64::regName[resultRegId],
+                PlatformRiscV64::regName[index1OperandRegId],
+                PlatformRiscV64::regName[resultRegId]);
+        }
         int elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
         int offset = 0;
         offset = (index * elementSize);
