@@ -314,7 +314,6 @@ add_custom_command(TARGET ${PROJECT_NAME}
 	VERBATIM
 )
 
-
 set(CPACK_SOURCE_GENERATOR "ZIP")
 
 # 忽略不需要源代码目录或文件
@@ -333,8 +332,8 @@ set(CPACK_SOURCE_IGNORE_FILES
 	"/.vs/;" # visual studio
 	"/.vscode/;" # vscode
 	"/.cache/;" # cache
-	"/.CMake/;"
-	"/.CMakeFiles/;"
+	"/CMake/;"
+	"/CMakeFiles/;"
 )
 
 # 二进制打包
