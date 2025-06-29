@@ -417,19 +417,16 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
     }
 
     int32_t result_reg_no = simpleRegisterAllocator.Allocate(result);
+
     int32_t load_result_reg_no, load_arg1_reg_no, load_arg2_reg_no, tmp_reg_no = -1;
     // 看arg1是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
     if (arg1_reg_no == -1) {
-
+        tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
         // 分配一个寄存器r8
         if (arg1->getType()->isIntegerType()) {
             load_arg1_reg_no = simpleRegisterAllocator.AllocateTempInt();
         } else if (arg1->getType()->isFloatType()) {
             load_arg1_reg_no = simpleRegisterAllocator.AllocateTempFloat();
-            if (Instanceof(immFloatArg1, ConstFloat *, arg1)) {
-                tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
-                std::cout << immFloatArg1->getIRName() << "is a Float immediate, which takes one more int register.\n";
-            }
         } else {
             load_arg1_reg_no = -1;
         }
@@ -437,25 +434,31 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
         iloc.load_var(load_arg1_reg_no, arg1, tmp_reg_no);
         simpleRegisterAllocator.free(tmp_reg_no);
     } else {
+        std::cout << "arg1_reg_no:" << arg1_reg_no << endl;
+
         load_arg1_reg_no = arg1_reg_no;
     }
 
     // 看arg2是否是寄存器，若是则寄存器寻址，否则要load变量到寄存器中
     if (arg2_reg_no == -1) {
-
+        std::cout << "arg2_reg_no:" << arg2_reg_no << endl;
+        tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
         if (arg2->getType()->isIntegerType()) {
             load_arg2_reg_no = simpleRegisterAllocator.AllocateTempInt();
+            std::cout << "load_arg2_reg_no:" << load_arg2_reg_no << endl;
+
         } else if (arg2->getType()->isFloatType()) {
             load_arg2_reg_no = simpleRegisterAllocator.AllocateTempFloat();
-            if (Instanceof(immFloatArg2, ConstFloat *, arg2)) {
-                tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
-                std::cout << immFloatArg2->getIRName() << "is a Float immediate, which takes one more int register.\n";
-            }
         } else {
             load_arg2_reg_no = -1;
         }
+        std::cout << "load_arg2_reg_no:" << load_arg2_reg_no << endl;
+
         iloc.load_var(load_arg2_reg_no, arg2, tmp_reg_no);
+        std::cout << "load_arg2_reg_no:" << load_arg2_reg_no << endl;
+
         simpleRegisterAllocator.free(tmp_reg_no);
+
     } else {
         load_arg2_reg_no = arg2_reg_no;
     }
@@ -490,6 +493,7 @@ void InstSelectorRiscV64::translate_two_operator(Instruction * inst, string oper
     inst->removeOperand(0);
     inst->removeOperand(1);
     // simpleRegisterAllocator.free(result);
+    std::cout << "[InstSelectorRiscV64::translate_two_operator]:end" << endl;
 }
 
 /// @brief 一元操作指令翻译成RISCV64汇编
@@ -920,7 +924,20 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
 
         // 前八个的后面参数采用栈传递
         int esp = 0;
+        for (uint32_t k = 0; k < operandNum; k++) {
+            auto arg = callInst->getOperand(k);
+            std::cout << arg->getIRName() << endl;
 
+            int value_reg_id = arg->getRegId();
+            std::cout << value_reg_id << endl;
+
+            if (value_reg_id != -1) {
+                int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+                simpleRegisterAllocator.free(arg);
+                iloc.store_var(value_reg_id, arg, tmp_reg_no);
+                simpleRegisterAllocator.free(tmp_reg_no);
+            }
+        }
         for (uint32_t k = 0; k < operandNum; k++) {
             auto arg = callInst->getOperand(k);
 
@@ -928,15 +945,6 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                 if (floatIndex < 8) {
                     int float_reg_no = 42 + floatIndex; // 42号为fa0
                                                         // TODO:[优化]在非全栈模式时需要对被占用的栈保护寄存器压栈
-                    if (arg->getRegId() >= 42 && arg->getRegId() < float_reg_no) {
-                        int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
-
-                        iloc.store_var(arg->getRegId(), arg, addr_regno);
-                        simpleRegisterAllocator.free(addr_regno);
-                    } else if (arg->getRegId() == float_reg_no) {
-                        floatIndex++;
-                        continue;
-                    }
                     // if(PlatformRiscV64::floatRegVal[float_reg_no]->)
                     simpleRegisterAllocator.Allocate(float_reg_no);
                     int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
@@ -960,17 +968,6 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                     int int_reg_no = 10 + intIndex; // 10号为a0
                     std::cout << arg->getRegId() << endl;
 
-                    if (arg->getRegId() >= 10 && arg->getRegId() < int_reg_no) {
-                        int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
-
-                        iloc.store_var(arg->getRegId(), arg, addr_regno);
-                        simpleRegisterAllocator.free(addr_regno);
-                    }
-                    else if(arg->getRegId() == int_reg_no)
-                    {
-                        intIndex++;
-                        continue;
-                    }
                     simpleRegisterAllocator.Allocate(int_reg_no);
                     int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
                     std::cout << "[InstSelectorRiscV64::translate_call]: call " << callInst->getName() << "(): int arg "
@@ -1504,11 +1501,29 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         int offset = 0;
 
         offset = (index * elementSize) + baseOffset;
-
+        if (!isConst) {
+            Instanceof(index1, Instruction *, gepInst->getOperand(OperandNum - 1));
+            int index1OperandRegId = simpleRegisterAllocator.Allocate(index1->getOperand(0));
+            int resultRegId = simpleRegisterAllocator.AllocateTempInt(); // 假设是 a0，编号为 10
+            iloc.inst("li", PlatformRiscV64::regName[resultRegId], to_string(elementSize));
+            iloc.inst(
+                "mul",
+                PlatformRiscV64::regName[index1OperandRegId],
+                PlatformRiscV64::regName[index1OperandRegId],
+                PlatformRiscV64::regName[resultRegId]);
+            iloc.inst(
+                "add",
+                PlatformRiscV64::regName[resultRegId],
+                PlatformRiscV64::regName[index1OperandRegId],
+                PlatformRiscV64::regName[baseRegId]);
+            gepInst->setAddressingInfo(resultRegId, offset);
+            simpleRegisterAllocator.free(resultRegId);
+        } else {
+            gepInst->setAddressingInfo(baseRegId, offset);
+        }
         // std::cout << "index:" << index << endl;
         // std::cout << "baseOffset:" << baseOffset << endl;
         // std::cout << "offset:" << offset << endl;
-        gepInst->setAddressingInfo(baseRegId, offset);
     } else if (Instanceof(base_load, LoadInstruction *, base)) {
         // std::cout << "translate_gep:base is LoadInstruction" << endl;
 

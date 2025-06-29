@@ -599,13 +599,19 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int tmp_reg_no)
 /// @param src_var 源操作数：指令临时变量
 void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var, int tmp_reg_no)
 {
+    std::cout << "load_var" << std::endl;
+
     if (src_var->getRegId() != -1) {
+        std::cout << "load_var1" << std::endl;
+
         // 源操作数为寄存器变量
         int src_regId = src_var->getRegId();
         if (src_regId != rs_reg_no) {
             mov_reg(rs_reg_no, src_regId);
         }
     } else {
+        std::cout << "load_var2" << std::endl;
+
         // 栈+偏移的寻址方式
         int32_t var_baseRegId = -1;
         int64_t var_offset = -1;
@@ -614,8 +620,12 @@ void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var, int tmp_reg_no)
             minic_log(LOG_ERROR, "BUG");
         }
         if (var_offset > 2047 || var_offset < -2048) {
+            std::cout << "load_var3" << std::endl;
+
             int var_finalBaseRegId = tmp_reg_no;
             emit("li", PlatformRiscV64::regName[var_finalBaseRegId], std::to_string(var_offset));
+            std::cout << "load_var4" << std::endl;
+
             emit(
                 "add",
                 PlatformRiscV64::regName[var_finalBaseRegId],
@@ -760,15 +770,15 @@ void ILocRiscV64::lea_var(int rs_reg_no, Value * var)
     // 栈帧偏移
     int32_t var_baseRegId = -1;
     int64_t var_offset = -1;
-	bool result = true;
-    auto gepInst = dynamic_cast<GetElementPtrInst *>(var);
-    auto loadInst = dynamic_cast<LoadInstruction*>(var);
-    if(gepInst){
+    bool    result = true;
+    auto    gepInst = dynamic_cast<GetElementPtrInst *>(var);
+    auto    loadInst = dynamic_cast<LoadInstruction *>(var);
+    if (gepInst) {
         var_baseRegId = gepInst->getBaseRegId();
         var_offset = gepInst->getOffset();
     } else if (loadInst) {
-        result = loadInst->getMemoryAddr(&var_baseRegId,&var_offset);
-	} else {
+        result = loadInst->getMemoryAddr(&var_baseRegId, &var_offset);
+    } else {
         minic_log(LOG_ERROR, "BUG:lea_var gets inst neither GEP nor load");
     }
     if (!result) {
