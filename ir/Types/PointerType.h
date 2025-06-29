@@ -125,6 +125,11 @@ public:
         return pointeeType->toString() + "*";
     }
 
+    [[nodiscard]] int32_t getSize() const override
+    {
+        return 8;
+    }
+
 private:
     ///
     /// @brief 指针直接指向的类型，在指针操作中只解引用一次

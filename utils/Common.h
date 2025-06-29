@@ -26,7 +26,16 @@ std::string int2str(uint64_t num);
 /// @param num 浮点数
 /// @return 字符串
 std::string double2str(double num);
-uint32_t     float2int(float num);
+
+/// @brief 浮点数变同二进制定点数
+/// @param num 浮点数
+/// @return 对应定点数
+uint32_t float2int(float num);
+
+/// @brief 判断是否为调用者保护寄存器
+/// @param regNo 寄存器号
+/// @return bool
+bool isCallerProtectReg(int regNo);
 
 /// @brief 检查字符是否是字母（大小写字母）
 /// @param ch 字符

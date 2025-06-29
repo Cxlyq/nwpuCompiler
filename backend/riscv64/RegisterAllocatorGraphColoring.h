@@ -105,6 +105,10 @@ public:
         return floatRegValues;
     }
 
+public:
+    // 检查寄存器是否被占用
+    bool isRegOccupied(int regNum);
+
 private:
     bool simplify(
         const std::unordered_map<Value *, std::unordered_set<Value *>> & graph, std::stack<Value *> & stack,

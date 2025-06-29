@@ -639,7 +639,7 @@ void GraphColoringRegisterAllocator::free(int32_t no)
 
     int regIndex = regNoToIndex(no);
     if (regIndex == -1) {
-        // std::cout << "[free] 非法寄存器号: " << no << "，无法找到对应索引\n";
+        std::cout << "[free] 非法寄存器号: " << no << "，无法找到对应索引\n";
         return;
     }
 
@@ -694,4 +694,18 @@ void GraphColoringRegisterAllocator::floatBitmapSet(int32_t no)
 {
     floatRegBitmap.set(no);
     usedFloatBitmap.set(no);
+}
+// 检查整型寄存器是否被占用
+bool GraphColoringRegisterAllocator::isRegOccupied(int regNum)
+{
+    int regIndex = regNoToIndex(regNum);
+    if (regIndex == -1) {
+        std::cout << "[free] 非法寄存器号: " << regNum << "，无法找到对应索引\n";
+        return false;
+    }
+    if (regNum >= 32) {
+        return regIndex < PlatformRiscV64::maxUsableFloatRegNum && floatRegBitmap.test(regIndex);
+    } else {
+        return regIndex < PlatformRiscV64::maxUsableIntRegNum && intRegBitmap.test(regIndex);
+    }
 }

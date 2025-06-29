@@ -895,25 +895,39 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
     //         minic_log(LOG_ERROR, "ARG指令的个数与调用函数个数不一致");
     //     }
     // }
+    for (Value* value: simpleRegisterAllocator.getIntRegValues()) {
+        int value_reg_id=value->getRegId();
+        if (isCallerProtectReg(value_reg_id)) {
+            int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+            iloc.store_var(value_reg_id, value, tmp_reg_no);
+            simpleRegisterAllocator.free(tmp_reg_no);
+            simpleRegisterAllocator.free(value);
+		}
+    }
+    for (Value * value: simpleRegisterAllocator.getFloatRegValues()) {
+        int value_reg_id = value->getRegId();
+        if (isCallerProtectReg(value_reg_id)) {
+            int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+            iloc.store_var(value_reg_id, value, tmp_reg_no);
+            simpleRegisterAllocator.free(tmp_reg_no);
+            simpleRegisterAllocator.free(value);
+        }
+    }
     int intIndex = 0;   // 对应 a0–a7（x10–x17）
     int floatIndex = 0; // 对应 fa0–fa7（f10–f17）
     if (operandNum) {
 
         // 前八个的后面参数采用栈传递
         int esp = 0;
-        for (int32_t k = 0; k < operandNum; k++) {
+        
+        for (uint32_t k = 0; k < operandNum; k++) {
             auto arg = callInst->getOperand(k);
 
             if (arg->getType()->isFloatType()) {
                 if (floatIndex < 8) {
                     int float_reg_no = 42 + floatIndex; // 42号为fa0
                     // TODO:[优化]在非全栈模式时需要对被占用的栈保护寄存器压栈
-                    if (arg->getRegId() >= 42 && arg->getRegId() < float_reg_no) {
-                        int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
-
-                        iloc.store_var(arg->getRegId(), arg, addr_regno);
-                        simpleRegisterAllocator.free(addr_regno);
-                    } else if (arg->getRegId() == float_reg_no) {
+                    if (arg->getRegId() == float_reg_no) {
                         floatIndex++;
                         continue;
                     }
@@ -939,12 +953,7 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                 if (intIndex < 8) {
                     int int_reg_no = 10 + intIndex; // 10号为a0
                     std::cout << arg->getRegId() << endl;
-                    if (arg->getRegId() >= 10 && arg->getRegId() < int_reg_no) {
-                        int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
-
-                        iloc.store_var(arg->getRegId(), arg, addr_regno);
-                        simpleRegisterAllocator.free(addr_regno);
-                    } else if (arg->getRegId() == int_reg_no) {
+					if (arg->getRegId() == int_reg_no) {
                         intIndex++;
                         continue;
                     }
@@ -971,10 +980,15 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                 if (intIndex < 8) {
                     int int_reg_no = 10 + intIndex;
                     simpleRegisterAllocator.Allocate(int_reg_no);
-
-                    int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
-                    iloc.load_var(int_reg_no, arg, tmp_reg_no); // 关键：加载指针的地址
-                    simpleRegisterAllocator.free(tmp_reg_no);
+                    std::cout << "尚未完成数组作为实参的函数调用1\n";
+                    if (Instanceof(GEParg, GetElementPtrInst *, arg)) {
+                        iloc.lea_var(int_reg_no, GEParg);
+                    } else if (Instanceof(LOADarg, LoadInstruction *, arg)) {
+						int tmp_reg_no=simpleRegisterAllocator.AllocateTempInt();
+                        iloc.load_var(int_reg_no, LOADarg, tmp_reg_no);
+                        simpleRegisterAllocator.free(tmp_reg_no);
+					}
+                    // 关键：加载指针的地址
 
                     intIndex++;
                 } else {
@@ -1398,7 +1412,7 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         int elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
         std::cout << " elementSize: " << elementSize << endl;
         int offset = 0;
-        offset = -(index * elementSize) + baseOffset;
+        offset = (index * elementSize) + baseOffset;
         // std::cout << "index:" << index << endl;
         // std::cout << "baseOffset:" << baseOffset << endl;
         // std::cout << "offset:" << offset << endl;
@@ -1406,7 +1420,7 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
             Instanceof(index1, Instruction *, gepInst->getOperand(OperandNum - 1));
             int index1OperandRegId = simpleRegisterAllocator.Allocate(index1->getOperand(0));
             int resultRegId = simpleRegisterAllocator.AllocateTempInt(); // 假设是 a0，编号为 10
-            iloc.inst("li", PlatformRiscV64::regName[resultRegId], to_string(-elementSize));
+            iloc.inst("li", PlatformRiscV64::regName[resultRegId], to_string(elementSize));
             iloc.inst(
                 "mul",
                 PlatformRiscV64::regName[index1OperandRegId],
@@ -1474,11 +1488,9 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         // std::cout << "translate_gep:elementSize is " << elementSize << endl;
 
         int offset = 0;
-        if (baseOffset >= 0) {
-            offset = (index * elementSize) + baseOffset;
-        } else {
-            offset = -(index * elementSize) + baseOffset;
-        }
+
+        offset = (index * elementSize) + baseOffset;
+
         // std::cout << "index:" << index << endl;
         // std::cout << "baseOffset:" << baseOffset << endl;
         // std::cout << "offset:" << offset << endl;
@@ -1487,20 +1499,36 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         // std::cout << "translate_gep:base is LoadInstruction" << endl;
 
         int32_t baseRegId = simpleRegisterAllocator.Allocate(base_load);
-        std::cout << 25 << endl;
 
         // ---------- Step 2: 处理偏移量 index1 ----------
 
         int elementSize = base_load->getType()->getPointeeType()->getSize(); // 比如 i32 -> 4
         // std::cout << "elementSize:" << elementSize << endl;
 
-        std::cout << 26 << endl;
-
         int offset = 0;
         offset = (index * elementSize);
         // std::cout << "index:" << index << endl;
         // std::cout << "offset:" << offset << endl;
-        gepInst->setAddressingInfo(baseRegId, offset);
+        if (!isConst) {
+            Instanceof(index1, Instruction *, gepInst->getOperand(OperandNum - 1));
+            int index1OperandRegId = simpleRegisterAllocator.Allocate(index1->getOperand(0));
+            int resultRegId = simpleRegisterAllocator.AllocateTempInt(); // 假设是 a0，编号为 10
+            iloc.inst("li", PlatformRiscV64::regName[resultRegId], to_string(elementSize));
+            iloc.inst(
+                "mul",
+                PlatformRiscV64::regName[index1OperandRegId],
+                PlatformRiscV64::regName[index1OperandRegId],
+                PlatformRiscV64::regName[resultRegId]);
+            iloc.inst(
+                "add",
+                PlatformRiscV64::regName[resultRegId],
+                PlatformRiscV64::regName[index1OperandRegId],
+                PlatformRiscV64::regName[baseRegId]);
+            gepInst->setAddressingInfo(resultRegId, offset);
+            simpleRegisterAllocator.free(resultRegId);
+        } else {
+            gepInst->setAddressingInfo(baseRegId, offset);
+        }
     } else {
         std::cout << "[InstSelectorRiscV64::translate_gep] src is not a Global/Local variable\n";
     }

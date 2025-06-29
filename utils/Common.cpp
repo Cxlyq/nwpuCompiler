@@ -38,6 +38,13 @@ string double2str(double num)
     return std::to_string(num);
 }
 
+/// @brief 判断是否为调用者保护寄存器
+/// @param regNo 寄存器号
+/// @return bool
+bool isCallerProtectReg(int regNo)
+{
+    return ((regNo>=10&&regNo<=17)||(regNo>=5&&regNo<=7)||(regNo>=28&&regNo<=39)||(regNo>=42&&regNo<=49)||(regNo>=60&&regNo<=63))?true:false;
+}
 /// @brief 浮点数变同二进制定点数
 /// @param num 浮点数
 /// @return 对应定点数

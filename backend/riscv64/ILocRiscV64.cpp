@@ -707,7 +707,6 @@ void ILocRiscV64::load_var(int rs_reg_no, GetElementPtrInst * src_var, int tmp_r
             // 栈+偏移的寻址方式
             int32_t var_baseRegId = src_var->getBaseRegId();
             int64_t var_offset = src_var->getOffset();
-            // TODO:@Kevin-wjq13777 [确认]是否需要这一部分？ 如需要，修改入口参数并更改同名参数
             if (var_offset > 2047 || var_offset < -2048) {
                 int var_finalBaseRegId = tmp_reg_no;
                 emit("li", PlatformRiscV64::regName[var_finalBaseRegId], std::to_string(var_offset));
@@ -761,18 +760,36 @@ void ILocRiscV64::lea_var(int rs_reg_no, Value * var)
     // 栈帧偏移
     int32_t var_baseRegId = -1;
     int64_t var_offset = -1;
-
-    bool result = var->getMemoryAddr(&var_baseRegId, &var_offset);
+	bool result = true;
+    auto gepInst = dynamic_cast<GetElementPtrInst *>(var);
+    auto loadInst = dynamic_cast<LoadInstruction*>(var);
+    if(gepInst){
+        var_baseRegId = gepInst->getBaseRegId();
+        var_offset = gepInst->getOffset();
+    } else if (loadInst) {
+        result = loadInst->getMemoryAddr(&var_baseRegId,&var_offset);
+	} else {
+        minic_log(LOG_ERROR, "BUG:lea_var gets inst neither GEP nor load");
+    }
     if (!result) {
-        minic_log(LOG_ERROR, "BUG");
+        minic_log(LOG_ERROR, "BUG:lea_var gets loadinst without mem init");
     }
 
-    std::string rsReg = PlatformRiscV64::regName[rs_reg_no];
-    std::string base = PlatformRiscV64::regName[var_baseRegId];
-    std::string offset_str = std::to_string(var_offset);
-    emit("addi", rsReg, base, offset_str);
+    if (var_offset > 2047 || var_offset < -2048) {
+        emit("li", PlatformRiscV64::regName[rs_reg_no], std::to_string(var_offset));
+        emit(
+            "add",
+            PlatformRiscV64::regName[rs_reg_no],
+            PlatformRiscV64::regName[rs_reg_no],
+            PlatformRiscV64::regName[var_baseRegId]);
+    } else {
+        emit(
+            "addi",
+            PlatformRiscV64::regName[rs_reg_no],
+            PlatformRiscV64::regName[var_baseRegId],
+            std::to_string(var_offset));
+    }
 }
-
 /// @brief 加载符号值 ldr r0,=g ldr r0,=.L1
 /// @param rs_reg_no 结果寄存器编号
 /// @param name 符号名
