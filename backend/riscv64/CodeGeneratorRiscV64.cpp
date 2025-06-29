@@ -608,6 +608,6 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
             // 处理不了的类型（安全起见）
             assert(false && "Unsupported Value* type for stack allocation");
         }
-        std::cout << entry.value->getName() << "\t" << entry.offsetFromSp << std::endl;
+        std::cout << entry.value->getIRName() << "\t" << -entry.offsetFromSp << std::endl;
     }
 }

@@ -895,39 +895,45 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
     //         minic_log(LOG_ERROR, "ARG指令的个数与调用函数个数不一致");
     //     }
     // }
-    for (Value* value: simpleRegisterAllocator.getIntRegValues()) {
-        int value_reg_id=value->getRegId();
-        if (isCallerProtectReg(value_reg_id)) {
-            int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
-            iloc.store_var(value_reg_id, value, tmp_reg_no);
-            simpleRegisterAllocator.free(tmp_reg_no);
-            simpleRegisterAllocator.free(value);
-		}
-    }
-    for (Value * value: simpleRegisterAllocator.getFloatRegValues()) {
-        int value_reg_id = value->getRegId();
-        if (isCallerProtectReg(value_reg_id)) {
-            int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
-            iloc.store_var(value_reg_id, value, tmp_reg_no);
-            simpleRegisterAllocator.free(tmp_reg_no);
-            simpleRegisterAllocator.free(value);
-        }
-    }
+    // for (Value * value: simpleRegisterAllocator.getIntRegValues()) {
+    //     int value_reg_id = value->getRegId();
+    //     std::cout << value->getIRName() << "\t" << value_reg_id << endl;
+    //     if (isCallerProtectReg(value_reg_id)) {
+    //         int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+    //         iloc.store_var(value_reg_id, value, tmp_reg_no);
+    //         simpleRegisterAllocator.free(tmp_reg_no);
+    //         simpleRegisterAllocator.free(value);
+    //     }
+    // }
+    // for (Value * value: simpleRegisterAllocator.getFloatRegValues()) {
+    //     int value_reg_id = value->getRegId();
+    //     if (isCallerProtectReg(value_reg_id)) {
+    //         int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+    //         iloc.store_var(value_reg_id, value, tmp_reg_no);
+    //         simpleRegisterAllocator.free(tmp_reg_no);
+    //         simpleRegisterAllocator.free(value);
+    //     }
+    // }
     int intIndex = 0;   // 对应 a0–a7（x10–x17）
     int floatIndex = 0; // 对应 fa0–fa7（f10–f17）
     if (operandNum) {
 
         // 前八个的后面参数采用栈传递
         int esp = 0;
-        
+
         for (uint32_t k = 0; k < operandNum; k++) {
             auto arg = callInst->getOperand(k);
 
             if (arg->getType()->isFloatType()) {
                 if (floatIndex < 8) {
                     int float_reg_no = 42 + floatIndex; // 42号为fa0
-                    // TODO:[优化]在非全栈模式时需要对被占用的栈保护寄存器压栈
-                    if (arg->getRegId() == float_reg_no) {
+                                                        // TODO:[优化]在非全栈模式时需要对被占用的栈保护寄存器压栈
+                    if (arg->getRegId() >= 42 && arg->getRegId() < float_reg_no) {
+                        int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
+
+                        iloc.store_var(arg->getRegId(), arg, addr_regno);
+                        simpleRegisterAllocator.free(addr_regno);
+                    } else if (arg->getRegId() == float_reg_no) {
                         floatIndex++;
                         continue;
                     }
@@ -953,7 +959,15 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                 if (intIndex < 8) {
                     int int_reg_no = 10 + intIndex; // 10号为a0
                     std::cout << arg->getRegId() << endl;
-					if (arg->getRegId() == int_reg_no) {
+
+                    if (arg->getRegId() >= 10 && arg->getRegId() < int_reg_no) {
+                        int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
+
+                        iloc.store_var(arg->getRegId(), arg, addr_regno);
+                        simpleRegisterAllocator.free(addr_regno);
+                    }
+                    else if(arg->getRegId() == int_reg_no)
+                    {
                         intIndex++;
                         continue;
                     }
@@ -984,10 +998,10 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
                     if (Instanceof(GEParg, GetElementPtrInst *, arg)) {
                         iloc.lea_var(int_reg_no, GEParg);
                     } else if (Instanceof(LOADarg, LoadInstruction *, arg)) {
-						int tmp_reg_no=simpleRegisterAllocator.AllocateTempInt();
+                        int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
                         iloc.load_var(int_reg_no, LOADarg, tmp_reg_no);
                         simpleRegisterAllocator.free(tmp_reg_no);
-					}
+                    }
                     // 关键：加载指针的地址
 
                     intIndex++;
