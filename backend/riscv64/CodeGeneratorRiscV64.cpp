@@ -260,6 +260,7 @@ void CodeGeneratorRiscV64::genCodeSection(Function * func)
     lva.run(func);
     simpleRegisterAllocator.buildGraph(lva); // 构建干涉图
     bool success = simpleRegisterAllocator.allocate();
+
     if (success) {
         // std::cout << "寄存器分配成功 ✅\n";
     } else {
@@ -568,7 +569,10 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
     // 遍历包含有值的指令，也就是临时变量
     for (auto inst: func->getInterCode().getInsts()) {
-
+        if (Instanceof(GEP, GetElementPtrInst *, inst)) {
+            GEP->getBaseRegId();
+            continue;
+        }
         if (inst->hasResultValue() && (inst->getRegId() == -1)) {
             // 有值，并且没有分配寄存器
 

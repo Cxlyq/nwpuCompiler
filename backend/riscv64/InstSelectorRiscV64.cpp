@@ -901,21 +901,22 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
     // }
     // for (Value * value: simpleRegisterAllocator.getIntRegValues()) {
     //     int value_reg_id = value->getRegId();
-    //     std::cout << value->getIRName() << "\t" << value_reg_id << endl;
-    //     if (isCallerProtectReg(value_reg_id)) {
+    //     if (value_reg_id >= 10 && value_reg_id <= (10 + operandNum)) {
+    //         std::cout << "IntRegValues():" << value->getIRName() << "\t" << value_reg_id << endl;
+
     //         int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+    //         simpleRegisterAllocator.free(value);
     //         iloc.store_var(value_reg_id, value, tmp_reg_no);
     //         simpleRegisterAllocator.free(tmp_reg_no);
-    //         simpleRegisterAllocator.free(value);
     //     }
     // }
     // for (Value * value: simpleRegisterAllocator.getFloatRegValues()) {
     //     int value_reg_id = value->getRegId();
-    //     if (isCallerProtectReg(value_reg_id)) {
+    //     if (value_reg_id >= 42 && value_reg_id <= (42 + operandNum)) {
     //         int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+    //         simpleRegisterAllocator.free(value);
     //         iloc.store_var(value_reg_id, value, tmp_reg_no);
     //         simpleRegisterAllocator.free(tmp_reg_no);
-    //         simpleRegisterAllocator.free(value);
     //     }
     // }
     int intIndex = 0;   // 对应 a0–a7（x10–x17）
@@ -926,12 +927,11 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
         int esp = 0;
         for (uint32_t k = 0; k < operandNum; k++) {
             auto arg = callInst->getOperand(k);
-            std::cout << arg->getIRName() << endl;
 
             int value_reg_id = arg->getRegId();
-            std::cout << value_reg_id << endl;
 
             if (value_reg_id != -1) {
+                std::cout << "operandNum:" << arg->getIRName() << "\t" << value_reg_id << endl;
                 int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
                 simpleRegisterAllocator.free(arg);
                 iloc.store_var(value_reg_id, arg, tmp_reg_no);
@@ -1325,12 +1325,9 @@ void InstSelectorRiscV64::translate_load(Instruction * inst)
         int32_t addr_regno = simpleRegisterAllocator.AllocateTempInt();
         //  data_reg<- src
         iloc.load_var(dst_regId, src, addr_regno);
-        std::cout << "91\n";
-        // iloc.store_var(dst_regId, dst, addr_regno);
         simpleRegisterAllocator.free(addr_regno);
     }
     inst->removeOperand(0);
-    std::cout << "12\n";
 }
 
 /// @brief Cast指令翻译成RISCV64汇编

@@ -599,10 +599,8 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int tmp_reg_no)
 /// @param src_var 源操作数：指令临时变量
 void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var, int tmp_reg_no)
 {
-    std::cout << "load_var" << std::endl;
 
     if (src_var->getRegId() != -1) {
-        std::cout << "load_var1" << std::endl;
 
         // 源操作数为寄存器变量
         int src_regId = src_var->getRegId();
@@ -610,7 +608,6 @@ void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var, int tmp_reg_no)
             mov_reg(rs_reg_no, src_regId);
         }
     } else {
-        std::cout << "load_var2" << std::endl;
 
         // 栈+偏移的寻址方式
         int32_t var_baseRegId = -1;
@@ -620,11 +617,9 @@ void ILocRiscV64::load_var(int rs_reg_no, Instruction * src_var, int tmp_reg_no)
             minic_log(LOG_ERROR, "BUG");
         }
         if (var_offset > 2047 || var_offset < -2048) {
-            std::cout << "load_var3" << std::endl;
 
             int var_finalBaseRegId = tmp_reg_no;
             emit("li", PlatformRiscV64::regName[var_finalBaseRegId], std::to_string(var_offset));
-            std::cout << "load_var4" << std::endl;
 
             emit(
                 "add",
