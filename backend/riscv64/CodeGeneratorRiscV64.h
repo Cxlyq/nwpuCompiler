@@ -72,5 +72,5 @@ private:
     ///
     /// @brief 基于图着色的寄存器分配方法
     ///
-    GraphColoringRegisterAllocator simpleRegisterAllocator;
+    // GraphColoringRegisterAllocator simpleRegisterAllocator;
 };
