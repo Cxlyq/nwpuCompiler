@@ -899,30 +899,36 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
     //         minic_log(LOG_ERROR, "ARG指令的个数与调用函数个数不一致");
     //     }
     // }
-    // for (Value * value: simpleRegisterAllocator.getIntRegValues()) {
-    //     int value_reg_id = value->getRegId();
-    //     if (value_reg_id >= 10 && value_reg_id <= (10 + operandNum)) {
-    //         std::cout << "IntRegValues():" << value->getIRName() << "\t" << value_reg_id << endl;
-
-    //         int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
-    //         simpleRegisterAllocator.free(value);
-    //         iloc.store_var(value_reg_id, value, tmp_reg_no);
-    //         simpleRegisterAllocator.free(tmp_reg_no);
-    //     }
-    // }
-    // for (Value * value: simpleRegisterAllocator.getFloatRegValues()) {
-    //     int value_reg_id = value->getRegId();
-    //     if (value_reg_id >= 42 && value_reg_id <= (42 + operandNum)) {
-    //         int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
-    //         simpleRegisterAllocator.free(value);
-    //         iloc.store_var(value_reg_id, value, tmp_reg_no);
-    //         simpleRegisterAllocator.free(tmp_reg_no);
-    //     }
-    // }
     int intIndex = 0;   // 对应 a0–a7（x10–x17）
     int floatIndex = 0; // 对应 fa0–fa7（f10–f17）
     if (operandNum) {
-
+        for (Value * value: simpleRegisterAllocator.getIntRegValues()) {
+            int value_reg_id = value->getRegId();
+            if (value_reg_id >= 10 && value_reg_id <= 17) {
+                std::cout << "IntRegValues():" << value->getIRName() << "\t" << value_reg_id << endl;
+                if (Instanceof(GEP, GetElementPtrInst *, value)) {
+                    simpleRegisterAllocator.free(GEP);
+                } else {
+                    int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+                    simpleRegisterAllocator.free(value);
+                    iloc.store_var(value_reg_id, value, tmp_reg_no);
+                    simpleRegisterAllocator.free(tmp_reg_no);
+                }
+            }
+        }
+        for (Value * value: simpleRegisterAllocator.getFloatRegValues()) {
+            int value_reg_id = value->getRegId();
+            if (value_reg_id >= 42 && value_reg_id <= 49) {
+                if (Instanceof(GEP, GetElementPtrInst *, value)) {
+                    simpleRegisterAllocator.free(GEP);
+                } else {
+                    int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+                    simpleRegisterAllocator.free(value);
+                    iloc.store_var(value_reg_id, value, tmp_reg_no);
+                    simpleRegisterAllocator.free(tmp_reg_no);
+                }
+            }
+        }
         // 前八个的后面参数采用栈传递
         int esp = 0;
         for (uint32_t k = 0; k < operandNum; k++) {

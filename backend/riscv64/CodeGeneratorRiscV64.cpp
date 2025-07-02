@@ -241,6 +241,21 @@ void CodeGeneratorRiscV64::getIRValueStr(Value * val, std::string & str)
 /// @param func 要处理的函数
 void CodeGeneratorRiscV64::genCodeSection(Function * func)
 {
+    // ILOC代码序列
+    ILocRiscV64          iloc(module);
+    LiveVariableAnalysis lva;
+    // printf("LVA addr = %p\n", &lva); // 看是否是 0x50 或其他非法值
+    lva.run(func);
+    simpleRegisterAllocator.buildGraph(lva); // 构建干涉图
+    bool success = simpleRegisterAllocator.allocate();
+    // simpleRegisterAllocator.clearIntRegValues();
+    // simpleRegisterAllocator.clearFloatRegValues();
+    if (success) {
+        // std::cout << "寄存器分配成功 ✅\n";
+    } else {
+        // std::cout << "部分变量需要溢出 ❌\n";
+    }
+
     // 寄存器分配以及栈内局部变量的站内地址重新分配
     registerAllocation(func);
     // 获取函数的指令列表
@@ -253,19 +268,6 @@ void CodeGeneratorRiscV64::genCodeSection(Function * func)
         }
     }
 
-    // ILOC代码序列
-    ILocRiscV64          iloc(module);
-    LiveVariableAnalysis lva;
-    // printf("LVA addr = %p\n", &lva); // 看是否是 0x50 或其他非法值
-    lva.run(func);
-    simpleRegisterAllocator.buildGraph(lva); // 构建干涉图
-    bool success = simpleRegisterAllocator.allocate();
-
-    if (success) {
-        // std::cout << "寄存器分配成功 ✅\n";
-    } else {
-        // std::cout << "部分变量需要溢出 ❌\n";
-    }
     // 指令选择生成汇编指令
     InstSelectorRiscV64 instSelector(IrInsts, iloc, func, simpleRegisterAllocator);
     instSelector.setShowLinearIR(this->showLinearIR);

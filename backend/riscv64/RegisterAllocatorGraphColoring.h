@@ -98,12 +98,13 @@ public:
     {
         return intRegValues;
     }
-
+    void clearIntRegValues();
     // Getter for floatRegValues
     const std::vector<Value *> & getFloatRegValues() const
     {
         return floatRegValues;
     }
+    void clearFloatRegValues();
 
 public:
     // 检查寄存器是否被占用

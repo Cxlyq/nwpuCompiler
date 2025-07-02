@@ -709,3 +709,27 @@ bool GraphColoringRegisterAllocator::isRegOccupied(int regNum)
         return regIndex < PlatformRiscV64::maxUsableIntRegNum && intRegBitmap.test(regIndex);
     }
 }
+
+void GraphColoringRegisterAllocator::clearIntRegValues()
+{
+    // 1. 首先将所有寄存器值替换为0
+    for (Value * var: intRegValues) {
+        // 创建与寄存器类型匹配的0常量
+        var->setRegId(-1);
+    }
+
+    // 2. 然后清空容器
+    intRegValues.clear();
+}
+
+void GraphColoringRegisterAllocator::clearFloatRegValues()
+{
+    // 1. 首先将所有寄存器值替换为0
+    for (Value * var: floatRegValues) {
+        // 创建与寄存器类型匹配的0常量
+        var->setRegId(-1);
+    }
+
+    // 2. 然后清空容器
+    floatRegValues.clear();
+}
