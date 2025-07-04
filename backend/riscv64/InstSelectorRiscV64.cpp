@@ -17,6 +17,7 @@
 #include <iostream>
 #include <string>
 #include <typeinfo>
+#include <cstdint>
 #include "Common.h"
 #include "ConstFloat.h"
 #include "ConstInt.h"

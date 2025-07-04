@@ -17,7 +17,7 @@
 #include <cstring>
 #include <string>
 #include <iostream>
-
+#include <cstdint>
 #include "Common.h"
 
 using namespace std;
