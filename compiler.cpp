@@ -13,10 +13,8 @@
 #include <iostream>
 #include <string>
 #include <getopt.h>
+#include <cstdint>
 
-#ifdef _WIN32
-#include <Windows.h>
-#endif
 
 #include "Common.h"
 #include "AST.h"
