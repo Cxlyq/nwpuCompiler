@@ -21,9 +21,9 @@
 #include "Common.h"
 #include "AST.h"
 #include "Antlr4Executor.h"
-#include "CodeGenerator.h"
-#include "CodeGeneratorArm32.h"
 #include "CodeGeneratorRiscV64.h"
+#include "CodeGenerator.h"
+
 #include "FrontEndExecutor.h"
 #include "Graph.h"
 #include "IRGenerator.h"
@@ -75,13 +75,7 @@ static struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
     {"output", required_argument, 0, 'o'},
     {"symbol", no_argument, 0, 'S'},
-    {"ast", no_argument, 0, 'T'},
-    {"antlr4", no_argument, 0, 'A'},
-    {"ll", no_argument, 0, 'L'},
-    {"ir", no_argument, 0, 'I'},
     {"optimize", required_argument, 0, 'O'},
-    {"target", required_argument, 0, 't'},
-    {"asmir", no_argument, 0, 'c'},
     {0, 0, 0, 0}};
 
 /// @brief 显示帮助
@@ -89,16 +83,11 @@ static struct option long_options[] = {
 static void showHelp(const std::string & exeName)
 {
     std::cout << exeName +
-                     " -S [--symbol] [-T | --ast | -I | --ir | -c | --asmir ] [-o output | --output=output] source\n";
+                     " -S [--symbol] [-o output | --output=output] source\n";
     std::cout << "Options:\n";
-    std::cout << "  -h, --help                 Show this help message\n";
     std::cout << "  -o, --output=FILE          Specify output file\n";
     std::cout << "  -S, --symbol               Show symbol information\n";
-    std::cout << "  -T, --ast                  Output abstract syntax tree\n";
-    std::cout << "  -I, --ir                   Output intermediate representation\n";
     std::cout << "  -O, --optimize=LEVEL       Set optimization level\n";
-    std::cout << "  -t, --target=CPU           Specify target CPU architecture\n";
-    std::cout << "  -c, --asmir                Show IR instructions as comments in assembly output\n";
 }
 
 /// @brief 参数解析与有效性检查
@@ -125,36 +114,15 @@ static int ArgsAnalysis(int argc, char * argv[])
 lb_check:
     while ((ch = getopt_long(argc, argv, options, long_options, &option_index)) != -1) {
         switch (ch) {
-            case 'h':
-                gShowHelp = true;
-                break;
             case 'o':
                 gOutputFile = optarg;
                 break;
             case 'S':
                 gShowSymbol = true;
                 break;
-            case 'T':
-                gShowAST = true;
-                break;
-            case 'A':
-                break;
-            case 'L':
-                gShowLineIR = true;
-                break;
-            case 'I':
-                // 产生中间IR
-                gShowLineIR = true;
-                break;
             case 'O':
                 // 优化级别分析，暂时没有用，如开启优化时请使用
                 gOptLevel = std::stoi(optarg);
-                break;
-            case 't':
-                gCPUTarget = optarg;
-                break;
-            case 'c':
-                gAsmAlsoShowIR = true;
                 break;
             default:
                 return -1;
@@ -325,12 +293,7 @@ static int compile(std::string inputFile, std::string outputFile)
             CodeGenerator * generator = nullptr;
             // 对IR的名字重命名
             module->renameIR();
-            if (gCPUTarget == "ARM32") {
-                // 输出面向ARM32的汇编指令
-                generator = new CodeGeneratorArm32(module);
-                generator->setShowLinearIR(gAsmAlsoShowIR);
-                generator->run(outputFile);
-            } else if (gCPUTarget == "RISCV64") {
+            if (gCPUTarget == "RISCV64") {
                 // TODO:[后端] 需补充输出面向RICSV64的CodeGenerator类
                 generator = new CodeGeneratorRiscV64(module);
                 generator->setShowLinearIR(gAsmAlsoShowIR);
