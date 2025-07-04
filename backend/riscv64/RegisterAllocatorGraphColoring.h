@@ -69,6 +69,11 @@ public:
     /// @return int 寄存器编号
     ///
     int AllocateTempInt();
+    
+    /// @brief 临时分配一个int型寄存器
+    /// @return int 寄存器编号
+    ///
+    int AllocateTempIntToTempReg();
 
     /// @brief 临时分配一个float型寄存器
     /// @return int 寄存器编号
