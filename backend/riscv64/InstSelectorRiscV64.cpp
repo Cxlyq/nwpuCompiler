@@ -276,9 +276,16 @@ void InstSelectorRiscV64::translate_exit(Instruction * inst)
         Value * retVal = inst->getOperand(0);
 
         // 赋值给寄存器a0
-        int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
-        iloc.load_var(10, retVal, tmp_reg_no);
-        simpleRegisterAllocator.free(tmp_reg_no);
+        if (retVal->getType()->isInt32Type()) {
+          int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+            iloc.load_var(10, retVal, tmp_reg_no);
+            simpleRegisterAllocator.free(tmp_reg_no);
+        } else if (retVal->getType()->isFloatType()) {
+            int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+            iloc.load_var(42, retVal, tmp_reg_no);
+            simpleRegisterAllocator.free(tmp_reg_no);
+        }
+
     }
     auto & protectedRegNo = func->getProtectedReg();
 
