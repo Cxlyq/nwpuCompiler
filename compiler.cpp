@@ -1,5 +1,5 @@
 ﻿/**
- * @file main.cpp
+ * @file compiler.cpp
  * @author zenglj (zenglj@nwpu.edu.cn)
  * @brief 主程序文件
  * @version 0.1
@@ -14,7 +14,6 @@
 #include <string>
 #include <getopt.h>
 #include <cstdint>
-
 
 #include "Common.h"
 #include "AST.h"
@@ -80,8 +79,7 @@ static struct option long_options[] = {
 /// @param exeName
 static void showHelp(const std::string & exeName)
 {
-    std::cout << exeName +
-                     " -S [--symbol] [-o output | --output=output] source\n";
+    std::cout << exeName + " -S [--symbol] [-o output | --output=output] source\n";
     std::cout << "Options:\n";
     std::cout << "  -o, --output=FILE          Specify output file\n";
     std::cout << "  -S, --symbol               Show symbol information\n";
