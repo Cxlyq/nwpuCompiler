@@ -53,6 +53,9 @@ asm.s
 # history
 .history
 
+# release zips
+*.zip
+*.tar.gz
 # clion
 .idea/
 
