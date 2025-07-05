@@ -251,9 +251,7 @@ void CodeGeneratorRiscV64::genCodeSection(Function * func)
     // simpleRegisterAllocator.clearIntRegValues();
     // simpleRegisterAllocator.clearFloatRegValues();
     if (success) {
-        // std::cout << "寄存器分配成功 ✅\n";
     } else {
-        // std::cout << "部分变量需要溢出 ❌\n";
     }
 
     // 寄存器分配以及栈内局部变量的站内地址重新分配
@@ -361,7 +359,6 @@ void CodeGeneratorRiscV64::registerAllocation(Function * func)
     std::string irCodeStr;
     func->renameIR();
     func->toString(irCodeStr);
-    std::cout << irCodeStr << std::endl;
 #endif
 }
 
@@ -498,7 +495,6 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
     // 这里对临时变量和局部变量都在栈上进行分配，采用FP+偏移的寻址方式，偏移为负数
 
     int64_t sp_esp = func->getProtectedReg().size() * 8;
-    std::cout << "sp_esp:" << sp_esp << std::endl;
 
     // auto & params = func->getParams();
 
@@ -554,7 +550,6 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
             // 该变量没有分配寄存器
             int32_t size = 0;
             size = var->getType()->getSize();
-            std::cout << "stackalloc:size= " << size << "\n";
             // 64位RISC平台按照4字节的大小整数倍分配局部变量
             size = (size + 3) & ~3;
             // 累计当前作用域大小
@@ -596,7 +591,7 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
 
     // 只有int类型时可以4字节对齐，支持浮点或者向量运算时要16字节对齐
     sp_esp = (sp_esp + 15) & ~15;
-    std::cout << "sp_esp:" << sp_esp << std::endl;
+
 
     // 设置函数的最大栈帧深度，没有考虑寄存器保护的空间大小
     // TODO:[]是否考虑保护寄存器？加入函数调用多实参逆序入栈的额外栈长度
@@ -614,6 +609,5 @@ void CodeGeneratorRiscV64::stackAlloc(Function * func)
             // 处理不了的类型（安全起见）
             assert(false && "Unsupported Value* type for stack allocation");
         }
-        std::cout << entry.value->getIRName() << "\t" << -entry.offsetFromSp << std::endl;
     }
 }

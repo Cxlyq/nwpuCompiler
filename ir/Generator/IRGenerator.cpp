@@ -307,8 +307,7 @@ bool IRGenerator::ir_function_define(ast_node * node)
             // 浮点型返回值，设置初始值为0.0
             node->blockInsts.addInst(new StoreInstruction(newFunc, retValue, module->newConstFloat(0.0f)));
         } else {
-            std::cerr << "Function define: return type \"" << type_node->type->toString() << "\" is not supported!"
-                      << std::endl;
+
         }
 
     } else {
@@ -415,7 +414,7 @@ bool IRGenerator::ir_function_formal_params(ast_node * node)
 
             ArrayType * arrayType = new ArrayType(param_type_ir, dims);
             if (!arrayType) {
-                std::cerr << "Function formal params: Failer to generate Array Type!" << std::endl;
+
             }
             Type *        eletype = arrayType->getElementType();
             PointerType * pointerType = new PointerType(eletype);
@@ -2201,7 +2200,6 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
         // 在 else 块的末尾添加一个无条件跳转到 merge 块的指令。
         if (!hasBreakContinueInElse &&
             !hasReturnInElse) { // ! 注意，如果else语句有break, continue, return，其本身的跳转标签会与 merge_label 重复
-            std::cout << "here " << hasBreakContinueInElse << " " << hasReturnInElse << std::endl;
             node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
         }
     }
@@ -2215,7 +2213,6 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
             (hasBreakContinueInIf && hasBreakContinueInElse)) { // if-else语句块存在完全return
             *stop = true;
             node->isIfElseHaveReturn = true;
-            std::cout << "here\n";
         } else {
             *stop = false;
             node->isIfElseHaveReturn = false; // 如果ifelse没有全部 return，则继续翻译后续代码
@@ -2589,7 +2586,7 @@ Value * IRGenerator::funcall_array_access(ast_node * node)
     /// 使用tempVal获取之前生成的节点
     Value * tempVal = module->findVarValue(array_name);
     if (!tempVal) {
-        std::cerr << "Function call - array: Cannot find array!" << std::endl;
+
     }
     bool isGlobalArray = false;
 
@@ -2921,8 +2918,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                         float_init_list->push_back(init_num->float_val);
                     } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
                         if (init_num->integer_val != 0) {
-                            std::cerr << "Warning: Auto transform type \"int\" to \"float\" at \"" << array_name
-                                      << "\"." << std::endl;
+
                         }
                         // TODO 增加类型转化指令
                         float_init_list->push_back((double) init_num->integer_val);
@@ -2942,9 +2938,7 @@ bool IRGenerator::ir_variable_declare(ast_node * node)
                 for (auto init_num: init_list) {
                     if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
                         int_init_list->push_back((int) init_num->float_val);
-                        std::cerr << "Warning: Auto transform type \"float\" to \"int\" at \"" << array_name << "\"."
-                                  << std::endl;
-                        // TODO 增加类型转化指令
+
                     } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
                         int_init_list->push_back((float) init_num->integer_val);
                     } else {
@@ -3102,8 +3096,6 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                         float_init_list->push_back(init_num->float_val);
                     } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
                         if (init_num->integer_val != 0) {
-                            std::cerr << "Warning: Auto transform type \"int\" to \"float\" at \"" << array_name
-                                      << "\"." << std::endl;
                         }
                         // TODO 增加类型转化指令
                         float_init_list->push_back((float) init_num->integer_val);
@@ -3120,9 +3112,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                 for (auto init_num: init_list) {
                     if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
                         int_init_list->push_back((int) init_num->float_val);
-                        std::cerr << "Warning: Auto transform type \"float\" to \"int\" at \"" << array_name << "\"."
-                                  << std::endl;
-                        // TODO 增加类型转化指令
+
                     } else if (init_num->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_UINT) {
                         int_init_list->push_back(init_num->integer_val);
                     } else {
@@ -3156,8 +3146,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                         {(float) init_val_node->integer_val, integer_bits},
                         ValueCategory::CONSTANT);
                     if (init_val_node->integer_val != 0) {
-                        std::cerr << "Warning: Auto transform type \"int\" to \"float\" at variable \"" << var_name
-                                  << "\"." << std::endl;
+
                     }
                 } else if (init_val_node->node_type == ast_operator_type::AST_OP_LEAF_LITERAL_FLOAT) {
                     node->val = module->newVarValueWithFloat(
@@ -3172,7 +3161,6 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                                   << std::endl;
                         return false;
                     } else {
-                        std::cout << "Evaluate successful with return value: " << init_num << std::endl;
                         uint64_t init_num_bits = Value::bitcast<double, uint64_t>(init_num);
                         node->val = module->newVarValueWithFloat(
                             var_type,
@@ -3200,9 +3188,7 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                         var_name,
                         (int) init_val_node->float_val,
                         ValueCategory::CONSTANT);
-                    std::cerr << "Warning: Auto transform type \"float\" to \"int\" at variable \"" << var_name << "\"."
-                              << std::endl;
-                    // TODO 增加类型转化指令
+
                 } else {
                     double init_num;
                     if (!evaluateConstExpr(init_val_node, &init_num)) {
@@ -3210,7 +3196,6 @@ bool IRGenerator::ir_const_declare(ast_node * node)
                                   << std::endl;
                         return false;
                     } else {
-                        std::cout << "Evaluate successful with return value: " << init_num << std::endl;
                         node->val =
                             module->newVarValueWithInt(var_type, var_name, (int) init_num, ValueCategory::CONSTANT);
                     }
@@ -3799,7 +3784,6 @@ bool IRGenerator::getConstVal(std::string name, double * val)
 {
     Value * var = module->findVarValue(name);
     if (!var) {
-        std::cerr << "Error: Constant variable '" << name << "' not found." << std::endl;
         return false;
     }
     if (var->getValueCategory() == ValueCategory::CONSTANT && var->isInited) {
@@ -3813,7 +3797,6 @@ bool IRGenerator::getConstVal(std::string name, double * val)
             return false;
         }
     } else {
-        std::cerr << "Error: Variable '" << name << "' is not a constant or not initialized." << std::endl;
         return false;
     }
 }
@@ -3821,30 +3804,19 @@ bool IRGenerator::getConstVal(std::string name, std::vector<int> & dims, double 
 {
     Value * var = module->findVarValue(name);
     if (!var) {
-        std::cerr << "Error: Constant variable '" << name << "' not found." << std::endl;
         return false;
     }
     if (var->getValueCategory() == ValueCategory::CONSTANT && var->isInited) {
         if (var->getType()->getBaseElementType()) {
             if (!var->getArrayValByIndex(dims, val)) {
-                std::cerr << "Error: Failed to get array value for variable '" << name << "' with dimensions [";
-                for (size_t i = 0; i < dims.size(); ++i) {
-                    std::cout << dims[i];
-                    if (i < dims.size() - 1) {
-                        std::cout << ", ";
-                    }
-                }
-                std::cout << "]." << std::endl;
                 return false;
             } else {
                 return true;
             }
         } else {
-            std::cerr << "Error: Variable '" << name << "' is not an array." << std::endl;
             return false;
         }
     } else {
-        std::cerr << "Error: Variable '" << name << "' is not a constant or not initialized in array." << std::endl;
         return false;
     }
     return false;

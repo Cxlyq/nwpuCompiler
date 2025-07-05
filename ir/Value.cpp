@@ -115,7 +115,7 @@ int32_t Value::getUserNum()
 ///
 int32_t Value::getScopeLevel()
 {
-    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
+
     return -1;
 }
 
@@ -125,7 +125,7 @@ int32_t Value::getScopeLevel()
 ///
 int32_t Value::getRegId()
 {
-    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
+
     return -1;
 }
 
@@ -140,7 +140,6 @@ bool Value::getMemoryAddr(int32_t * regId, int64_t * offset)
 {
     (void) regId;
     (void) offset;
-    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
     return false;
 }
 
@@ -151,7 +150,6 @@ bool Value::getMemoryAddr(int32_t * regId, int64_t * offset)
 void Value::setRegId(int32_t regId)
 {
     (void) regId;
-    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
 }
 
 // 为value赋初值
@@ -241,21 +239,21 @@ bool Value::getArrayValByIndex(std::vector<int> & indexs, double * val)
     const std::vector<int> origin_dims = this->getType()->getDimensions();
     // 检查索引的大小是否超过数组维度
     if (indexs.empty()) {
-        std::cerr << "Error: indexs cannot be empty." << std::endl;
+
         return false;
     }
     if (origin_dims.empty()) {
-        std::cerr << "Error: origin_dims cannot be empty." << std::endl;
+
         return false;
     }
     // 检查索引是否在有效范围内
     if (indexs.size() != origin_dims.size()) {
-        std::cerr << "Error: index size exceeds array dimensions." << std::endl;
+
         return false;
     }
     for (size_t i = 0; i < indexs.size(); ++i) {
         if (indexs[i] < 0 || indexs[i] >= origin_dims[i]) {
-            std::cerr << "Error: index out of bounds for dimension " << i << "." << std::endl;
+
             return false;
         }
     }
@@ -276,11 +274,11 @@ bool Value::getArrayValByIndex(std::vector<int> & indexs, double * val)
             *val = (*(this->initVal.array_float_init_list))[linear_index];
             return true;
         } else {
-            std::cerr << "Error: Value is not an array type." << std::endl;
+
             return false;
         }
     } else {
-        std::cerr << "Error: Value is not initialized or not a constant." << std::endl;
+
         return false;
     }
     return false;
