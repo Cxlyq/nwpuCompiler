@@ -52,10 +52,15 @@ asm.s
 
 # history
 .history
-
+*.s
+*.out
+*.c
+*.zip
+*.tar.gz
 # clion
 .idea/
-
+tests/
+.vscode/
 # Visual Studio
 .vs/
 
