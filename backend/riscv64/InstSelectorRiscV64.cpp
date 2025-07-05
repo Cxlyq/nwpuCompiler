@@ -1429,15 +1429,9 @@ void InstSelectorRiscV64::translate_gep(Instruction * inst)
         std::string label = base_gv->getName();
         int         elementSize = base->getType()->getElementType()->getSize(); // 比如 i32 -> 4
         // 比如 "a"
-        // 输出 lui a0, %hi(a)
-        iloc.inst("lui", PlatformRiscV64::regName[tmpRegId], "%hi(" + label + ")", "");
+        // 输出 la a0, a
+        iloc.inst("la", PlatformRiscV64::regName[resultRegId], label);
 
-        // 输出 addi a0, a0, %lo(a)
-        iloc.inst(
-            "addi",
-            PlatformRiscV64::regName[resultRegId],
-            PlatformRiscV64::regName[tmpRegId],
-            "%lo(" + label + ")");
         if (!isConst) {
             Instanceof(index1, Instruction *, gepInst->getOperand(OperandNum - 1));
             int index1OperandRegId = simpleRegisterAllocator.Allocate(index1->getOperand(0));
