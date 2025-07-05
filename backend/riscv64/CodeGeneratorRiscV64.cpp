@@ -32,6 +32,7 @@
 #include "FuncCallInstruction.h"
 #include "ArgInstruction.h"
 #include "MoveInstruction.h"
+#include "RegisterAllocatorGraphColoring.h"
 
 /// @brief 构造函数
 /// @param tab 符号表
@@ -241,6 +242,7 @@ void CodeGeneratorRiscV64::getIRValueStr(Value * val, std::string & str)
 /// @param func 要处理的函数
 void CodeGeneratorRiscV64::genCodeSection(Function * func)
 {
+    GraphColoringRegisterAllocator simpleRegisterAllocator;
     // ILOC代码序列
     ILocRiscV64          iloc(module);
     LiveVariableAnalysis lva;

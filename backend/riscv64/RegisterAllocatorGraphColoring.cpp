@@ -519,6 +519,43 @@ int GraphColoringRegisterAllocator::AllocateTempInt()
     return regno; // 返回物理寄存器编号
 }
 
+/// @brief 临时分配一个int型寄存器
+/// @return int 寄存器编号
+///
+int GraphColoringRegisterAllocator::AllocateTempIntToTempReg()
+{
+    int32_t regno = -1;
+    int     regIndex = -1;
+    // 查询空闲的整数寄存器
+    for (int k = 8; k < PlatformRiscV64::maxUsableIntRegNum; ++k) {
+        if (!intRegBitmap.test(k)) { // 如果该寄存器未被占用
+            regIndex = k;
+            break;
+        }
+    }
+
+    if (regIndex != -1) {
+        // 占用该寄存器
+        intBitmapSet(regIndex);
+    } else {
+        // 没有空闲寄存器，选择寄存器号大于8的最旧变量
+        for (auto it = intRegValues.begin(); it != intRegValues.end(); ++it) {
+            int varRegId = (*it)->getRegId();
+            if (varRegId >= 8) {
+                regno = varRegId;
+                (*it)->setRegId(-1);    // 清除原绑定
+                intRegValues.erase(it); // 从活跃列表中移除
+                break;
+            }
+        }
+    }
+
+    if (regIndex >= 0 && regIndex < PlatformRiscV64::maxUsableIntRegNum) {
+        regno = PlatformRiscV64::RISCV64_INT_REGS[regIndex];
+    }
+    return regno; // 返回物理寄存器编号
+}
+
 /// @brief 临时分配一个float型寄存器
 /// @return int 寄存器编号
 ///
