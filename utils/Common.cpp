@@ -17,7 +17,7 @@
 #include <cstring>
 #include <string>
 #include <iostream>
-
+#include <cstdint>
 #include "Common.h"
 
 using namespace std;
@@ -43,7 +43,10 @@ string double2str(double num)
 /// @return bool
 bool isCallerProtectReg(int regNo)
 {
-    return ((regNo>=10&&regNo<=17)||(regNo>=5&&regNo<=7)||(regNo>=28&&regNo<=39)||(regNo>=42&&regNo<=49)||(regNo>=60&&regNo<=63))?true:false;
+    return ((regNo >= 10 && regNo <= 17) || (regNo >= 5 && regNo <= 7) || (regNo >= 28 && regNo <= 39) ||
+            (regNo >= 42 && regNo <= 49) || (regNo >= 60 && regNo <= 63))
+               ? true
+               : false;
 }
 /// @brief 浮点数变同二进制定点数
 /// @param num 浮点数
@@ -51,10 +54,10 @@ bool isCallerProtectReg(int regNo)
 uint32_t float2int(float num)
 {
     const float f = num;
-    uint32_t     result;
+    uint32_t    result;
     // 将float的4字节内存复制到int32_t中
     memcpy(&result, &f, sizeof(float));
-    std::cout<<"[Common::float2int] origin is"<<num<<", resultINT is"<<result<<"\n";
+    std::cout << "[Common::float2int] origin is" << num << ", resultINT is" << result << "\n";
     return result;
 }
 
