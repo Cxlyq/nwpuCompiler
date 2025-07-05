@@ -676,7 +676,6 @@ void GraphColoringRegisterAllocator::free(int32_t no)
 
     int regIndex = regNoToIndex(no);
     if (regIndex == -1) {
-        std::cout << "[free] 非法寄存器号: " << no << "，无法找到对应索引\n";
         return;
     }
 
@@ -737,7 +736,6 @@ bool GraphColoringRegisterAllocator::isRegOccupied(int regNum)
 {
     int regIndex = regNoToIndex(regNum);
     if (regIndex == -1) {
-        std::cout << "[free] 非法寄存器号: " << regNum << "，无法找到对应索引\n";
         return false;
     }
     if (regNum >= 32) {

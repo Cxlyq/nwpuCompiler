@@ -327,7 +327,6 @@ void Function::renameIR()
             // inst->setIRName(IR_LABEL_PREFIX + std::to_string(labelIndex++));
             LabelInstruction * labelInst = dynamic_cast<LabelInstruction *>(inst);
             if (labelInst == nullptr) {
-                std::cerr << "Error: Label instruction is not a LabelInstruction type.\n";
                 exit(EXIT_FAILURE);
             }
             if (labelInst->isUsed) {

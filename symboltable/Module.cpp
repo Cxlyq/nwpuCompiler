@@ -421,7 +421,6 @@ Value * Module::newVarValueWithInt(Type * type, std::string name, int initVal, V
 {
     Value *     retVal;
     std::string varName;
-    std::cout << initVal << std::endl;
     // 若变量名有效，检查当前作用域中是否存在变量，如存在则语义错误
     // 反之，因无效需创建新的变量名，肯定不现在的不同，不需要查找
     if (!name.empty()) {
