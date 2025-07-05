@@ -907,6 +907,7 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
 
             int value_reg_id = arg->getRegId();
             if (Instanceof(GEP, GetElementPtrInst *, arg)) {
+                GEP->getBaseRegId();
                 int tmp_reg_no = simpleRegisterAllocator.AllocateTempIntToTempReg();
                 iloc.mov_reg(tmp_reg_no, GEP->getBaseRegId());
                 GEP->setAddressingInfo(tmp_reg_no, GEP->getOffset());
@@ -948,19 +949,19 @@ void InstSelectorRiscV64::translate_call(Instruction * inst)
         }
         // 前八个的后面参数采用栈传递
         int esp = 0;
-        for (uint32_t k = 0; k < operandNum; k++) {
-            auto arg = callInst->getOperand(k);
+        // for (uint32_t k = 0; k < operandNum; k++) {
+        //     auto arg = callInst->getOperand(k);
 
-            int value_reg_id = arg->getRegId();
+        //     int value_reg_id = arg->getRegId();
 
-            if (value_reg_id != -1) {
-                std::cout << "operandNum:" << arg->getIRName() << "\t" << value_reg_id << endl;
-                int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
-                simpleRegisterAllocator.free(arg);
-                iloc.store_var(value_reg_id, arg, tmp_reg_no);
-                simpleRegisterAllocator.free(tmp_reg_no);
-            }
-        }
+        //     if (value_reg_id != -1) {
+        //         std::cout << "operandNum:" << arg->getIRName() << "\t" << value_reg_id << endl;
+        //         int tmp_reg_no = simpleRegisterAllocator.AllocateTempInt();
+        //         simpleRegisterAllocator.free(arg);
+        //         iloc.store_var(value_reg_id, arg, tmp_reg_no);
+        //         simpleRegisterAllocator.free(tmp_reg_no);
+        //     }
+        // }
         for (uint32_t k = 0; k < operandNum; k++) {
             auto arg = callInst->getOperand(k);
 
