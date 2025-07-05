@@ -830,7 +830,7 @@ void InstSelectorRiscV64::translate_pos_float32(Instruction * inst)
 void InstSelectorRiscV64::translate_neg_float32(Instruction * inst)
 {
     // 直接翻译成neg指令
-    translate_two_operator(inst, "fneg.s");
+    translate_two_operator(inst, "fsub.s");
 }
 
 /// @brief 浮点数逻辑非指令翻译成RISCV64汇编
