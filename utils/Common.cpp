@@ -57,7 +57,6 @@ uint32_t float2int(float num)
     uint32_t    result;
     // 将float的4字节内存复制到int32_t中
     memcpy(&result, &f, sizeof(float));
-    std::cout << "[Common::float2int] origin is" << num << ", resultINT is" << result << "\n";
     return result;
 }
 
@@ -122,6 +121,8 @@ std::string trim(const std::string & str)
 void minic_log_common(int level, const char * content)
 {
     if (level != LOG_ERROR) {
+
     } else {
+
     }
 }

@@ -266,12 +266,9 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
         emit("addi", PlatformRiscV64::regName[rs_reg_no], "zero", std::to_string(constant));
     } else if ((constant & 0x00000FFF) == 0) {
         // 如果常量是 0xFFF00000 的倍数，可以直接使用 lui 指令
-        std::cout << "constant:" << constant << "\n";
-        std::cout << "constant>>12:" << (constant >> 12) << "\n";
         emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant >> 12));
         return;
     } else {
-        std::cout << constant << "\n";
         int32_t upper = (constant >> 12);
 
         int32_t lower = constant & 0xFFF;
@@ -279,8 +276,6 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
             lower |= lower - 4096;
             upper = upper + 1;
         }
-        std::cout << upper << "\n";
-        std::cout << lower << "\n";
         emit("lui", PlatformRiscV64::regName[rs_reg_no], std::to_string(upper));
         if (lower != 0) {
             emit(
@@ -289,7 +284,6 @@ void ILocRiscV64::load_imm(int rs_reg_no, int32_t constant)
                 PlatformRiscV64::regName[rs_reg_no],
                 std::to_string(lower));
         }
-        std::cout << ((upper << 12) + lower) << "\n";
     }
 
     // emit("li", PlatformRiscV64::regName[rs_reg_no], std::to_string(constant));
@@ -479,9 +473,6 @@ void ILocRiscV64::store_var(int src_reg_no, Instruction * dest_var, int tmp_reg_
 /// @param tmp_reg_no 基址寄存器
 void ILocRiscV64::store_var(int src_reg_no, GlobalVariable * dest_var, int addr_reg_no)
 {
-    if (addr_reg_no == -1) {
-        std::cout << "BUG[ILocRiscV64::store_var]:addr_reg_no can't be -1 when dealing with globalvariable.\n";
-    }
     std::string name = dest_var->getName();
     emit("lui", PlatformRiscV64::regName[addr_reg_no], std::string("%hi(" + name + ")"));
     // 再加载低位
@@ -499,9 +490,7 @@ void ILocRiscV64::store_var(int src_reg_no, GetElementPtrInst * dest_var, int tm
     Value * base = dest_var->getOperand(0); // GEP 的 base 是数组或结构体指针
     if (Instanceof(globalbase, GlobalVariable *, base)) {
         globalbase->getRegId();
-        if (tmp_reg_no == -1) {
-            std::cout << "BUG[ILocRiscV64::store_var]:addr_reg_no can't be -1 when dealing with globalvariable.\n";
-        }
+
         std::string name = dest_var->getName();
         // 再加载低位
         emit(
@@ -564,8 +553,6 @@ void ILocRiscV64::store_var(int src_reg_no, Value * dest_var, int tmp_reg_no)
     } else if (Instanceof(globalVar, GlobalVariable *, dest_var)) {
         store_var(src_reg_no, globalVar, tmp_reg_no);
     } else {
-        // TODO: [寻址]目前只实现了局部变量和全局变量
-        std::cout << "[ILocRiscV64::store_var]被保存目标变量不是局部变量或全局变量\n";
         emit("sw", "?", "?");
     }
 }
@@ -590,7 +577,6 @@ void ILocRiscV64::load_var(int rs_reg_no, Value * src_var, int tmp_reg_no)
     } else if (Instanceof(globalVar, GlobalVariable *, src_var)) {
         load_var(rs_reg_no, globalVar, tmp_reg_no);
     } else {
-        std::cout << "[ILocRiscV64::load_var]被保存目标变量不是局部变量或全局变量或临时变量\n";
         emit("lw", "?", "?");
     }
 }
@@ -693,9 +679,6 @@ void ILocRiscV64::load_var(int rs_reg_no, GetElementPtrInst * src_var, int tmp_r
     if (Instanceof(globalbase, GlobalVariable *, base)) {
         globalbase->getRegId();
         // xxx:可以做局部改进，将addr_reg_no与rs_reg_no设为同一寄存器
-        if (tmp_reg_no == -1) {
-            std::cout << "BUG[ILocRiscV64::store_var]:addr_reg_no can't be -1 when dealing with globalvariable.\n";
-        }
         std::string name = src_var->getName();
         emit(
             "lw",

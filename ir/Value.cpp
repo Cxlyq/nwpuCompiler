@@ -115,7 +115,7 @@ int32_t Value::getUserNum()
 ///
 int32_t Value::getScopeLevel()
 {
-    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
+
     return -1;
 }
 
@@ -125,7 +125,7 @@ int32_t Value::getScopeLevel()
 ///
 int32_t Value::getRegId()
 {
-    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
+
     return -1;
 }
 
@@ -140,7 +140,6 @@ bool Value::getMemoryAddr(int32_t * regId, int64_t * offset)
 {
     (void) regId;
     (void) offset;
-    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
     return false;
 }
 
@@ -151,7 +150,6 @@ bool Value::getMemoryAddr(int32_t * regId, int64_t * offset)
 void Value::setRegId(int32_t regId)
 {
     (void) regId;
-    std::cout << "MethodCall warning: use base class(Value)method instead of extend methods.";
 }
 
 // 为value赋初值

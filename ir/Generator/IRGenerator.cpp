@@ -2198,7 +2198,6 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
         // 在 else 块的末尾添加一个无条件跳转到 merge 块的指令。
         if (!hasBreakContinueInElse &&
             !hasReturnInElse) { // ! 注意，如果else语句有break, continue, return，其本身的跳转标签会与 merge_label 重复
-            std::cout << "here " << hasBreakContinueInElse << " " << hasReturnInElse << std::endl;
             node->blockInsts.addInst(new GotoInstruction(currentFunc, merge_label));
         }
     }
@@ -2212,7 +2211,6 @@ LabelInstruction * IRGenerator::ir_ifelse(ast_node * node, bool * stopTranslateB
             (hasBreakContinueInIf && hasBreakContinueInElse)) { // if-else语句块存在完全return
             *stop = true;
             node->isIfElseHaveReturn = true;
-            std::cout << "here\n";
         } else {
             *stop = false;
             node->isIfElseHaveReturn = false; // 如果ifelse没有全部 return，则继续翻译后续代码
@@ -3150,7 +3148,6 @@ bool IRGenerator::ir_const_declare(ast_node * node)
 
                         return false;
                     } else {
-                        std::cout << "Evaluate successful with return value: " << init_num << std::endl;
                         uint64_t init_num_bits = Value::bitcast<double, uint64_t>(init_num);
                         node->val = module->newVarValueWithFloat(
                             var_type,
