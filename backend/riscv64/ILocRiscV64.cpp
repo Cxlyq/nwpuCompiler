@@ -474,12 +474,12 @@ void ILocRiscV64::store_var(int src_reg_no, Instruction * dest_var, int tmp_reg_
 void ILocRiscV64::store_var(int src_reg_no, GlobalVariable * dest_var, int addr_reg_no)
 {
     std::string name = dest_var->getName();
-    emit("lui", PlatformRiscV64::regName[addr_reg_no], std::string("%hi(" + name + ")"));
+    emit("la", PlatformRiscV64::regName[addr_reg_no], std::string(name));
     // 再加载低位
     emit(
         "sw",
         PlatformRiscV64::regName[src_reg_no],
-        std::string("%lo(" + name + ")(" + PlatformRiscV64::regName[addr_reg_no] + ")"));
+        std::string("0(" + PlatformRiscV64::regName[addr_reg_no] + ")"));
 }
 
 /// @brief 保存寄存器到局部变量，
@@ -726,12 +726,12 @@ void ILocRiscV64::load_var(int rs_reg_no, GlobalVariable * src_var, int addr_reg
 {
     // xxx:可以做局部改进，将addr_reg_no与rs_reg_no设为同一寄存器
     std::string name = src_var->getName();
-    emit("lui", PlatformRiscV64::regName[addr_reg_no], std::string("%hi(" + name + ")"));
+    emit("la", PlatformRiscV64::regName[addr_reg_no], std::string(name));
     // 再加载低位
     emit(
         "lw",
         PlatformRiscV64::regName[rs_reg_no],
-        std::string("%lo(" + name + ")(" + PlatformRiscV64::regName[addr_reg_no] + ")"));
+        std::string("0(" + PlatformRiscV64::regName[addr_reg_no] + ")"));
 }
 
 /// @brief 加载变量地址到寄存器
@@ -788,13 +788,13 @@ void ILocRiscV64::load_symbol(int rs_reg_no, std::string name)
     // 这里简单模拟加载符号地址到寄存器
     // 实际中可能需要根据链接器等情况处理
     // 先加载高位
-    emit("lui", PlatformRiscV64::regName[rs_reg_no], std::string("%hi(" + name + ")"));
+    emit("la", PlatformRiscV64::regName[rs_reg_no], std::string(name));
     // 再加载低位
     emit(
         "lw",
         PlatformRiscV64::regName[rs_reg_no],
         PlatformRiscV64::regName[rs_reg_no],
-        std::string("%lo(" + name + ")(" + PlatformRiscV64::regName[rs_reg_no] + ")"));
+        std::string("0(" + PlatformRiscV64::regName[rs_reg_no] + ")"));
 }
 
 /// @brief 加载栈内变量地址
