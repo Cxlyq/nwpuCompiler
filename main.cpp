@@ -57,7 +57,7 @@ static bool gShowSymbol = false;
 ///
 /// @brief 在输出汇编时是否输出中间IR作为注释
 ///
-static bool gAsmAlsoShowIR = false;
+static bool gAsmAlsoShowIR = true;
 
 /// @brief 优化的级别，即-O后面的数字，默认为0
 static int gOptLevel = 0;

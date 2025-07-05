@@ -148,7 +148,8 @@ const int PlatformRiscV64::RISCV64_INT_REGS[PlatformRiscV64::maxUsableIntRegNum]
     14,
     15,
     16,
-    17, // a0-a7
+    17,
+    5, // a0-a7
     6,
     7, // t0-t2
     28,
